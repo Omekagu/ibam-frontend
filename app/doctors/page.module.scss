@@ -1,0 +1,212 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.hero {
+  background: $navy-dark;
+  padding: 9rem 0 5rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba($primary, 0.18) 0%, transparent 70%);
+    top: -150px; right: -100px;
+    pointer-events: none;
+  }
+}
+
+.heroInner {
+  @include container;
+  position: relative;
+  z-index: 1;
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    color: $white;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.875rem;
+  }
+
+  p { font-size: 1rem; color: rgba(255,255,255,0.6); max-width: 500px; margin-bottom: 2rem; line-height: 1.7; }
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  background: $white;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  max-width: 560px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+
+  .searchIcon {
+    padding: 0 1rem;
+    color: $text-muted;
+    svg { width: 20px; height: 20px; }
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 1rem 0;
+    font-size: 0.9375rem;
+    color: $text-dark;
+    font-family: inherit;
+
+    &::placeholder { color: $text-muted; }
+  }
+
+  button {
+    @include btn-primary;
+    border-radius: 0;
+    margin: 0;
+  }
+}
+
+// ─── Filters + Grid ───────────────────────────────
+.body {
+  background: $off-white;
+  @include section-pad;
+}
+
+.bodyInner {
+  @include container;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+
+  @media (min-width: $bp-lg) { grid-template-columns: 260px 1fr; align-items: start; }
+}
+
+.filters {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
+  padding: 1.75rem;
+  position: sticky;
+  top: 100px;
+
+  h3 { font-size: 0.875rem; font-weight: 700; color: $text-dark; margin-bottom: 1.25rem; }
+}
+
+.filterGroup {
+  margin-bottom: 1.5rem;
+
+  &:last-child { margin-bottom: 0; }
+
+  h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $text-muted; margin-bottom: 0.875rem; }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    color: $text-muted;
+    cursor: pointer;
+    padding: 0.375rem 0;
+    transition: color 0.15s ease;
+
+    &:hover { color: $primary; }
+
+    input[type="radio"], input[type="checkbox"] { accent-color: $primary; }
+  }
+}
+
+.divider { border: none; border-top: 1px solid $border; margin: 1.25rem 0; }
+
+.results {
+  h2 { font-size: 1.125rem; font-weight: 700; color: $text-dark; margin-bottom: 1.5rem; }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.card {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.25rem;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+
+  &:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.08); transform: translateY(-3px); }
+}
+
+.docAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: $radius-lg;
+  background: $primary-light;
+  @include flex-center;
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.docInfo { flex: 1; min-width: 0; }
+
+.docTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.docName { font-size: 1rem; font-weight: 700; color: $text-dark; }
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.625rem;
+
+  &.available { background: rgba($success, 0.1); color: $success; }
+  &.busy      { background: rgba($warning, 0.1); color: $warning; }
+}
+
+.specialty { font-size: 0.8rem; color: $primary; font-weight: 600; margin-bottom: 0.5rem; }
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: $text-muted;
+
+    svg { width: 13px; height: 13px; }
+  }
+
+  .star { color: #F59E0B; fill: #F59E0B; }
+}
+
+.docFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .price { font-size: 0.9375rem; font-weight: 700; color: $text-dark; span { font-size: 0.75rem; font-weight: 400; color: $text-muted; } }
+}
+
+.bookBtn {
+  @include btn-primary;
+  font-size: 0.8rem;
+  padding: 0.5rem 1.125rem;
+}

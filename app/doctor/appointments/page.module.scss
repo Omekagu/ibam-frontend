@@ -1,0 +1,182 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: $radius-md;
+  border: 1px solid $navy-border;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
+  &.active { background: $primary; border-color: $primary; color: #fff; }
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  @include flex-between;
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  transition: border-color 0.15s ease;
+
+  &:hover { border-color: rgba($primary,0.25); }
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  @include flex-center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $accent;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.info { min-width: 0; }
+
+.patName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 1px;
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.typeBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+
+  &.video { background: rgba(59,130,246,0.12); color: #60A5FA; }
+  &.audio { background: rgba($primary,0.12);   color: $accent; }
+  &.chat  { background: rgba($warning,0.12);   color: $warning; }
+}
+
+.statusBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+
+  &.confirmed { background: rgba($success,0.12);          color: $success; }
+  &.pending   { background: rgba($warning,0.12);          color: $warning; }
+  &.completed { background: var(--badge-neutral-bg);       color: var(--text-muted); }
+  &.cancelled { background: rgba($danger,0.12);           color: $danger; }
+  &.no_show   { background: rgba($danger,0.08);           color: rgba($danger,0.7); }
+}
+
+.startBtn {
+  padding: 0.375rem 0.875rem;
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) { background: $primary-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ─── Timing labels ────────────────────────────────
+.timingLabel {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.timingMuted  { background: var(--input-hover-bg); color: var(--text-muted); }
+.timingUrgent { background: rgba($danger,0.1);      color: $danger; }
+
+// ─── Urgent card highlight ─────────────────────────
+.card.urgent { border-color: rgba($danger,0.3); }
+
+// ─── Start Now highlight ──────────────────────────
+.startBtn.startNow {
+  background: $danger;
+  animation: pulse 2s ease-in-out infinite;
+  &:hover:not(:disabled) { background: #C53030; }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($danger,0); }
+  50%       { box-shadow: 0 0 0 6px rgba($danger,0.25); }
+}
+
+// ─── Live rejoin button ────────────────────────────
+.startBtn.live {
+  background: $success;
+  &:hover:not(:disabled) { background: #059669; }
+}
+
+.cancelBtn {
+  padding: 0.375rem 0.875rem;
+  background: transparent;
+  border: 1px solid rgba($danger,0.4);
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $danger;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) { background: rgba($danger,0.1); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}

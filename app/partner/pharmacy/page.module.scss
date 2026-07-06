@@ -1,0 +1,65 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+.pageHeader { @include flex-between; }
+.title { font-size: 1.25rem; font-weight: 800; color: $white; margin: 0; }
+.refreshBtn { padding: 7px 14px; border-radius: $radius-sm; border: 1px solid $navy-border; background: transparent; color: rgba(255,255,255,0.55); font-size: 0.8rem; cursor: pointer; &:hover { background: rgba(255,255,255,0.05); } }
+.empty { color: rgba(255,255,255,0.35); font-size: 0.875rem; text-align: center; padding: 3rem; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+.stat { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-md; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.statNum { font-size: 1.5rem; font-weight: 800; color: $white; }
+.stat span:last-child { font-size: 0.72rem; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+.list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.card {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; overflow: hidden;
+  &.processing { border-left: 3px solid $warning; }
+  &.ready      { border-left: 3px solid $success; }
+  &.dispatched { border-left: 3px solid $accent; }
+  &.delivered  { border-left: 3px solid rgba(255,255,255,0.2); }
+  &.cancelled  { opacity: 0.55; }
+}
+
+.cardHead { @include flex-between; padding: 1rem 1.25rem; cursor: pointer; gap: 12px; &:hover { background: rgba(255,255,255,0.02); } }
+.cardLeft  { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cardRight { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.cardInfo  { min-width: 0; }
+
+.statusBadge { font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+.badge_pending    { background: rgba($warning,0.12); color: $warning; }
+.badge_processing { background: rgba($accent,0.12); color: $accent; }
+.badge_ready      { background: rgba($success,0.12); color: $success; }
+.badge_dispatched { background: rgba($primary,0.12); color: $accent; }
+.badge_delivered  { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
+.badge_cancelled  { background: rgba($danger,0.09); color: $danger; }
+
+.patientName { font-size: 0.9rem; font-weight: 700; color: $white; margin: 0; }
+.meds        { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.amount      { font-size: 0.875rem; font-weight: 700; color: $success; }
+.date        { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+.chevron     { font-size: 0.65rem; color: rgba(255,255,255,0.3); }
+
+.cardBody { padding: 0 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 0.875rem; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 1rem; }
+
+.rxSection { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: $radius-sm; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.diagnosis  { font-size: 0.78rem; color: $accent; font-weight: 600; margin: 0; }
+.medRow     { display: flex; justify-content: space-between; gap: 8px; }
+.medName    { font-size: 0.82rem; font-weight: 600; color: $white; }
+.medMeta    { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+
+.address { font-size: 0.82rem; color: rgba(255,255,255,0.55); margin: 0; }
+.notes   { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0; font-style: italic; }
+.phone   { font-size: 0.82rem; color: rgba(255,255,255,0.55); margin: 0; }
+
+.priceRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  label { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.45); white-space: nowrap; }
+  input { flex: 1; min-width: 120px; max-width: 180px; background: rgba(255,255,255,0.06); border: 1px solid $navy-border; border-radius: $radius-sm; padding: 7px 10px; font-size: 0.875rem; color: $white; outline: none; &:focus { border-color: rgba($primary,0.4); } &::placeholder { color: rgba(255,255,255,0.25); } }
+}
+.setAmountBtn { padding: 7px 14px; border-radius: $radius-sm; border: none; background: rgba($primary,0.15); color: $accent; font-size: 0.8rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($primary,0.25); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
+
+.actions   { display: flex; gap: 8px; flex-wrap: wrap; }
+.actionBtn { padding: 8px 16px; border-radius: $radius-sm; border: 1px solid rgba($success,0.3); background: rgba($success,0.08); color: $success; font-size: 0.82rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($success,0.16); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
+.cancelBtn { padding: 8px 16px; border-radius: $radius-sm; border: 1px solid rgba($danger,0.25); background: rgba($danger,0.06); color: $danger; font-size: 0.82rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($danger,0.14); } &:disabled { opacity: 0.4; cursor: not-allowed; } }

@@ -1,0 +1,39 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+.header { @include flex-between; flex-wrap: wrap; gap: 1rem; }
+.headerLeft { display: flex; align-items: center; gap: 10px; }
+.title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0; }
+.countBadge { background: rgba($primary,0.15); color: $accent; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.filter { background: var(--input-hover-bg); border: 1px solid $navy-border; border-radius: $radius-md; padding: 7px 10px; color: var(--text); font-size: 0.875rem; outline: none; cursor: pointer; option { background: #0D1829; } }
+.empty { color: var(--text-faint); font-size: 0.875rem; text-align: center; padding: 3rem; }
+
+.table { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; overflow: hidden; }
+.thead {
+  display: grid; grid-template-columns: 1.5fr 2fr 1fr 1.5fr 0.8fr 1fr 1fr;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid $navy-border;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.trow {
+  display: grid; grid-template-columns: 1.5fr 2fr 1fr 1.5fr 0.8fr 1fr 1fr;
+  padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border);
+  align-items: center;
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--nav-hover-bg); }
+}
+.main   { font-size: 0.8rem; font-weight: 600; color: var(--text); margin: 0; }
+.sub    { font-size: 0.73rem; color: var(--text-sub); margin: 2px 0 0; }
+.amount { font-size: 0.82rem; font-weight: 700; color: $success; margin: 0; }
+
+.statusBadge { font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; display: inline-block; white-space: nowrap; }
+.pending          { background: rgba($warning,0.12); color: $warning; }
+.assigned         { background: rgba($primary,0.12); color: $accent; }
+.sample_collected { background: rgba($accent,0.12); color: $accent; }
+.processing       { background: rgba($warning,0.12); color: $warning; }
+.completed        { background: rgba($success,0.12); color: $success; }
+.cancelled        { background: rgba($danger,0.12); color: $danger; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
+.pgBtn { padding: 6px 14px; border-radius: $radius-sm; border: 1px solid $navy-border; background: var(--input-bg); color: var(--text-semi); font-size: 0.8rem; cursor: pointer; &:hover:not(:disabled) { background: var(--input-hover-bg); } &:disabled { opacity: 0.3; cursor: not-allowed; } }

@@ -1,0 +1,38 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+.header { @include flex-between; flex-wrap: wrap; gap: 1rem; }
+.headerLeft { display: flex; align-items: center; gap: 10px; }
+.title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0; }
+.countBadge { background: rgba($primary,0.15); color: $accent; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.filter { background: var(--input-hover-bg); border: 1px solid $navy-border; border-radius: $radius-md; padding: 7px 10px; color: var(--text); font-size: 0.875rem; outline: none; cursor: pointer; option { background: #0D1829; } }
+.empty { color: var(--text-faint); font-size: 0.875rem; text-align: center; padding: 3rem; }
+
+.table { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; overflow: hidden; }
+.thead {
+  display: grid; grid-template-columns: 2fr 1.5fr 1fr 1.5fr 0.8fr 1fr;
+  padding: 0.75rem 1.25rem; border-bottom: 1px solid $navy-border;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.trow {
+  display: grid; grid-template-columns: 2fr 1.5fr 1fr 1.5fr 0.8fr 1fr;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+  align-items: center;
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--nav-hover-bg); }
+}
+.pharmName { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0; }
+.pharmAddr { font-size: 0.75rem; color: var(--text-muted); margin: 2px 0 0; }
+.detail    { font-size: 0.8rem; color: var(--text-muted); margin: 1px 0; }
+
+.statusBadge { font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; display: inline-block; }
+.pending   { background: rgba($warning,0.12); color: $warning; }
+.active    { background: rgba($success,0.12); color: $success; }
+.inactive  { background: var(--badge-neutral-bg); color: var(--text-muted); }
+.suspended { background: rgba($danger,0.12); color: $danger; }
+
+.actionRow { display: flex; gap: 6px; flex-wrap: wrap; }
+.approveBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($success,0.3); background: rgba($success,0.08); color: $success; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($success,0.16); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
+.suspendBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($danger,0.3); background: rgba($danger,0.07); color: $danger; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($danger,0.14); } &:disabled { opacity: 0.4; cursor: not-allowed; } }

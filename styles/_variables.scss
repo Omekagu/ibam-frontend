@@ -1,0 +1,96 @@
+// ────────────────────────────────────────────────
+// Brand palette  (aligned with mobile/src/lib/theme.ts)
+// ────────────────────────────────────────────────
+$primary:        #0A8F6C;
+$primary-dark:   #065F46;
+$primary-light:  #E8F5F0;
+$accent:         #00E5A0;   // web-only electric mint – glow / dark-mode highlights
+
+// Status colours
+$success:        #10B981;
+$success-light:  #D1FAE5;
+$warning:        #F59E0B;
+$warning-light:  #FEF3C7;
+$danger:         #EF4444;
+$danger-light:   #FEE2E2;
+
+// Extended semantic palette
+$info:           #3B82F6;
+$info-light:     #DBEAFE;
+$violet:         #8B5CF6;
+$violet-light:   #EDE9FE;
+$teal:           #14B8A6;
+$teal-light:     #CCFBF1;
+$orange:         #F97316;
+$orange-light:   #FFEDD5;
+$gold:           #EAB308;
+$gold-light:     #FEF9C3;
+
+// Dark-mode / navy  (resolved at runtime via CSS vars — see globals.scss :root / [data-theme="dark"])
+$navy:           #0D1B2A;
+$navy-dark:      var(--bg-card);
+$navy-card:      var(--bg-card);
+$navy-border:    var(--border);
+$navy-border-hov: rgba(0, 229, 160, 0.35);
+
+// Neutral surface & text
+$white:          #FFFFFF;
+$off-white:      #F8FAFC;
+$border:         #E5E7EB;
+$border-light:   #F3F4F6;
+
+$text-dark:      #0D1B2A;
+$text-muted:     #6B7280;
+$text-muted-soft: #9CA3AF;   // mobile textMuted
+$text-light:     #F0F7FF;
+$text-light-muted: #8BA4C4;
+
+// ────────────────────────────────────────────────
+// Spacing scale  (matches mobile Spacing tokens)
+// ────────────────────────────────────────────────
+$space-xs:   4px;
+$space-sm:   8px;
+$space-md:   12px;
+$space-base: 16px;
+$space-lg:   20px;
+$space-xl:   24px;
+$space-2xl:  32px;
+$space-3xl:  40px;
+$space-4xl:  48px;
+$space-5xl:  64px;
+
+// ────────────────────────────────────────────────
+// Typography scale  (matches mobile Typography.size)
+// ────────────────────────────────────────────────
+$text-tiny:    10px;
+$text-small:   11px;
+$text-caption: 12px;
+$text-body:    13px;
+$text-body-lg: 14px;
+$text-label:   15px;
+$text-h4:      16px;
+$text-h3:      18px;
+$text-h2:      20px;
+$text-h1:      24px;
+$text-display: 28px;
+
+// ────────────────────────────────────────────────
+// Layout
+// ────────────────────────────────────────────────
+$max-width:  1280px;
+
+// Border-radius  (aligned with mobile Radius tokens)
+$radius-sm:  6px;
+$radius-md:  10px;
+$radius-lg:  14px;
+$radius-xl:  18px;
+$radius-2xl: 24px;
+$radius-full: 999px;
+
+// ────────────────────────────────────────────────
+// Breakpoints
+// ────────────────────────────────────────────────
+$bp-sm:  640px;
+$bp-md:  768px;
+$bp-lg:  1024px;
+$bp-xl:  1280px;

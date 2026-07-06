@@ -1,0 +1,43 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.shell { display: flex; min-height: 100vh; background: var(--bg-page); }
+
+.sidebar {
+  width: 240px; flex-shrink: 0; background: $navy-dark; border-right: 1px solid $navy-border;
+  display: flex; flex-direction: column; padding: 1.5rem 1rem; gap: 0.5rem;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+}
+
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-bottom: 0.25rem;
+  .mark { width: 28px; height: 28px; background: $primary; border-radius: $radius-sm; @include flex-center; font-size: 0.6rem; font-weight: 900; color: var(--text); }
+  span { font-size: 0.875rem; font-weight: 700; color: var(--text); em { font-style: normal; color: $accent; } }
+}
+
+.partnerBadge {
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: $accent; background: rgba($primary, 0.1); border: 1px solid rgba($primary, 0.2);
+  border-radius: 999px; padding: 3px 10px; text-align: center; margin-bottom: 0.5rem;
+}
+
+.nav { display: flex; flex-direction: column; gap: 2px; flex: 1; margin-top: 0.5rem; }
+
+.navLink {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: $radius-md; font-size: 0.875rem; font-weight: 500;
+  color: rgba(255,255,255,0.55); text-decoration: none; transition: all 0.15s;
+  svg { opacity: 0.6; }
+  &:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); svg { opacity: 1; } }
+  &.active { background: rgba($primary,0.14); color: $accent; svg { opacity: 1; color: $accent; } }
+}
+
+.logoutBtn {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: $radius-md; border: none; background: transparent;
+  font-size: 0.875rem; font-weight: 500; color: var(--text-faint);
+  cursor: pointer; transition: all 0.15s; text-align: left;
+  &:hover { color: $danger; background: rgba($danger, 0.07); }
+}
+
+.main { margin-left: 240px; flex: 1; }
+.content { padding: 2rem; }

@@ -1,0 +1,196 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: $radius-md;
+  border: 1px solid $navy-border;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
+  &.active { background: $primary; border-color: $primary; color: #fff; }
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+
+  &:hover { border-color: rgba($primary,0.2); }
+}
+
+.cardTop {
+  @include flex-between;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rxIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.cardLeft > div {
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.cardLeft > div > span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.chevron {
+  font-size: 0.625rem;
+  color: var(--text-faint);
+}
+
+.statusBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+
+  &.active     { background: rgba($success,0.12); color: $success; }
+  &.fulfilled  { background: var(--badge-neutral-bg); color: var(--text-muted); }
+  &.expired    { background: rgba($danger,0.08); color: rgba($danger,0.6); }
+  &.cancelled  { background: rgba($danger,0.12); color: $danger; }
+  &.pending    { background: rgba($warning,0.12); color: $warning; }
+  &.assigned   { background: rgba(59,130,246,0.12); color: #60A5FA; }
+  &.processing { background: rgba($accent,0.12); color: $accent; }
+  &.completed  { background: rgba($success,0.12); color: $success; }
+}
+
+.fwdBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.12);
+  color: #60A5FA;
+}
+
+.cardBody {
+  border-top: 1px solid $navy-border;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.diagnosis {
+  font-size: 0.8125rem;
+  color: var(--text-semi);
+  strong { color: var(--text-faint); font-weight: 600; }
+}
+
+.medList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.medItem {
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  padding: 0.625rem 0.875rem;
+}
+
+.medName { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+.medMeta { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+.medNote { font-size: 0.75rem; color: rgba($accent,0.7); margin-top: 3px; font-style: italic; }
+
+.instructions {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.fwdBtn {
+  align-self: flex-start;
+  @include btn-primary;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+}
+
+.resultReady {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $success;
+}
+
+.resultNotes {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.downloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba($primary,0.12);
+  border: 1px solid rgba($primary,0.3);
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $accent;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &:hover { background: rgba($primary,0.2); }
+}

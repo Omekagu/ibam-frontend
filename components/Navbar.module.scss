@@ -1,0 +1,360 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+// ─── Slide-in animation for mobile overlay ────────
+@keyframes mobile-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes menu-link-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+// ────────────────────────────────────────────────
+// Desktop navbar bar
+// ────────────────────────────────────────────────
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  transition: background 0.4s ease, backdrop-filter 0.4s ease, box-shadow 0.4s ease;
+
+  &.transparent {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  &.solid {
+    background: rgba(5, 13, 27, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
+
+.inner {
+  @include container;
+  @include flex-between;
+  height: 68px;
+}
+
+// ─── Logo ────────────────────────────────────────
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  z-index: 201;
+
+  .logoMark {
+    width: 34px; height: 34px;
+    border-radius: $radius-sm;
+    background: $primary;
+    @include flex-center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: $white;
+    transition: transform 0.3s ease;
+  }
+
+  .logoText {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: $white;
+    span { color: $accent; }
+  }
+
+  &:hover .logoMark { transform: scale(1.08); }
+}
+
+// ─── Desktop links ────────────────────────────────
+.links {
+  display: none;
+  list-style: none;
+  gap: 2rem;
+
+  @media (min-width: $bp-lg) { display: flex; }
+
+  a {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
+    transition: color 0.2s ease;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0; right: 0;
+      height: 1.5px;
+      background: $accent;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    &:hover { color: $white; &::after { transform: scaleX(1); } }
+  }
+}
+
+// ─── Desktop CTAs ────────────────────────────────
+.ctas {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+
+  @media (min-width: $bp-lg) { display: flex; }
+
+  .loginBtn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 0.5rem 1rem;
+    border-radius: $radius-md;
+    transition: color 0.2s ease, background 0.2s ease;
+
+    &:hover { color: $white; background: rgba(255, 255, 255, 0.06); }
+  }
+
+  .getStartedBtn {
+    @include btn-primary;
+    padding: 0.625rem 1.375rem;
+    font-size: 0.875rem;
+  }
+}
+
+// ─── Hamburger ───────────────────────────────────
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: $radius-md;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 201;
+  transition: background 0.2s ease;
+
+  @media (min-width: $bp-lg) { display: none; }
+
+  &:hover { background: rgba(255,255,255,0.12); }
+
+  span {
+    display: block;
+    height: 1.5px;
+    background: $white;
+    border-radius: 2px;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease;
+  }
+
+  &.open {
+    background: rgba(255,255,255,0.1);
+    span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  }
+}
+
+// ─────────────────────────────────────────────────
+// FULL-SCREEN MOBILE OVERLAY
+// ─────────────────────────────────────────────────
+.mobileOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: $navy-dark;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: mobile-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @media (min-width: $bp-lg) { display: none; }
+}
+
+// Background decoration
+.menuOrb1 {
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba($primary, 0.22) 0%, transparent 70%);
+  top: -150px; right: -150px;
+  pointer-events: none;
+  filter: blur(60px);
+}
+
+.menuOrb2 {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba($accent, 0.08) 0%, transparent 70%);
+  bottom: -100px; left: -80px;
+  pointer-events: none;
+  filter: blur(50px);
+}
+
+.menuGrid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+// Top bar inside the overlay (logo + close)
+.menuTop {
+  position: relative;
+  z-index: 1;
+  @include flex-between;
+  padding: 0 1.5rem;
+  height: 68px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.menuLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+
+  .menuLogoMark {
+    width: 34px; height: 34px;
+    border-radius: $radius-sm;
+    background: $primary;
+    @include flex-center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: $white;
+  }
+
+  .menuLogoText {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $white;
+    em { font-style: normal; color: $accent; }
+  }
+}
+
+.closeBtn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  @include flex-center;
+  cursor: pointer;
+  color: rgba(255,255,255,0.8);
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover { background: rgba(255,255,255,0.14); color: $white; }
+}
+
+// Nav links — large and prominent
+.menuNav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.75rem;
+  flex: 1;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  text-decoration: none;
+  animation: menu-link-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: padding-left 0.2s ease;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover {
+    padding-left: 0.625rem;
+
+    .menuLinkText { color: $accent; }
+    .menuArrow    { color: $accent; opacity: 1; transform: translateX(4px); }
+  }
+}
+
+.menuLinkText {
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  font-weight: 800;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.menuArrow {
+  opacity: 0.3;
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+// Bottom CTA section
+.menuBottom {
+  position: relative;
+  z-index: 1;
+  padding: 1.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  animation: menu-link-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+.menuCtas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.menuLoginBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem;
+  border-radius: $radius-lg;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover { background: rgba(255,255,255,0.12); color: $white; }
+}
+
+.menuStartBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.875rem;
+  font-size: 0.9375rem;
+}
+
+.menuTrust {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.menuTrustBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+}

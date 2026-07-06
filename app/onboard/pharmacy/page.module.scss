@@ -1,0 +1,109 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.page {
+  min-height: 100vh;
+  background: #070F1C;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 640px;
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 2rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+.mark {
+  width: 30px; height: 30px;
+  background: $primary;
+  border-radius: $radius-sm;
+  @include flex-center;
+  font-size: 0.65rem; font-weight: 900; color: $white;
+}
+.brandName {
+  font-size: 0.9rem; font-weight: 700; color: $white;
+  em { font-style: normal; color: $accent; }
+}
+
+.title { font-size: 1.25rem; font-weight: 800; color: $white; margin: 0; }
+.sub   { font-size: 0.875rem; color: rgba(255,255,255,0.45); margin: 6px 0 1.5rem; }
+
+.form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.section {
+  display: flex; flex-direction: column; gap: 0.875rem;
+  padding: 1.25rem; background: rgba(255,255,255,0.02);
+  border: 1px solid $navy-border; border-radius: $radius-md;
+}
+.sectionTitle {
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: $accent; margin: 0;
+}
+
+.field {
+  display: flex; flex-direction: column; gap: 5px;
+  label { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.55); }
+  input, textarea {
+    background: rgba(255,255,255,0.05); border: 1px solid $navy-border;
+    border-radius: $radius-sm; padding: 9px 12px; font-size: 0.875rem;
+    color: $white; outline: none; transition: border-color 0.15s;
+    font-family: inherit;
+    &::placeholder { color: rgba(255,255,255,0.22); }
+    &:focus { border-color: rgba($primary, 0.5); }
+  }
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+
+.testRow {
+  display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap;
+}
+.removeTest {
+  align-self: flex-end; width: 32px; height: 38px; border: none;
+  background: rgba($danger, 0.08); color: $danger; border-radius: $radius-sm;
+  cursor: pointer; font-size: 0.75rem; flex-shrink: 0;
+  &:hover { background: rgba($danger, 0.16); }
+}
+.addTest {
+  align-self: flex-start; padding: 8px 14px; border-radius: $radius-sm;
+  border: 1px dashed rgba($primary, 0.3); background: rgba($primary, 0.04);
+  color: $accent; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  &:hover { background: rgba($primary, 0.1); }
+}
+
+.error { color: $danger; font-size: 0.8rem; background: rgba($danger, 0.07); border: 1px solid rgba($danger, 0.2); border-radius: $radius-sm; padding: 10px 12px; margin: 0; }
+
+.submit {
+  @include btn-primary;
+  width: 100%; padding: 12px 18px; font-size: 0.9375rem;
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.loginHint { text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.38); margin-top: 1rem; a { color: $accent; text-decoration: none; &:hover { text-decoration: underline; } } }
+
+// Success state
+.successIcon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba($success, 0.12); border: 2px solid $success;
+  @include flex-center; font-size: 1.5rem; color: $success;
+  margin: 0 auto 1.25rem;
+}
+.successTitle { font-size: 1.25rem; font-weight: 800; color: $white; text-align: center; margin: 0; }
+.successMsg   { font-size: 0.875rem; color: rgba(255,255,255,0.55); text-align: center; line-height: 1.6; margin: 0.75rem 0 1.5rem; }
+.loginLink {
+  display: block; text-align: center;
+  @include btn-primary;
+  text-decoration: none; padding: 10px 24px;
+}

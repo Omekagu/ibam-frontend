@@ -1,0 +1,102 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.section {
+  background: $white;
+  @include section-pad;
+}
+
+.inner { @include container; }
+
+.header {
+  text-align: center;
+  margin-bottom: 4rem;
+
+  .eyebrow { @include eyebrow; display: block; margin-bottom: 0.75rem; }
+
+  h2 {
+    font-size: clamp(1.875rem, 3.5vw, 2.75rem);
+    font-weight: 900;
+    color: $text-dark;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+
+  p { color: $text-muted; max-width: 480px; margin: 0 auto; line-height: 1.7; }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: $bp-lg) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.card {
+  @include card-light;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: relative;
+
+  &::before {
+    content: '\201C';
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    font-size: 5rem;
+    font-family: Georgia, serif;
+    line-height: 1;
+    color: $primary-light;
+    pointer-events: none;
+  }
+}
+
+.stars {
+  display: flex;
+  gap: 0.25rem;
+
+  svg { width: 16px; height: 16px; color: #F59E0B; fill: #F59E0B; }
+}
+
+.quote {
+  font-size: 0.9375rem;
+  color: $text-muted;
+  line-height: 1.75;
+  flex: 1;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding-top: 1rem;
+  border-top: 1px solid $border-light;
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: $primary-light;
+    @include flex-center;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+  }
+
+  .name     { font-size: 0.875rem; font-weight: 700; color: $text-dark; }
+  .meta     { font-size: 0.75rem; color: $text-muted; margin-top: 0.125rem; }
+  .tag {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: $primary;
+    background: $primary-light;
+    border-radius: 999px;
+    padding: 0.25rem 0.625rem;
+    white-space: nowrap;
+  }
+}

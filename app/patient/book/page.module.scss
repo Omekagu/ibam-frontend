@@ -1,0 +1,272 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: $bp-lg) { grid-template-columns: 1fr 1.1fr; }
+}
+
+// ─── Doctor list ──────────────────────────────────
+.searchRow {
+  margin-bottom: 1rem;
+
+  select {
+    width: 100%;
+    background: $navy-dark;
+    border: 1px solid $navy-border;
+    border-radius: $radius-md;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+
+    &:focus { border-color: rgba($primary,0.5); }
+    option { background: $navy-dark; }
+  }
+}
+
+.docList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.docCard {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+
+  &:hover  { border-color: rgba($primary,0.3); }
+  &.selected { border-color: $primary; background: rgba($primary,0.05); }
+}
+
+.docAvatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  @include flex-center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $accent;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.docInfo { flex: 1; min-width: 0; }
+.docName { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+.docSpec { font-size: 0.75rem; color: var(--text-muted); display: block; margin: 1px 0; }
+.docFee  { font-size: 0.75rem; color: $success; font-weight: 600; }
+
+.tick {
+  font-size: 0.875rem;
+  color: $accent;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+// ─── Book panel ───────────────────────────────────
+.bookPanel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: fit-content;
+}
+
+.bookHead {
+  h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
+}
+
+.bookSpec {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.bio {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 0.875rem;
+  background: var(--input-bg);
+  border-radius: $radius-md;
+  border: 1px solid $navy-border;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  input[type='date'], select {
+    background: var(--input-bg);
+    border: 1px solid $navy-border;
+    border-radius: $radius-md;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    color-scheme: dark;
+
+    &:focus { border-color: rgba($primary,0.5); }
+  }
+}
+
+.slotNote {
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.slotBtn {
+  padding: 0.5rem 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-semi);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover    { border-color: rgba($primary,0.4); color: var(--text); }
+  &.slotActive { background: rgba($primary,0.15); border-color: $primary; color: $accent; }
+}
+
+.typeRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.typeBtn {
+  flex: 1;
+  padding: 0.5rem 0.375rem;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: all 0.15s ease;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+
+  small { font-size: 0.65rem; font-weight: 500; color: var(--text-faint); }
+
+  &:hover      { border-color: rgba($primary,0.4); color: var(--text); small { color: var(--text-muted); } }
+  &.typeActive { background: rgba($primary,0.15); border-color: $primary; color: $accent; small { color: var(--text-muted); } }
+}
+
+.durationRow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.durationBtn {
+  padding: 6px 14px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: var(--input-bg); color: var(--text-muted);
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.13s;
+  &:hover        { border-color: rgba($primary,0.4); color: var(--text); }
+  &.durationActive { background: rgba($primary,0.15); border-color: $primary; color: $accent; }
+}
+
+.summary {
+  @include flex-between;
+  padding: 0.75rem 1rem;
+  background: var(--input-bg);
+  border-radius: $radius-md;
+  border: 1px solid $navy-border;
+
+  span   { font-size: 0.875rem; color: var(--text-muted); }
+  strong { font-size: 1.125rem; font-weight: 800; color: $success; }
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: $danger;
+  padding: 0.5rem 0.75rem;
+  background: rgba($danger,0.08);
+  border-radius: $radius-md;
+}
+
+.bookBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.875rem;
+  font-size: 0.9rem;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+}
+
+.selectPrompt {
+  @include flex-center;
+  min-height: 200px;
+  background: $navy-dark;
+  border: 1px dashed $navy-border;
+  border-radius: $radius-lg;
+  padding: 2rem;
+
+  p { font-size: 0.9rem; color: var(--text-faint); }
+}
+
+.urgentRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: $warning;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  input { accent-color: $warning; width: 14px; height: 14px; }
+}
+
+// ─── Success ──────────────────────────────────────
+.successBox {
+  @include flex-center;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+  padding: 4rem 2rem;
+
+  h2 { font-size: 1.5rem; font-weight: 800; color: var(--text); }
+  p  { color: var(--text-muted); max-width: 380px; line-height: 1.6; }
+}
+
+.successIcon { font-size: 3rem; }
+
+.doneBtn {
+  @include btn-primary;
+  margin-top: 0.5rem;
+}

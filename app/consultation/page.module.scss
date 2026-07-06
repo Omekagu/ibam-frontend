@@ -1,0 +1,1061 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+// ─── Local palette overrides ────────────────────────────
+$bg:       #060D1A;
+$surface:  #0D1829;
+$surface2: #111E33;
+$bd:       rgba(255, 255, 255, 0.07);
+$bd2:      rgba(255, 255, 255, 0.13);
+$cyan:     #06B6D4;
+$txt:      rgba(255, 255, 255, 0.92);
+$txt2:     rgba(255, 255, 255, 0.52);
+$txt3:     rgba(255, 255, 255, 0.28);
+$r-sm:     6px;
+$r:        10px;
+$r-pill:   999px;
+
+// ─── Page Shell ────────────────────────────────────────
+.page {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: $bg;
+  color: $txt;
+  position: relative;
+  font-size: 0.875rem;
+}
+
+// ─── Topbar ────────────────────────────────────────────
+.topbar {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+  background: rgba(6, 13, 26, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid $bd;
+  position: relative;
+  z-index: 20;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.topRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $r-sm;
+  border: 1px solid $bd;
+  background: transparent;
+  color: $txt2;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+  svg { width: 15px; height: 15px; }
+
+  &:hover {
+    color: $txt;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: $bd2;
+  }
+}
+
+.callerInfo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.callerAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary 0%, $cyan 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.callerName {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: $txt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.callerBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.liveBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: $success;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $success;
+  animation: livePulse 1.6s ease-out infinite;
+}
+
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0   rgba(16, 185, 129, 0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(16, 185, 129, 0); }
+}
+
+.lateBadge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: $warning;
+  background: rgba(245, 158, 11, 0.13);
+  padding: 1px 6px;
+  border-radius: $r-pill;
+}
+
+.timerBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.elapsed {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: $txt;
+}
+
+.remaining {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: $txt2;
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: $warning !important;
+  font-weight: 700 !important;
+}
+
+.timeUp {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: $danger;
+  text-transform: uppercase;
+}
+
+.schedLabel {
+  font-size: 0.65rem;
+  color: $txt3;
+}
+
+// ─── Warn Banner ────────────────────────────────────────
+.warnBanner {
+  flex-shrink: 0;
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.22);
+  color: $warning;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 7px 16px;
+  z-index: 19;
+}
+
+// ─── Call Area ──────────────────────────────────────────
+.callArea {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #030810;
+}
+
+// ─── Wait Screen ────────────────────────────────────────
+.waitScreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(59, 130, 246, 0.07) 0%, transparent 68%);
+}
+
+.waitAvatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary, $cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 12px rgba(59, 130, 246, 0.08),
+    0 0 0 24px rgba(59, 130, 246, 0.04);
+}
+
+.waitName {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $txt;
+  margin: 0;
+}
+
+.waitSub {
+  font-size: 0.8rem;
+  color: $txt2;
+  margin: 0;
+}
+
+.waitDots {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+
+  span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.5);
+    animation: dotBounce 1.2s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40%           { opacity: 1;   transform: translateY(-6px); }
+}
+
+// ─── Controls Bar ───────────────────────────────────────
+.controlsBar {
+  height: 80px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 13, 26, 0.88);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid $bd;
+  z-index: 20;
+}
+
+.controlPill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid $bd;
+  border-radius: $r-pill;
+  backdrop-filter: blur(12px);
+}
+
+.ctrlBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 54px;
+  padding: 8px;
+  border-radius: $r;
+  border: none;
+  background: transparent;
+  color: $txt;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover   { background: rgba(255, 255, 255, 0.07); }
+  &:active  { background: rgba(255, 255, 255, 0.12); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.ctrlIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+
+  svg { width: 100%; height: 100%; }
+}
+
+.ctrlLabel {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: $txt2;
+  white-space: nowrap;
+}
+
+.ctrlOff {
+  color: $danger;
+
+  .ctrlLabel { color: rgba(239, 68, 68, 0.72); }
+  &:hover { background: rgba(239, 68, 68, 0.08); }
+}
+
+.ctrlActive {
+  background: rgba(59, 130, 246, 0.14);
+  color: $primary;
+
+  .ctrlLabel { color: rgba(59, 130, 246, 0.82); }
+  &:hover { background: rgba(59, 130, 246, 0.22); }
+}
+
+.ctrlEnd {
+  color: $danger;
+
+  .ctrlLabel { color: rgba(239, 68, 68, 0.72); }
+  &:hover  { background: rgba(239, 68, 68, 0.14); }
+  &:active { background: rgba(239, 68, 68, 0.24); }
+}
+
+.ctrlDivider {
+  width: 1px;
+  height: 28px;
+  background: $bd;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 16px;
+  height: 16px;
+  background: $danger;
+  border-radius: $r-pill;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+// ─── Shared Drawer Head ─────────────────────────────────
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid $bd;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.drawerHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $txt;
+
+  svg { width: 15px; height: 15px; color: $primary; }
+}
+
+.drawerClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: $r-sm;
+  border: none;
+  background: transparent;
+  color: $txt2;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  svg { width: 15px; height: 15px; }
+
+  &:hover { background: rgba(255, 255, 255, 0.08); color: $txt; }
+}
+
+// ─── Chat Drawer ────────────────────────────────────────
+.chatDrawer {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  bottom: 80px;
+  width: clamp(280px, 340px, 88vw);
+  background: rgba(9, 17, 34, 0.97);
+  backdrop-filter: blur(24px);
+  border-left: 1px solid $bd;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  animation: slideIn 0.18s ease;
+}
+
+// ─── Prescription Panel ─────────────────────────────────
+.rxPanel {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  bottom: 80px;
+  width: clamp(300px, 380px, 92vw);
+  background: rgba(9, 17, 34, 0.97);
+  backdrop-filter: blur(24px);
+  border-left: 1px solid $bd;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  animation: slideIn 0.18s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(16px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+// ─── Chat Messages ──────────────────────────────────────
+.chatMessages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+}
+
+.noMsgs {
+  text-align: center;
+  color: $txt3;
+  font-size: 0.78rem;
+  padding: 28px 0;
+  margin: auto 0;
+}
+
+.msg {
+  max-width: 86%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  p {
+    margin: 0;
+    padding: 9px 13px;
+    border-radius: $r;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+}
+
+.me {
+  align-self: flex-end;
+  align-items: flex-end;
+
+  p {
+    background: $primary;
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+}
+
+.them {
+  align-self: flex-start;
+  align-items: flex-start;
+
+  p {
+    background: $surface2;
+    color: $txt;
+    border: 1px solid $bd;
+    border-bottom-left-radius: 3px;
+  }
+}
+
+.msgSender {
+  font-size: 0.68rem;
+  color: $txt3;
+  font-weight: 500;
+  padding: 0 4px;
+}
+
+.msgTime {
+  font-size: 0.63rem;
+  color: $txt3;
+  padding: 0 4px;
+}
+
+// ─── Chat Input Row ─────────────────────────────────────
+.chatInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid $bd;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.02);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid $bd;
+    border-radius: $r-pill;
+    padding: 9px 14px;
+    font-size: 0.875rem;
+    color: $txt;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+
+    &::placeholder { color: $txt3; }
+    &:focus { border-color: rgba(59, 130, 246, 0.5); }
+    &:disabled { opacity: 0.5; }
+  }
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: $primary;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover  { background: #5B9EFF; }
+  &:active { transform: scale(0.92); }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.09);
+    color: $txt3;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Chat-only Wrap ─────────────────────────────────────
+.chatOnlyWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: $surface;
+}
+
+// ─── Prescription Body ──────────────────────────────────
+.rxBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+}
+
+.rxField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: $txt2;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  input,
+  select,
+  textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $bd;
+    border-radius: $r-sm;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: $txt;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+
+    &::placeholder { color: $txt3; }
+    &:focus { border-color: rgba(59, 130, 246, 0.5); }
+
+    option { background: $surface2; }
+  }
+
+  select { cursor: pointer; }
+}
+
+.rxDrugCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $bd;
+  border-radius: $r;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rxDrugHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rxDrugNum {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: $cyan;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.rxRemoveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: $txt3;
+  border-radius: $r-sm;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  svg { width: 13px; height: 13px; }
+
+  &:hover { color: $danger; background: rgba(239, 68, 68, 0.1); }
+}
+
+.rxRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.rxAddBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: $r;
+  border: 1px dashed rgba(59, 130, 246, 0.32);
+  background: rgba(59, 130, 246, 0.05);
+  color: $primary;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+
+  svg { width: 13px; height: 13px; }
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.55);
+  }
+}
+
+.rxIssueBtn {
+  padding: 11px 18px;
+  border-radius: $r;
+  border: none;
+  background: linear-gradient(135deg, $primary 0%, $cyan 100%);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+
+  &:hover  { opacity: 0.88; }
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.rxSentSection {
+  border-top: 1px solid $bd;
+  padding-top: 14px;
+}
+
+.rxSentTitle {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: $txt2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+}
+
+.rxSentCard {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid $bd;
+  border-radius: $r-sm;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.rxSentLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  margin: 0;
+
+  span:first-child { color: $txt; font-weight: 600; }
+  span:last-child  { color: $txt2; font-size: 0.73rem; }
+}
+
+// Patient Rx view
+.rxDxLine {
+  font-size: 0.82rem;
+  color: $cyan;
+  font-weight: 600;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(6, 182, 212, 0.07);
+  border-radius: $r-sm;
+  border-left: 2px solid $cyan;
+}
+
+.rxMedRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 0;
+  border-bottom: 1px solid $bd;
+
+  &:last-child { border-bottom: none; }
+}
+
+.rxMedName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: $txt;
+  margin: 0;
+}
+
+.rxMedMeta {
+  font-size: 0.78rem;
+  color: $txt2;
+  margin: 0;
+}
+
+.rxMedNote {
+  font-size: 0.73rem;
+  color: $txt3;
+  font-style: italic;
+  margin: 0;
+}
+
+.rxNote {
+  font-size: 0.78rem;
+  color: $txt2;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $bd;
+  border-radius: $r-sm;
+  padding: 10px 12px;
+  margin: 0;
+  line-height: 1.55;
+
+  strong { color: $primary; font-weight: 600; }
+}
+
+// ─── Agora: Video Container ─────────────────────────────
+.videoContainer {
+  position: absolute;
+  inset: 0;
+  background: #030810;
+}
+
+.remoteVideo {
+  position: absolute;
+  inset: 0;
+  background: #030810;
+
+  > div,
+  > video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+}
+
+.remoteWaiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: radial-gradient(ellipse at 50% 44%, rgba(59, 130, 246, 0.07) 0%, transparent 65%);
+}
+
+.avatarCircle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary 0%, $cyan 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 14px rgba(59, 130, 246, 0.07),
+    0 0 0 28px rgba(59, 130, 246, 0.03);
+}
+
+.avatarName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $txt;
+  margin: 0;
+}
+
+.connectingLabel {
+  font-size: 0.8rem;
+  color: $txt2;
+  margin: 0;
+}
+
+.connectedLabel {
+  font-size: 0.78rem;
+  color: $success;
+  font-weight: 600;
+  margin: 0;
+}
+
+// ─── Local PiP ─────────────────────────────────────────
+.localPip {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 120px;
+  height: 90px;
+  border-radius: $r;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+.localPipInner {
+  width: 100%;
+  height: 100%;
+  background: #050C19;
+
+  > div,
+  > video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+}
+
+.localPipOff {
+  position: absolute;
+  inset: 0;
+  background: $surface;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $primary, $cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+}
+
+.localPipLabel {
+  position: absolute;
+  bottom: 5px;
+  left: 7px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.68);
+  background: rgba(0, 0, 0, 0.48);
+  padding: 1px 5px;
+  border-radius: $r-pill;
+  letter-spacing: 0.04em;
+}
+
+// ─── Audio-only View ────────────────────────────────────
+.audioView {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(ellipse at 50% 42%, rgba(6, 182, 212, 0.08) 0%, transparent 65%);
+}
+
+.audioAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primary, $cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 16px rgba(6, 182, 212, 0.07),
+    0 0 0 32px rgba(6, 182, 212, 0.03);
+}
+
+.audioName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $txt;
+  margin: 0;
+}
+
+.audioWaves {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 30px;
+}
+
+.audioBar {
+  width: 4px;
+  border-radius: 2px;
+  background: $cyan;
+  animation: audioWave 0.8s ease-in-out infinite alternate;
+
+  &:nth-child(1) { height: 12px; }
+  &:nth-child(2) { height: 22px; }
+  &:nth-child(3) { height: 30px; }
+  &:nth-child(4) { height: 18px; }
+  &:nth-child(5) { height: 10px; }
+}
+
+@keyframes audioWave {
+  from { opacity: 0.35; transform: scaleY(0.5); }
+  to   { opacity: 1;    transform: scaleY(1); }
+}
+
+.mutedBanner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.24);
+  color: $danger;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: $r-pill;
+}
+
+// ─── Agora Error ────────────────────────────────────────
+.agoraError {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(239, 68, 68, 0.04);
+
+  span { font-size: 2rem; }
+
+  p {
+    font-size: 0.875rem;
+    color: $txt2;
+    max-width: 300px;
+    margin: 0;
+    line-height: 1.55;
+  }
+}

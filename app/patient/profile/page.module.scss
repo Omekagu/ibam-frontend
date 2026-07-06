@@ -1,0 +1,155 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+
+  @media (min-width: $bp-lg) { grid-template-columns: 280px 1fr; }
+}
+
+// ─── Profile card ─────────────────────────────────
+.card {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  text-align: center;
+  height: fit-content;
+}
+
+.avatarWrap { margin-bottom: 0.875rem; }
+
+.avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  border: 2px solid rgba($primary,0.25);
+  @include flex-center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: $accent;
+  text-transform: uppercase;
+  margin: 0 auto;
+}
+
+.name  { font-size: 1rem; font-weight: 700; color: var(--text); }
+.email { font-size: 0.8125rem; color: var(--text-faint); margin-top: 3px; }
+
+.badges {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.roleBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba($primary,0.12);
+  color: $accent;
+  text-transform: capitalize;
+}
+
+.verBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba($success,0.12);
+  color: $success;
+}
+
+.meta {
+  margin-top: 1rem;
+  text-align: left;
+  border-top: 1px solid $navy-border;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.metaRow {
+  @include flex-between;
+  span { font-size: 0.75rem; color: var(--text-faint); }
+  p    { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+}
+
+// ─── Edit panel ───────────────────────────────────
+.panel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  height: fit-content;
+}
+
+.panelHead {
+  @include flex-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $navy-border;
+
+  h3 { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+}
+
+.panelBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  input {
+    background: var(--input-bg);
+    border: 1px solid $navy-border;
+    border-radius: $radius-md;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    width: 100%;
+
+    &:focus { border-color: rgba($primary,0.5); }
+    &::placeholder { color: var(--text-faint); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: $danger;
+  padding: 0.5rem 0.75rem;
+  background: rgba($danger,0.08);
+  border-radius: $radius-md;
+}
+
+.saveBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+}

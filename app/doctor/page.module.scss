@@ -1,0 +1,194 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+.kycBanner {
+  background: rgba($warning,0.1);
+  border: 1px solid rgba($warning,0.3);
+  border-radius: $radius-md;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: $warning;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.kycLink {
+  color: $accent;
+  font-weight: 700;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}
+
+.greeting {
+  margin-bottom: 1.5rem;
+  h1 { font-size: 1.375rem; font-weight: 800; color: var(--text); }
+  p  { font-size: 0.875rem; color: var(--text-muted); margin-top: 3px; }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  @media (min-width: $bp-lg) { grid-template-columns: repeat(4, 1fr); }
+}
+
+.statCard {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.125rem;
+}
+
+.statIcon { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.statLabel { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+.statValue { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-top: 2px; }
+.statSub   { font-size: 0.6875rem; color: var(--text-faint); margin-top: 2px; }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  @media (min-width: $bp-xl) { grid-template-columns: 1.5fr 1fr; }
+}
+
+// ─── Panel ───────────────────────────────────────
+.panel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.panelHead {
+  @include flex-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $navy-border;
+
+  h3 { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+}
+
+// ─── Appointment list ─────────────────────────────
+.apptList { }
+
+.apptItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--nav-hover-bg); }
+}
+
+.apptTime {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $accent;
+  width: 48px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.apptAvatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  @include flex-center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.apptInfo {
+  flex: 1;
+  min-width: 0;
+  p { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+  span { font-size: 0.75rem; color: var(--text-muted); }
+}
+
+.apptType {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+
+  &.video   { background: rgba(59,130,246,0.12); color: #60A5FA; }
+  &.audio   { background: rgba($primary,0.12);   color: $accent;  }
+  &.chat    { background: rgba($warning,0.12);   color: $warning;  }
+}
+
+.joinBtn {
+  padding: 0.35rem 0.75rem;
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+  &:hover { background: $primary-dark; }
+}
+
+// ─── Earnings ────────────────────────────────────
+.earningsCard {
+  background: linear-gradient(135deg, rgba($primary-dark,0.6) 0%, var(--bg-card) 100%);
+  border: 1px solid rgba($primary,0.2);
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.earningsLabel { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+.earningsValue { font-size: 2.25rem; font-weight: 900; color: var(--text); margin: 0.25rem 0; }
+.earningsPeriod { font-size: 0.75rem; color: var(--text-faint); }
+
+.payoutBtn {
+  @include btn-primary;
+  width: 100%;
+  justify-content: center;
+  font-size: 0.875rem;
+  padding: 0.75rem;
+}
+
+.recentPayouts { }
+
+.payoutItem {
+  @include flex-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.payoutLeft {
+  p    { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+  span { font-size: 0.75rem; color: var(--text-faint); }
+}
+
+.payoutAmount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $success;
+}

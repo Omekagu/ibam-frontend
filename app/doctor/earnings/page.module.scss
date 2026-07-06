@@ -1,0 +1,138 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+// ─── Stats ────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+
+  &.highlight {
+    border-color: rgba($primary,0.25);
+    background: linear-gradient(135deg, rgba($primary-dark,0.5), var(--bg-card));
+  }
+}
+
+.statLabel { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+.statValue { font-size: 1.75rem; font-weight: 900; color: var(--text); margin: 0.25rem 0; }
+.statSub   { font-size: 0.6875rem; color: var(--text-faint); }
+
+// ─── Payout box ───────────────────────────────────
+.payoutBox {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.msg {
+  font-size: 0.8125rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: $radius-md;
+  font-weight: 500;
+
+  &.ok  { background: rgba($success,0.1); color: $success; }
+  &.err { background: rgba($danger,0.1);  color: $danger; }
+}
+
+.payoutBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.875rem;
+  font-size: 0.9rem;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.payoutNote {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+// ─── Panel ────────────────────────────────────────
+.panel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.panelHead {
+  @include flex-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $navy-border;
+
+  h3 { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+}
+
+.empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+.row {
+  @include flex-between;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--nav-hover-bg); }
+}
+
+.rowLeft {
+  p    { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+  span { font-size: 0.75rem; color: var(--text-faint); }
+}
+
+.rowRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.625rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+
+  &.pending   { background: rgba($warning,0.12); color: $warning; }
+  &.requested { background: rgba(59,130,246,0.12); color: #60A5FA; }
+  &.paid      { background: rgba($success,0.12); color: $success; }
+}
+
+.amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $success;
+}

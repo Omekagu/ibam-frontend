@@ -1,0 +1,151 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.pageHeader { @include flex-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.title    { font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0; }
+.subtitle { font-size: 0.8rem; color: var(--text-sub); margin: 4px 0 0; }
+
+.newBtns { display: flex; gap: 8px; flex-shrink: 0; }
+.newBtn {
+  padding: 8px 16px; border-radius: $radius-sm; border: 1px solid rgba($accent,0.3);
+  background: rgba($accent,0.08); color: $accent; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; &:hover { background: rgba($accent,0.16); }
+}
+.backBtn {
+  padding: 7px 14px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: transparent; color: var(--text-muted); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s; &:hover { color: var(--text); background: var(--input-hover-bg); }
+}
+
+.successBanner {
+  background: rgba($success,0.1); border: 1px solid rgba($success,0.25);
+  border-radius: $radius-sm; padding: 10px 14px; color: $success; font-size: 0.875rem; font-weight: 600; margin: 0;
+}
+.errorBanner {
+  background: rgba($danger,0.08); border: 1px solid rgba($danger,0.2);
+  border-radius: $radius-sm; padding: 10px 14px; color: $danger; font-size: 0.875rem; margin: 0;
+}
+
+.empty { color: var(--text-faint); font-size: 0.875rem; }
+
+// ─── Form ────────────────────────────────────────────────
+.form {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;
+}
+
+.field {
+  display: flex; flex-direction: column; gap: 6px;
+  label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+  select {
+    background: var(--input-hover-bg); border: 1px solid $navy-border; border-radius: $radius-sm;
+    padding: 9px 12px; font-size: 0.875rem; color: var(--text); outline: none; font-family: inherit;
+    option { background: $navy-dark; }
+    &:focus { border-color: rgba($primary,0.45); }
+  }
+}
+
+.input {
+  width: 100%; background: var(--input-hover-bg); border: 1px solid $navy-border;
+  border-radius: $radius-sm; padding: 9px 12px; font-size: 0.875rem; color: var(--text);
+  outline: none; font-family: inherit; &::placeholder { color: var(--text-faint); }
+  &:focus { border-color: rgba($primary,0.45); }
+}
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.optCard {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: $radius-sm;
+  cursor: pointer; transition: all 0.12s;
+  input { display: none; }
+  span { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+  &.picked { border-color: $primary; background: rgba($primary,0.1); span { color: $accent; } }
+}
+
+.drugGrid { display: flex; flex-direction: column; gap: 8px; }
+.drugCard {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 14px; background: var(--input-bg); border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  p { margin: 0; }
+  span { font-size: 0.75rem; color: var(--text-muted); }
+}
+.drugName { font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.qtyCtrl {
+  display: flex; align-items: center; gap: 6px;
+  button {
+    width: 26px; height: 26px; border-radius: 50%; border: 1px solid $navy-border;
+    background: var(--input-hover-bg); color: var(--text); font-size: 1rem; cursor: pointer;
+    @include flex-center; transition: all 0.12s;
+    &:hover { background: rgba($primary,0.15); border-color: rgba($primary,0.4); color: $accent; }
+  }
+  span { font-size: 0.875rem; font-weight: 700; color: var(--text); min-width: 18px; text-align: center; }
+}
+
+.checkList { display: flex; flex-direction: column; gap: 6px; }
+.checkItem {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: $radius-sm;
+  cursor: pointer; transition: all 0.12s;
+  input { accent-color: $primary; }
+  span { flex: 1; font-size: 0.82rem; color: var(--text-semi); }
+  em { font-style: normal; font-size: 0.72rem; color: $success; font-weight: 600; }
+  &.checked { border-color: rgba($primary,0.35); background: rgba($primary,0.06); span { color: var(--text); } }
+}
+
+.saveBtn {
+  align-self: flex-start; padding: 10px 22px; border-radius: $radius-sm; border: none;
+  background: linear-gradient(135deg, $primary, $accent); color: var(--text);
+  font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  &:hover { opacity: 0.88; } &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ─── List ────────────────────────────────────────────────
+.list { display: flex; flex-direction: column; gap: 0.75rem; }
+.card {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  overflow: hidden; &.cancelled { opacity: 0.5; }
+}
+.cardTop {
+  @include flex-between; align-items: flex-start; padding: 1rem 1.25rem; gap: 12px; flex-wrap: wrap;
+}
+.typeDrug, .typeTest {
+  font-size: 0.72rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; display: inline-block; margin-bottom: 6px;
+}
+.typeDrug { background: rgba($accent,0.12); color: $accent; }
+.typeTest { background: rgba($primary,0.12); color: $accent; }
+
+.cardItems { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0 0 4px; }
+.cardMeta  { font-size: 0.75rem; color: var(--text-sub); }
+
+.cardRight { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.statusBadge {
+  font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; text-transform: capitalize;
+  &.active   { background: rgba($success,0.12); color: $success; }
+  &.paused   { background: rgba($warning,0.12); color: $warning; }
+  &.cancelled{ background: rgba($danger,0.09); color: $danger; }
+}
+.amount { font-size: 0.82rem; font-weight: 700; color: $success; }
+.nextDue { font-size: 0.72rem; color: var(--text-faint); }
+.overdue { font-size: 0.72rem; color: $warning; font-weight: 600; }
+
+.cardActions {
+  display: flex; gap: 8px; padding: 10px 1.25rem; border-bottom: 1px solid var(--border);
+}
+.pauseBtn {
+  padding: 6px 14px; border-radius: $radius-sm; border: 1px solid rgba($warning,0.3);
+  background: rgba($warning,0.07); color: $warning; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  &:hover { background: rgba($warning,0.14); }
+}
+.resumeBtn {
+  padding: 6px 14px; border-radius: $radius-sm; border: 1px solid rgba($success,0.3);
+  background: rgba($success,0.07); color: $success; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  &:hover { background: rgba($success,0.14); }
+}
+.cancelBtn {
+  padding: 6px 14px; border-radius: $radius-sm; border: 1px solid rgba($danger,0.2);
+  background: rgba($danger,0.05); color: $danger; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  &:hover { background: rgba($danger,0.12); }
+}

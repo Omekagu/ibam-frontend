@@ -1,0 +1,176 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.hero {
+  background: $navy-dark;
+  padding: 10rem 0 6rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba($accent, 0.1) 0%, transparent 70%);
+    bottom: -200px; left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+}
+
+.heroInner {
+  @include container;
+  position: relative;
+  z-index: 1;
+
+  .eyebrow { @include eyebrow; display: block; margin-bottom: 1rem; }
+
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 900;
+    color: $white;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+  }
+
+  p { font-size: 1.0625rem; color: rgba(255,255,255,0.6); max-width: 520px; margin: 0 auto; line-height: 1.75; }
+}
+
+.plans {
+  background: $off-white;
+  @include section-pad;
+}
+
+.plansInner { @include container; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 5rem;
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: $bp-lg) { grid-template-columns: repeat(4, 1fr); }
+}
+
+.card {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+
+  &:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.1); transform: translateY(-4px); }
+
+  &.featured {
+    background: $primary;
+    border-color: $primary;
+    position: relative;
+
+    &::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      background: $accent;
+      color: $navy-dark;
+      border-radius: 999px;
+      padding: 0.25rem 0.875rem;
+      white-space: nowrap;
+    }
+
+    .planName, .price, .period, .featureName { color: rgba(255,255,255,0.85); }
+    .price { color: $white; }
+    .divider { border-color: rgba(255,255,255,0.2); }
+    .check { color: $accent; fill: $accent; }
+    .cross { color: rgba(255,255,255,0.25); fill: rgba(255,255,255,0.25); }
+    .cta { background: $white; color: $primary; &:hover { background: $primary-light; } }
+  }
+}
+
+.planName { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $text-muted; margin-bottom: 0.875rem; }
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: $text-dark;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.period { font-size: 0.8rem; color: $text-muted; margin-bottom: 1.5rem; }
+
+.divider { border: none; border-top: 1px solid $border; margin-bottom: 1.25rem; }
+
+.featureList { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; flex: 1; }
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  color: $text-muted;
+}
+
+.featureName { font-size: 0.875rem; color: $text-muted; }
+.check { width: 16px; height: 16px; color: $primary; fill: $primary; flex-shrink: 0; }
+.cross { width: 16px; height: 16px; color: $border; fill: $border; flex-shrink: 0; }
+
+.cta { @include btn-primary; text-align: center; justify-content: center; }
+
+// ─── Comparison table ─────────────────────────────
+.compare {
+  background: $white;
+  @include section-pad;
+}
+
+.compareInner { @include container; }
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+
+  h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 900; color: $text-dark; letter-spacing: -0.02em; }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th, td {
+    padding: 1rem 1.25rem;
+    text-align: center;
+    border-bottom: 1px solid $border-light;
+
+    &:first-child { text-align: left; }
+  }
+
+  thead th {
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: $off-white;
+
+    &.highlight { color: $primary; background: $primary-light; }
+  }
+
+  tbody td { color: $text-muted; }
+  tbody tr:hover td { background: $off-white; }
+
+  .rowLabel { font-weight: 600; color: $text-dark; }
+  .yes { color: $primary; font-weight: 700; }
+  .no  { color: $border;  }
+}

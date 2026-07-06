@@ -1,0 +1,49 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.page { min-height: 100vh; background: #070F1C; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; }
+.wrap { width: 100%; max-width: 860px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-bottom: 0.5rem;
+  .mark { width: 32px; height: 32px; background: $primary; border-radius: $radius-sm; @include flex-center; font-size: 0.65rem; font-weight: 900; color: $white; }
+  span { font-size: 1rem; font-weight: 700; color: $white; em { font-style: normal; color: $accent; } }
+}
+
+.title { font-size: 1.75rem; font-weight: 800; color: $white; text-align: center; margin: 0; }
+.sub   { font-size: 0.95rem; color: rgba(255,255,255,0.5); text-align: center; max-width: 520px; line-height: 1.6; margin: 0; }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; width: 100%; @media (max-width: 640px) { grid-template-columns: 1fr; } }
+
+.card {
+  display: flex; flex-direction: column; gap: 0.875rem;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 2rem; text-decoration: none; transition: border-color 0.18s, transform 0.18s;
+
+  &:hover { border-color: rgba($primary, 0.4); transform: translateY(-2px); }
+
+  h2 { font-size: 1.05rem; font-weight: 800; color: $white; margin: 0; }
+  p  { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.55; margin: 0; }
+}
+
+.cardIcon {
+  width: 48px; height: 48px; border-radius: $radius-md;
+  background: rgba($primary, 0.12); @include flex-center;
+  svg { width: 24px; height: 24px; color: $accent; }
+}
+
+.perks {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 5px;
+
+  li {
+    font-size: 0.8rem; color: rgba(255,255,255,0.6);
+    padding-left: 16px; position: relative;
+    &::before { content: '✓'; position: absolute; left: 0; color: $success; font-weight: 700; font-size: 0.72rem; }
+  }
+}
+
+.cta { margin-top: auto; font-size: 0.875rem; font-weight: 700; color: $accent; }
+
+.loginHint { font-size: 0.82rem; color: rgba(255,255,255,0.35); text-align: center;
+  a { color: $accent; text-decoration: none; font-weight: 600; &:hover { text-decoration: underline; } }
+}

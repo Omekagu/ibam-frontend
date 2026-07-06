@@ -1,0 +1,233 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+// ─── Stats grid ──────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (min-width: $bp-lg) { grid-template-columns: repeat(4, 1fr); }
+}
+
+.statCard {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.statIcon {
+  width: 36px; height: 36px;
+  border-radius: $radius-md;
+  @include flex-center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.statDelta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $success;
+
+  &.down { color: $danger; }
+}
+
+// ─── Two-col grid ────────────────────────────────
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: $bp-lg) { grid-template-columns: 1fr 1fr; }
+}
+
+// ─── Panel ───────────────────────────────────────
+.panel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.panelHead {
+  @include flex-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $navy-border;
+
+  h3 { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+}
+
+.viewAll {
+  font-size: 0.75rem;
+  color: $primary;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover { color: $accent; }
+}
+
+// ─── Table ───────────────────────────────────────
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: left;
+    border-bottom: 1px solid $navy-border;
+  }
+
+  td {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.8125rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+}
+
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba($primary,0.15);
+  @include flex-center;
+  font-size: 0.875rem;
+  display: inline-flex;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+
+  &.green  { background: rgba($success,0.12); color: $success; }
+  &.yellow { background: rgba($warning,0.12); color: $warning; }
+  &.red    { background: rgba($danger,0.12);  color: $danger;  }
+  &.blue   { background: rgba(59,130,246,0.12); color: #60A5FA; }
+}
+
+// ─── Empty ───────────────────────────────────────
+.empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--text-faint);
+  font-size: 0.875rem;
+}
+
+// ─── Doctor cell in table ────────────────────────
+.docCell {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.docAvatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  @include flex-center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $accent;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.docCell > div > p    { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+.docCell > div > span { font-size: 0.6875rem; color: var(--text-faint); display: block; }
+
+// ─── Quick links ──────────────────────────────────
+.quickLinks {
+  display: flex;
+  flex-direction: column;
+}
+
+.quickLink {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-semi);
+  transition: all 0.15s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { color: var(--text); background: var(--nav-hover-bg); }
+}
+
+.quickIcon { font-size: 1.125rem; }
+
+// ─── Activity feed ───────────────────────────────
+.feed {
+  padding: 0.5rem 0;
+}
+
+.feedItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.feedDot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+
+  &.green  { background: $success; }
+  &.yellow { background: $warning; }
+  &.red    { background: $danger; }
+  &.blue   { background: #60A5FA; }
+}
+
+.feedText {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--text-semi);
+  line-height: 1.5;
+
+  strong { color: var(--text); font-weight: 600; }
+}
+
+.feedTime {
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  margin-top: 2px;
+}

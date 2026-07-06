@@ -1,0 +1,145 @@
+@use 'variables' as *;
+
+// ─── Layout ──────────────────────────────────────
+@mixin container {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  @media (min-width: $bp-lg) { padding: 0 2rem; }
+}
+
+@mixin section-pad {
+  padding: 5rem 0;
+  @media (min-width: $bp-lg) { padding: 7rem 0; }
+}
+
+// ─── Glass ───────────────────────────────────────
+@mixin glass-dark {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $navy-border;
+}
+
+@mixin glass-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+// ─── Glow ────────────────────────────────────────
+@mixin glow-primary($strength: 1) {
+  box-shadow:
+    0 0 #{20px * $strength} rgba($primary, 0.25 * $strength),
+    0 0 #{60px * $strength} rgba($primary, 0.08 * $strength);
+}
+
+@mixin glow-accent($strength: 1) {
+  box-shadow:
+    0 0 #{20px * $strength} rgba($accent, 0.3 * $strength),
+    0 0 #{60px * $strength} rgba($accent, 0.1 * $strength);
+}
+
+// ─── Gradient text ───────────────────────────────
+@mixin gradient-text($from: $primary, $to: $accent) {
+  background: linear-gradient(135deg, $from 0%, $to 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+}
+
+// ─── Card ────────────────────────────────────────
+@mixin card-light {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: $radius-xl;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.3);
+    box-shadow: 0 12px 40px rgba($primary, 0.08);
+    transform: translateY(-4px);
+  }
+}
+
+@mixin card-dark {
+  background: $navy-card;
+  border: 1px solid $navy-border;
+  border-radius: $radius-xl;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    border-color: $navy-border-hov;
+    @include glow-accent(0.7);
+    transform: translateY(-4px);
+  }
+}
+
+// ─── Button ──────────────────────────────────────
+@mixin btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: $primary;
+  color: $white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: $radius-lg;
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+
+  &:hover {
+    background: $primary-dark;
+    transform: translateY(-2px);
+    @include glow-primary(0.8);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+@mixin btn-outline-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: $white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: $radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.2s ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+// ─── Typography label ────────────────────────────
+@mixin eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: $primary;
+}
+
+// ─── Flex helpers ────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
