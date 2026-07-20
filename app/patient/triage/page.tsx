@@ -159,7 +159,7 @@ export default function PatientTriage () {
   )
 
   return (
-    <form className={s.questionWrap} onSubmit={step < questions.length - 1 ? (e) => { e.preventDefault(); setStep(s => s + 1) } : submit}>
+    <form className={s.questionWrap} onSubmit={step < questions.length - 1 ? (e) => { e.preventDefault(); setStep(prev => prev + 1) } : submit}>
       <div className={s.progress}>
         <div className={s.progressBar} style={{ width: `${((step + 1) / questions.length) * 100}%` }} />
       </div>
@@ -206,7 +206,7 @@ export default function PatientTriage () {
 
       <div className={s.nav}>
         {step > 0 && (
-          <button type='button' className={s.backBtn} onClick={() => setStep(s => s - 1)}>← Back</button>
+          <button type='button' className={s.backBtn} onClick={() => setStep(prev => prev - 1)}>← Back</button>
         )}
         <button
           type='submit'

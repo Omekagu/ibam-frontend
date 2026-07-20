@@ -1,0 +1,228 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+// ── Hero ─────────────────────────────────────────────────────────────────────
+
+.hero {
+  background: var(--bg-card);
+  padding: 9rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+
+  &Inner {
+    @include container;
+    max-width: 720px;
+    text-align: center;
+  }
+}
+
+.eyebrow {
+  @include eyebrow;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+// ── Two-column layout ─────────────────────────────────────────────────────────
+
+.layout {
+  @include container;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 3rem;
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+  align-items: start;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+.sidebar {
+  position: sticky;
+  top: 6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: $radius-xl;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @media (max-width: $bp-md) {
+    position: static;
+  }
+}
+
+.sidebarHeading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.sidebarLink {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: $primary;
+  }
+}
+
+.sidebarContact {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+
+  &Title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  a {
+    font-size: 0.8rem;
+    color: $primary;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ── Document content ──────────────────────────────────────────────────────────
+
+.content {
+  min-width: 0;
+}
+
+// This class is used inside each page to wrap the prose
+:global(.legal-doc) {
+  color: var(--text-secondary);
+  line-height: 1.75;
+
+  h1 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.25rem;
+  }
+
+  .effective {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    display: block;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 2.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid $primary-light;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  p {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  ul, ol {
+    margin: 0.5rem 0 1rem 1.5rem;
+    font-size: 0.9rem;
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  a {
+    color: $primary;
+    text-decoration: underline;
+  }
+
+  .highlight-box {
+    background: $primary-light;
+    border-left: 4px solid $primary;
+    border-radius: 0 $radius-md $radius-md 0;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    font-size: 0.875rem;
+    color: $primary-dark;
+  }
+
+  .warning-box {
+    background: #FEF9C3;
+    border-left: 4px solid $warning;
+    border-radius: 0 $radius-md $radius-md 0;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    font-size: 0.875rem;
+    color: #713F12;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 1rem 0 1.5rem;
+
+    th {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: var(--bg-hover);
+    }
+  }
+}
