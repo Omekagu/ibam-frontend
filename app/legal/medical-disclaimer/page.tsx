@@ -246,7 +246,7 @@ export default function MedicalDisclaimerPage () {
         our clinical team:
         <br />
         <strong>Clinical Concerns:</strong>{' '}
-        <a href='mailto:complaints@ibamhealth.com'>complaints@ibamhealth.com</a>
+        <a href='mailto:support@ibamhealth.com'>support@ibamhealth.com</a>
         <br />
         <strong>General Support:</strong>{' '}
         <a href='mailto:support@ibamhealth.com'>support@ibamhealth.com</a>
