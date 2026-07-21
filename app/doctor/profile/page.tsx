@@ -19,38 +19,54 @@ interface Doctor {
   user: { name: string; email: string; phone?: string }
 }
 
-interface Slot { startTime: string; endTime: string }
+interface Slot {
+  startTime: string
+  endTime: string
+}
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday'
+]
 const DURATIONS = [15, 20, 30, 45, 60, 90]
 
 export default function DoctorProfile () {
-  const [doctor,  setDoctor]  = useState<Doctor | null>(null)
+  const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [saved,   setSaved]   = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
-  const [bio,              setBio]              = useState('')
-  const [fee,              setFee]              = useState(0)
-  const [exp,              setExp]              = useState(0)
-  const [quals,            setQuals]            = useState<string[]>([])
-  const [newQual,          setNewQual]          = useState('')
-  const [rateType,         setRateType]         = useState<'per_session' | 'per_hour' | 'per_minute'>('per_session')
-  const [sessionDuration,  setSessionDuration]  = useState(30)
-  const [urgentAvailable,  setUrgentAvailable]  = useState(false)
-  const [urgentSurcharge,  setUrgentSurcharge]  = useState(0)
-  const [videoFee,         setVideoFee]         = useState<number | ''>('')
-  const [audioFee,         setAudioFee]         = useState<number | ''>('')
-  const [chatFee,          setChatFee]          = useState<number | ''>('')
+  const [bio, setBio] = useState('')
+  const [fee, setFee] = useState(0)
+  const [exp, setExp] = useState(0)
+  const [quals, setQuals] = useState<string[]>([])
+  const [newQual, setNewQual] = useState('')
+  const [rateType, setRateType] = useState<
+    'per_session' | 'per_hour' | 'per_minute'
+  >('per_session')
+  const [sessionDuration, setSessionDuration] = useState(30)
+  const [urgentAvailable, setUrgentAvailable] = useState(false)
+  const [urgentSurcharge, setUrgentSurcharge] = useState(0)
+  const [videoFee, setVideoFee] = useState<number | ''>('')
+  const [audioFee, setAudioFee] = useState<number | ''>('')
+  const [chatFee, setChatFee] = useState<number | ''>('')
 
   // Availability: multiple days
-  const [avDays,   setAvDays]   = useState<boolean[]>(Array(7).fill(false))
-  const [avSlots,  setAvSlots]  = useState<Slot[]>([{ startTime: '08:00', endTime: '09:00' }])
+  const [avDays, setAvDays] = useState<boolean[]>(Array(7).fill(false))
+  const [avSlots, setAvSlots] = useState<Slot[]>([
+    { startTime: '08:00', endTime: '09:00' }
+  ])
   const [avSaving, setAvSaving] = useState(false)
-  const [avSaved,  setAvSaved]  = useState(false)
+  const [avSaved, setAvSaved] = useState(false)
 
   useEffect(() => {
-    api.get('/doctors/my/profile')
+    api
+      .get('/doctors/my/profile')
       .then(r => {
         const d: Doctor = r.data.data?.doctor
         if (!d) return
@@ -79,16 +95,21 @@ export default function DoctorProfile () {
       const fees: Record<string, number> = {}
       if (videoFee !== '') fees.video = Number(videoFee)
       if (audioFee !== '') fees.audio = Number(audioFee)
-      if (chatFee  !== '') fees.chat  = Number(chatFee)
+      if (chatFee !== '') fees.chat = Number(chatFee)
       await api.put('/doctors/my/profile', {
-        bio, consultationFee: fee, yearsOfExperience: exp, qualifications: quals,
-        rateType, sessionDurationMinutes: sessionDuration,
-        urgentAvailable, urgentSurcharge,
-        fees: Object.keys(fees).length > 0 ? fees : undefined,
+        bio,
+        consultationFee: fee,
+        yearsOfExperience: exp,
+        qualifications: quals,
+        rateType,
+        sessionDurationMinutes: sessionDuration,
+        urgentAvailable,
+        urgentSurcharge,
+        fees: Object.keys(fees).length > 0 ? fees : undefined
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } catch { }
+    } catch {}
     setSaving(false)
   }
 
@@ -104,7 +125,9 @@ export default function DoctorProfile () {
 
   async function saveAvailability (e: FormEvent) {
     e.preventDefault()
-    const selectedDays = avDays.map((on, i) => on ? i : -1).filter(i => i >= 0)
+    const selectedDays = avDays
+      .map((on, i) => (on ? i : -1))
+      .filter(i => i >= 0)
     if (!selectedDays.length) return
     setAvSaving(true)
     setAvSaved(false)
@@ -114,13 +137,13 @@ export default function DoctorProfile () {
           api.post('/doctors/availability', {
             type: 'recurring',
             dayOfWeek: day,
-            slots: avSlots.map(sl => ({ ...sl, isBooked: false })),
+            slots: avSlots.map(sl => ({ ...sl, isBooked: false }))
           })
         )
       )
       setAvSaved(true)
       setTimeout(() => setAvSaved(false), 3000)
-    } catch { }
+    } catch {}
     setAvSaving(false)
   }
 
@@ -129,7 +152,9 @@ export default function DoctorProfile () {
   }
 
   function updateSlot (i: number, field: keyof Slot, value: string) {
-    setAvSlots(prev => prev.map((sl, idx) => idx === i ? { ...sl, [field]: value } : sl))
+    setAvSlots(prev =>
+      prev.map((sl, idx) => (idx === i ? { ...sl, [field]: value } : sl))
+    )
   }
 
   function removeSlot (i: number) {
@@ -138,7 +163,7 @@ export default function DoctorProfile () {
 
   function feeLabel () {
     if (rateType === 'per_session') return `₦${fee.toLocaleString()} / session`
-    if (rateType === 'per_hour')    return `₦${fee.toLocaleString()} / hr`
+    if (rateType === 'per_hour') return `₦${fee.toLocaleString()} / hr`
     return `₦${fee.toLocaleString()} / min`
   }
 
@@ -153,84 +178,180 @@ export default function DoctorProfile () {
           <div>
             <p className={s.docName}>{doctor?.user.name}</p>
             <p className={s.docSpec}>{doctor?.specialization}</p>
-            <span className={`${s.kycBadge} ${doctor?.isApproved ? s.approved : s.pending}`}>
+            <span
+              className={`${s.kycBadge} ${
+                doctor?.isApproved ? s.approved : s.pending
+              }`}
+            >
               {doctor?.isApproved ? 'Approved' : 'Pending Approval'}
             </span>
           </div>
         </div>
 
         <div className={s.detailGrid}>
-          <div className={s.detail}><span>Email</span><p>{doctor?.user.email}</p></div>
-          <div className={s.detail}><span>Phone</span><p>{doctor?.user.phone ?? '—'}</p></div>
-          <div className={s.detail}><span>License No.</span><p>{doctor?.licenseNumber}</p></div>
-          <div className={s.detail}><span>Specialization</span><p>{doctor?.specialization}</p></div>
-          <div className={s.detail}><span>Experience</span><p>{exp} yr{exp !== 1 ? 's' : ''}</p></div>
-          <div className={s.detail}><span>Rate</span><p>{feeLabel()}</p></div>
-          <div className={s.detail}><span>Session</span><p>{sessionDuration} min</p></div>
-          <div className={s.detail}><span>Urgent</span><p>{urgentAvailable ? `Available (+₦${urgentSurcharge.toLocaleString()})` : 'Not available'}</p></div>
+          <div className={s.detail}>
+            <span>Email</span>
+            <p>{doctor?.user.email}</p>
+          </div>
+          <div className={s.detail}>
+            <span>Phone</span>
+            <p>{doctor?.user.phone ?? '—'}</p>
+          </div>
+          <div className={s.detail}>
+            <span>License No.</span>
+            <p>{doctor?.licenseNumber}</p>
+          </div>
+          <div className={s.detail}>
+            <span>Specialization</span>
+            <p>{doctor?.specialization}</p>
+          </div>
+          <div className={s.detail}>
+            <span>Experience</span>
+            <p>
+              {exp} yr{exp !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className={s.detail}>
+            <span>Rate</span>
+            <p>{feeLabel()}</p>
+          </div>
+          <div className={s.detail}>
+            <span>Session</span>
+            <p>{sessionDuration} min</p>
+          </div>
+          <div className={s.detail}>
+            <span>Urgent</span>
+            <p>
+              {urgentAvailable
+                ? `Available (+₦${urgentSurcharge.toLocaleString()})`
+                : 'Not available'}
+            </p>
+          </div>
         </div>
       </div>
 
       <div>
         {/* ── Edit professional info ─────────────── */}
         <form className={s.panel} onSubmit={saveProfile}>
-          <div className={s.panelHead}><h3>Professional Info</h3></div>
+          <div className={s.panelHead}>
+            <h3>Professional Info</h3>
+          </div>
           <div className={s.panelBody}>
             <div className={s.field}>
               <label>Bio</label>
-              <textarea rows={3} value={bio} onChange={e => setBio(e.target.value)} placeholder='Tell patients about yourself…' />
+              <textarea
+                rows={3}
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                placeholder='Tell patients about yourself…'
+              />
             </div>
 
             {/* Rate type */}
             <div className={s.field}>
               <label>Billing Model</label>
               <div className={s.rateRow}>
-                {(['per_session', 'per_hour', 'per_minute'] as const).map(rt => (
-                  <button
-                    key={rt}
-                    type='button'
-                    className={`${s.rateBtn} ${rateType === rt ? s.rateActive : ''}`}
-                    onClick={() => setRateType(rt)}
-                  >
-                    {rt === 'per_session' ? 'Per Session' : rt === 'per_hour' ? 'Per Hour' : 'Per Minute'}
-                  </button>
-                ))}
+                {(['per_session', 'per_hour', 'per_minute'] as const).map(
+                  rt => (
+                    <button
+                      key={rt}
+                      type='button'
+                      className={`${s.rateBtn} ${
+                        rateType === rt ? s.rateActive : ''
+                      }`}
+                      onClick={() => setRateType(rt)}
+                    >
+                      {rt === 'per_session'
+                        ? 'Per Session'
+                        : rt === 'per_hour'
+                        ? 'Per Hour'
+                        : 'Per Minute'}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
             <div className={s.row2}>
               <div className={s.field}>
                 <label>
-                  {rateType === 'per_session' ? 'Base Fee (₦)' : rateType === 'per_hour' ? 'Hourly Rate (₦)' : 'Per-Minute Rate (₦)'}
+                  {rateType === 'per_session'
+                    ? 'Base Fee (₦)'
+                    : rateType === 'per_hour'
+                    ? 'Hourly Rate (₦)'
+                    : 'Per-Minute Rate (₦)'}
                 </label>
-                <input type='number' min={0} value={fee} onChange={e => setFee(Number(e.target.value))} />
-                <p className={s.hint}>Default rate. Override per consultation type below.</p>
+                <input
+                  type='number'
+                  min={0}
+                  value={fee}
+                  onChange={e => setFee(Number(e.target.value))}
+                />
+                <p className={s.hint}>
+                  Default rate. Override per consultation type below.
+                </p>
               </div>
               <div className={s.field}>
                 <label>Session Duration (min)</label>
-                <select value={sessionDuration} onChange={e => setSessionDuration(Number(e.target.value))}>
-                  {DURATIONS.map(d => <option key={d} value={d}>{d} min</option>)}
+                <select
+                  value={sessionDuration}
+                  onChange={e => setSessionDuration(Number(e.target.value))}
+                >
+                  {DURATIONS.map(d => (
+                    <option key={d} value={d}>
+                      {d} min
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
             <div className={s.field}>
-              <label>Per-Type Overrides (₦) — leave blank to use base rate</label>
+              <label>
+                Per-Type Overrides (₦) — leave blank to use base rate
+              </label>
               <div className={s.row3}>
                 <div>
                   <p className={s.typeLabel}>📹 Video</p>
-                  <input type='number' min={0} placeholder='e.g. 5000'
-                    value={videoFee} onChange={e => setVideoFee(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <input
+                    type='number'
+                    min={0}
+                    placeholder='e.g. 5000'
+                    value={videoFee}
+                    onChange={e =>
+                      setVideoFee(
+                        e.target.value === '' ? '' : Number(e.target.value)
+                      )
+                    }
+                  />
                 </div>
                 <div>
                   <p className={s.typeLabel}>📞 Audio</p>
-                  <input type='number' min={0} placeholder='e.g. 3500'
-                    value={audioFee} onChange={e => setAudioFee(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <input
+                    type='number'
+                    min={0}
+                    placeholder='e.g. 3500'
+                    value={audioFee}
+                    onChange={e =>
+                      setAudioFee(
+                        e.target.value === '' ? '' : Number(e.target.value)
+                      )
+                    }
+                  />
                 </div>
                 <div>
                   <p className={s.typeLabel}>💬 Chat</p>
-                  <input type='number' min={0} placeholder='e.g. 2000'
-                    value={chatFee} onChange={e => setChatFee(e.target.value === '' ? '' : Number(e.target.value))} />
+                  <input
+                    type='number'
+                    min={0}
+                    placeholder='e.g. 2000'
+                    value={chatFee}
+                    onChange={e =>
+                      setChatFee(
+                        e.target.value === '' ? '' : Number(e.target.value)
+                      )
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -238,7 +359,12 @@ export default function DoctorProfile () {
             <div className={s.row2}>
               <div className={s.field}>
                 <label>Years of Experience</label>
-                <input type='number' min={0} value={exp} onChange={e => setExp(Number(e.target.value))} />
+                <input
+                  type='number'
+                  min={0}
+                  value={exp}
+                  onChange={e => setExp(Number(e.target.value))}
+                />
               </div>
               <div className={s.field}>
                 <label>Urgent Calls</label>
@@ -256,8 +382,15 @@ export default function DoctorProfile () {
             {urgentAvailable && (
               <div className={s.field}>
                 <label>Urgent Surcharge (₦)</label>
-                <input type='number' min={0} value={urgentSurcharge} onChange={e => setUrgentSurcharge(Number(e.target.value))} />
-                <p className={s.hint}>Added on top of your base rate for urgent/emergency bookings.</p>
+                <input
+                  type='number'
+                  min={0}
+                  value={urgentSurcharge}
+                  onChange={e => setUrgentSurcharge(Number(e.target.value))}
+                />
+                <p className={s.hint}>
+                  Added on top of your base rate for urgent/emergency bookings.
+                </p>
               </div>
             )}
 
@@ -268,7 +401,9 @@ export default function DoctorProfile () {
                   {quals.map((q, i) => (
                     <div key={i} className={s.qualChip}>
                       <span>{q}</span>
-                      <button type='button' onClick={() => removeQual(i)}>×</button>
+                      <button type='button' onClick={() => removeQual(i)}>
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -277,10 +412,17 @@ export default function DoctorProfile () {
                 <input
                   value={newQual}
                   onChange={e => setNewQual(e.target.value)}
-                  placeholder='e.g. MBBS, University of Lagos'
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addQual() } }}
+                  placeholder='e.g. MBBS, University of Enugu'
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addQual()
+                    }
+                  }}
                 />
-                <button type='button' onClick={addQual}>Add</button>
+                <button type='button' onClick={addQual}>
+                  Add
+                </button>
               </div>
             </div>
 
@@ -291,8 +433,14 @@ export default function DoctorProfile () {
         </form>
 
         {/* ── Availability ──────────────────────── */}
-        <form className={s.panel} style={{ marginTop: '1.25rem' }} onSubmit={saveAvailability}>
-          <div className={s.panelHead}><h3>Weekly Availability</h3></div>
+        <form
+          className={s.panel}
+          style={{ marginTop: '1.25rem' }}
+          onSubmit={saveAvailability}
+        >
+          <div className={s.panelHead}>
+            <h3>Weekly Availability</h3>
+          </div>
           <div className={s.panelBody}>
             <div className={s.field}>
               <label>Working Days</label>
@@ -302,7 +450,11 @@ export default function DoctorProfile () {
                     key={i}
                     type='button'
                     className={`${s.dayBtn} ${avDays[i] ? s.dayActive : ''}`}
-                    onClick={() => setAvDays(prev => prev.map((on, idx) => idx === i ? !on : on))}
+                    onClick={() =>
+                      setAvDays(prev =>
+                        prev.map((on, idx) => (idx === i ? !on : on))
+                      )
+                    }
                   >
                     {d.slice(0, 3)}
                   </button>
@@ -315,19 +467,39 @@ export default function DoctorProfile () {
               <div className={s.slotList}>
                 {avSlots.map((sl, i) => (
                   <div key={i} className={s.slotRow}>
-                    <input type='time' value={sl.startTime} onChange={e => updateSlot(i, 'startTime', e.target.value)} />
+                    <input
+                      type='time'
+                      value={sl.startTime}
+                      onChange={e => updateSlot(i, 'startTime', e.target.value)}
+                    />
                     <span className={s.slotSep}>to</span>
-                    <input type='time' value={sl.endTime} onChange={e => updateSlot(i, 'endTime', e.target.value)} />
+                    <input
+                      type='time'
+                      value={sl.endTime}
+                      onChange={e => updateSlot(i, 'endTime', e.target.value)}
+                    />
                     {avSlots.length > 1 && (
-                      <button type='button' className={s.removeSlotBtn} onClick={() => removeSlot(i)}>×</button>
+                      <button
+                        type='button'
+                        className={s.removeSlotBtn}
+                        onClick={() => removeSlot(i)}
+                      >
+                        ×
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
-              <button type='button' className={s.addSlotBtn} onClick={addSlot}>+ Add Time Slot</button>
+              <button type='button' className={s.addSlotBtn} onClick={addSlot}>
+                + Add Time Slot
+              </button>
             </div>
 
-            <button type='submit' className={s.saveBtn} disabled={avSaving || !avDays.some(Boolean)}>
+            <button
+              type='submit'
+              className={s.saveBtn}
+              disabled={avSaving || !avDays.some(Boolean)}
+            >
               {avSaving ? 'Saving…' : avSaved ? '✓ Saved' : 'Save Availability'}
             </button>
           </div>

@@ -36,7 +36,7 @@ const SCENES = [
     // icon: '💊',
     tag: 'Pharmacy',
     title: 'Medications\ndelivered today',
-    stat: 'Same-day in Lagos & Abuja'
+    stat: 'Same-day in Enugu & Abuja'
   }
 ]
 
