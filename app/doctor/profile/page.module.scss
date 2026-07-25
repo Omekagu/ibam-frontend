@@ -32,6 +32,31 @@
   margin-bottom: 1.25rem;
 }
 
+.avatarWrap {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  border: 2px solid rgba($primary,0.25);
+  @include flex-center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: $accent;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+
+  span { z-index: 1; }
+}
+
+.avatarEditBtn {
+  position: absolute; bottom: -4px; right: -4px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: $primary; border: 2px solid $navy-dark;
+  @include flex-center; cursor: pointer; font-size: 0.7rem;
+  color: $white; z-index: 2;
+}
+
 .avatar {
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -343,6 +368,27 @@
   font-size: 0.6875rem;
   color: var(--text-faint);
   margin-top: 4px;
+}
+
+// ─── Social links ───────────────────────────────
+.socialGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  input {
+    background: var(--input-bg);
+    border: 1px solid $navy-border;
+    border-radius: $radius-md;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+    &:focus { border-color: rgba($primary,0.5); }
+    &::placeholder { color: var(--text-faint); }
+  }
 }
 
 // ─── Day grid ───────────────────────────────────

@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState, FormEvent } from 'react'
+import { useEffect, useState, useRef, FormEvent, ChangeEvent } from 'react'
+import Image from 'next/image'
 import api from '@/lib/api'
 import s from './page.module.scss'
 
@@ -17,7 +18,9 @@ interface Doctor {
   urgentSurcharge: number
   fees?: { video?: number; audio?: number; chat?: number }
   bankAccount?: { bankName?: string; accountNumber?: string; accountName?: string; bankCode?: string }
-  user: { name: string; email: string; phone?: string }
+  displayName?: string
+  socialLinks?: { twitter?: string; linkedin?: string; website?: string }
+  user: { name: string; email: string; phone?: string; avatar?: string }
 }
 
 interface Slot {
@@ -57,6 +60,17 @@ export default function DoctorProfile () {
   const [audioFee, setAudioFee] = useState<number | ''>('')
   const [chatFee, setChatFee] = useState<number | ''>('')
 
+  // Avatar upload
+  const avatarRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl,     setAvatarUrl]     = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
+
+  // Display name + social
+  const [displayName, setDisplayName] = useState('')
+  const [socialTwitter,  setSocialTwitter]  = useState('')
+  const [socialLinkedin, setSocialLinkedin] = useState('')
+  const [socialWebsite,  setSocialWebsite]  = useState('')
+
   // Bank account
   const [bankName,   setBankName]   = useState('')
   const [acctNumber, setAcctNumber] = useState('')
@@ -95,10 +109,30 @@ export default function DoctorProfile () {
         setAcctNumber(d.bankAccount?.accountNumber ?? '')
         setAcctName(d.bankAccount?.accountName ?? '')
         setBankCode(d.bankAccount?.bankCode ?? '')
+        setAvatarUrl(d.user?.avatar ?? '')
+        setDisplayName(d.displayName ?? '')
+        setSocialTwitter(d.socialLinks?.twitter ?? '')
+        setSocialLinkedin(d.socialLinks?.linkedin ?? '')
+        setSocialWebsite(d.socialLinks?.website ?? '')
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  async function uploadAvatar (e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setAvatarUploading(true)
+    try {
+      const form = new FormData()
+      form.append('avatar', f)
+      const r = await api.post('/doctors/my/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setAvatarUrl(r.data.data?.avatarUrl ?? '')
+    } catch {}
+    setAvatarUploading(false)
+  }
 
   async function saveProfile (e: FormEvent) {
     e.preventDefault()
@@ -118,7 +152,13 @@ export default function DoctorProfile () {
         sessionDurationMinutes: sessionDuration,
         urgentAvailable,
         urgentSurcharge,
-        fees: Object.keys(fees).length > 0 ? fees : undefined
+        fees: Object.keys(fees).length > 0 ? fees : undefined,
+        displayName: displayName.trim() || undefined,
+        socialLinks: {
+          twitter: socialTwitter.trim() || undefined,
+          linkedin: socialLinkedin.trim() || undefined,
+          website: socialWebsite.trim() || undefined,
+        },
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -199,9 +239,24 @@ export default function DoctorProfile () {
       {/* ── Summary card ──────────────────────────── */}
       <div className={s.profileCard}>
         <div className={s.avatarBlock}>
-          <div className={s.avatar}>{doctor?.user.name?.[0] ?? '?'}</div>
+          <div className={s.avatarWrap}>
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt='Profile photo' fill style={{ objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              <span>{doctor?.user.name?.[0]?.toUpperCase() ?? '?'}</span>
+            )}
+            <button
+              type='button'
+              className={s.avatarEditBtn}
+              onClick={() => avatarRef.current?.click()}
+              title='Change photo'
+            >
+              {avatarUploading ? '…' : '📷'}
+            </button>
+            <input ref={avatarRef} type='file' accept='image/*' onChange={uploadAvatar} style={{ display: 'none' }} />
+          </div>
           <div>
-            <p className={s.docName}>{doctor?.user.name}</p>
+            <p className={s.docName}>{doctor?.displayName || doctor?.user.name}</p>
             <p className={s.docSpec}>{doctor?.specialization}</p>
             <span
               className={`${s.kycBadge} ${
@@ -262,6 +317,16 @@ export default function DoctorProfile () {
             <h3>Professional Info</h3>
           </div>
           <div className={s.panelBody}>
+            <div className={s.field}>
+              <label>Display Name <span className={s.hint}>(shown publicly — leave blank to use account name)</span></label>
+              <input
+                type='text'
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder={doctor?.user.name ?? 'Your public name'}
+              />
+            </div>
+
             <div className={s.field}>
               <label>Bio</label>
               <textarea
@@ -448,6 +513,15 @@ export default function DoctorProfile () {
                 <button type='button' onClick={addQual}>
                   Add
                 </button>
+              </div>
+            </div>
+
+            <div className={s.field}>
+              <label>Social Links <span className={s.hint}>(optional — shown on your public profile)</span></label>
+              <div className={s.socialGrid}>
+                <input value={socialTwitter}  onChange={e => setSocialTwitter(e.target.value)}  placeholder='Twitter / X handle (e.g. @drsmith)' />
+                <input value={socialLinkedin} onChange={e => setSocialLinkedin(e.target.value)} placeholder='LinkedIn URL' />
+                <input value={socialWebsite}  onChange={e => setSocialWebsite(e.target.value)}  placeholder='Personal website URL' />
               </div>
             </div>
 

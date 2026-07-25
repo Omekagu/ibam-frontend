@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             var p = window.location.pathname;
-            var portals = ['/patient','/doctor','/admin','/partner'];
+            var portals = ['/patient/','/doctor/','/admin/','/partner/'];
             var isPortal = portals.some(function(x){ return p.startsWith(x); });
             var t = isPortal ? (localStorage.getItem('theme') || 'light') : 'dark';
             if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');

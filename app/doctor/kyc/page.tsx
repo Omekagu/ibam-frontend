@@ -1,31 +1,105 @@
 'use client'
-import { useState, useRef, DragEvent } from 'react'
+import { useState, useRef, useEffect, DragEvent, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
 
-const STEPS = ['MDCN Details', 'Upload Document', 'Under Review']
+const STEPS = ['MDCN Details', 'NIN Verify', 'Face Match', 'Upload Document']
 
 export default function DoctorKYCPage () {
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [kycStatus, setKycStatus] = useState('pending')
   const [step, setStep] = useState(0)
+
+  // Step 0
   const [mdcn, setMdcn] = useState('')
   const [specialty, setSpecialty] = useState('')
+
+  // Step 1 — NIN
+  const [nin, setNin] = useState('')
+  const [ninLoading, setNinLoading] = useState(false)
+  const [ninError, setNinError] = useState('')
+
+  // Step 2 — Face selfie
+  const selfieRef = useRef<HTMLInputElement>(null)
+  const [selfiePreview, setSelfiePreview] = useState('')
+  const [faceLoading, setFaceLoading] = useState(false)
+  const [faceError, setFaceError] = useState('')
+
+  // Step 3 — License upload
+  const fileRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    api.get('/kyc/status')
+      .then(res => {
+        const { kycStatus: status, doctor } = res.data
+        const st = status ?? 'pending'
+        setKycStatus(st)
+        if (st === 'approved') {
+          setStep(4)
+        } else if (st === 'face_verified') {
+          setStep(doctor?.licenseDocument ? 4 : 3)
+        } else if (st === 'nin_verified') {
+          setStep(2)
+        }
+        // pending / rejected → stay at step 0
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  // ── Handlers ────────────────────────────────────
+
+  function submitDetails () {
+    if (!mdcn.trim() || !specialty) return
+    setStep(1)
+  }
+
+  async function verifyNin () {
+    if (nin.length !== 11) return
+    setNinLoading(true)
+    setNinError('')
+    try {
+      await api.post('/kyc/verify-nin', { nin })
+      setStep(2)
+    } catch (err: any) {
+      setNinError(err?.response?.data?.message ?? 'NIN verification failed. Check the number and try again.')
+    } finally {
+      setNinLoading(false)
+    }
+  }
+
+  function onSelfieChange (e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    const reader = new FileReader()
+    reader.onload = () => setSelfiePreview(reader.result as string)
+    reader.readAsDataURL(f)
+  }
+
+  async function verifyFace () {
+    if (!selfiePreview) return
+    setFaceLoading(true)
+    setFaceError('')
+    try {
+      await api.post('/kyc/verify-face', { selfie: selfiePreview })
+      setStep(3)
+    } catch (err: any) {
+      setFaceError(err?.response?.data?.message ?? 'Face match failed. Please retake your selfie and try again.')
+    } finally {
+      setFaceLoading(false)
+    }
+  }
 
   function onDrop (e: DragEvent) {
     e.preventDefault()
     setDragging(false)
     const f = e.dataTransfer.files[0]
     if (f) setFile(f)
-  }
-
-  async function submitDetails () {
-    if (!mdcn.trim() || !specialty) return
-    setStep(1)
   }
 
   async function submitDocument () {
@@ -39,30 +113,57 @@ export default function DoctorKYCPage () {
       await api.post('/doctors/license', form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      setStep(2)
+      setStep(4)
     } catch {
-      // Still advance to awaiting screen — server may be offline
-      setStep(2)
+      setStep(4)
     } finally {
       setUploading(false)
     }
   }
 
+  // ── Loading ──────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className={s.page}>
+        <div className={s.card}>
+          <div className={s.loadingWrap}>
+            <div className={s.spinner} />
+            <p>Checking verification status…</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={s.page}>
       <div className={s.card}>
-        {/* Step indicators */}
-        <div className={s.steps}>
-          {STEPS.map((label, i) => (
-            <div key={label} className={`${s.step} ${i < step ? s.done : ''} ${i === step ? s.current : ''}`}>
-              <div className={s.stepCircle}>{i < step ? '✓' : i + 1}</div>
-              <span className={s.stepLabel}>{label}</span>
-              <div className={s.stepLine} />
-            </div>
-          ))}
-        </div>
 
-        {/* Step 0 — MDCN details */}
+        {/* Step indicators — hide on review / approved */}
+        {step < 4 && (
+          <div className={s.steps}>
+            {STEPS.map((label, i) => (
+              <div
+                key={label}
+                className={`${s.step} ${i < step ? s.done : ''} ${i === step ? s.current : ''}`}
+              >
+                <div className={s.stepCircle}>{i < step ? '✓' : i + 1}</div>
+                <span className={s.stepLabel}>{label}</span>
+                <div className={s.stepLine} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Rejected banner */}
+        {kycStatus === 'rejected' && step === 0 && (
+          <div className={s.rejectedBanner}>
+            Your previous submission was rejected. Please correct your details and resubmit.
+          </div>
+        )}
+
+        {/* ── Step 0 — MDCN Details ────────────────── */}
         {step === 0 && (
           <>
             <h1 className={s.title}>Verify your credentials</h1>
@@ -101,12 +202,91 @@ export default function DoctorKYCPage () {
           </>
         )}
 
-        {/* Step 1 — Upload license */}
+        {/* ── Step 1 — NIN Verification ────────────── */}
         {step === 1 && (
+          <>
+            <h1 className={s.title}>NIN Verification</h1>
+            <p className={s.sub}>
+              Enter your 11-digit National Identification Number. We use this to confirm your identity before face matching.
+            </p>
+
+            <div className={s.field}>
+              <label>National Identification Number (NIN)</label>
+              <input
+                type='text'
+                inputMode='numeric'
+                maxLength={11}
+                placeholder='12345678901'
+                value={nin}
+                onChange={e => setNin(e.target.value.replace(/\D/g, ''))}
+              />
+              <span className={s.fieldHint}>{nin.length} / 11 digits</span>
+            </div>
+
+            {ninError && <p className={s.errorText}>{ninError}</p>}
+
+            <button
+              className={s.nextBtn}
+              onClick={verifyNin}
+              disabled={nin.length !== 11 || ninLoading}
+            >
+              {ninLoading ? 'Verifying…' : 'Verify NIN →'}
+            </button>
+            <button className={s.backBtn} onClick={() => setStep(0)}>← Back</button>
+          </>
+        )}
+
+        {/* ── Step 2 — Face Selfie ─────────────────── */}
+        {step === 2 && (
+          <>
+            <h1 className={s.title}>Face Verification</h1>
+            <p className={s.sub}>
+              Take a clear selfie. We&apos;ll match it against your NIN photo to confirm your identity.
+            </p>
+
+            <div className={s.selfieWrap}>
+              {selfiePreview ? (
+                <img src={selfiePreview} className={s.selfiePreview} alt='Selfie preview' />
+              ) : (
+                <div className={s.selfieEmpty}>
+                  <span>🤳</span>
+                  <p>No photo yet</p>
+                </div>
+              )}
+
+              <input
+                ref={selfieRef}
+                type='file'
+                accept='image/*'
+                capture='user'
+                onChange={onSelfieChange}
+                style={{ display: 'none' }}
+              />
+
+              <button className={s.cameraBtn} onClick={() => selfieRef.current?.click()}>
+                📷 {selfiePreview ? 'Retake Photo' : 'Take Selfie / Upload'}
+              </button>
+            </div>
+
+            {faceError && <p className={s.errorText}>{faceError}</p>}
+
+            <button
+              className={s.nextBtn}
+              onClick={verifyFace}
+              disabled={!selfiePreview || faceLoading}
+            >
+              {faceLoading ? 'Matching…' : 'Verify Face →'}
+            </button>
+            <button className={s.backBtn} onClick={() => setStep(1)}>← Back</button>
+          </>
+        )}
+
+        {/* ── Step 3 — Upload License ──────────────── */}
+        {step === 3 && (
           <>
             <h1 className={s.title}>Upload license document</h1>
             <p className={s.sub}>
-              Upload a clear photo or scan of your medical license / MDCN certificate. Accepted: PDF, JPG, PNG (max 10MB).
+              Upload a clear photo or scan of your medical license / MDCN certificate. Accepted: PDF, JPG, PNG (max 10 MB).
             </p>
 
             <div
@@ -123,9 +303,7 @@ export default function DoctorKYCPage () {
                 onChange={e => e.target.files?.[0] && setFile(e.target.files[0])}
               />
               <div className={s.uploadIcon}>📁</div>
-              <p className={s.uploadTitle}>
-                {dragging ? 'Drop file here' : 'Click or drag & drop'}
-              </p>
+              <p className={s.uploadTitle}>{dragging ? 'Drop file here' : 'Click or drag & drop'}</p>
               <p className={s.uploadSub}>PDF, JPG, PNG up to 10 MB</p>
             </div>
 
@@ -143,24 +321,41 @@ export default function DoctorKYCPage () {
             >
               {uploading ? 'Uploading…' : 'Submit for Review →'}
             </button>
-            <button className={s.backBtn} onClick={() => setStep(0)}>← Back</button>
+            <button className={s.backBtn} onClick={() => setStep(2)}>← Back</button>
           </>
         )}
 
-        {/* Step 2 — Awaiting */}
-        {step === 2 && (
+        {/* ── Step 4 — Under Review / Approved ────── */}
+        {step === 4 && (
           <div className={s.awaiting}>
-            <div className={s.awaitingIcon}>⏳</div>
-            <h2 className={s.awaitingTitle}>Application Submitted!</h2>
-            <p className={s.awaitingText}>
-              Your KYC is under review by our medical team. This usually takes 1–2 business days.
-              We&apos;ll notify you by email once approved.
-            </p>
+            {kycStatus === 'approved' ? (
+              <>
+                <div className={`${s.awaitingIcon} ${s.approvedIcon}`}>✅</div>
+                <h2 className={s.awaitingTitle}>KYC Approved!</h2>
+                <p className={s.awaitingText}>
+                  Your identity and credentials have been verified. You can now accept patient consultations on iBam Health.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className={s.awaitingIcon}>⏳</div>
+                <h2 className={s.awaitingTitle}>Application Submitted!</h2>
+                <p className={s.awaitingText}>
+                  Your KYC is under review by our medical team. This usually takes 1–2 business days.
+                  We&apos;ll notify you by email once approved.
+                </p>
+              </>
+            )}
 
             <div className={s.checklist}>
               <div className={s.checkItem}><span>✅</span> MDCN number recorded</div>
+              <div className={s.checkItem}><span>✅</span> NIN identity verified</div>
+              <div className={s.checkItem}><span>✅</span> Face match complete</div>
               <div className={s.checkItem}><span>✅</span> License document uploaded</div>
-              <div className={s.checkItem}><span>🔍</span> Admin review in progress</div>
+              {kycStatus === 'approved'
+                ? <div className={s.checkItem}><span>✅</span> Admin review complete</div>
+                : <div className={s.checkItem}><span>🔍</span> Admin review in progress</div>
+              }
               <div className={s.checkItem}><span>📧</span> Email notification on approval</div>
             </div>
 
@@ -169,6 +364,7 @@ export default function DoctorKYCPage () {
             </button>
           </div>
         )}
+
       </div>
     </div>
   )
