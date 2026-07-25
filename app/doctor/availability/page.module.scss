@@ -1,0 +1,94 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap    { display: flex; flex-direction: column; gap: 1.5rem; }
+.pageHeader { @include flex-between; flex-wrap: wrap; gap: 1rem; }
+.title   { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0; }
+.subtitle{ font-size: 0.8125rem; color: var(--text-muted); margin: 4px 0 0; }
+
+.tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.tab {
+  padding: 0.5rem 1.125rem; border-radius: $radius-md; border: 1px solid $navy-border;
+  background: transparent; color: var(--text-muted); font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
+  &.active { background: $primary; border-color: $primary; color: #fff; }
+}
+
+.successBanner { background: rgba($success,0.1); border: 1px solid rgba($success,0.25); border-radius: $radius-md; padding: 0.75rem 1rem; font-size: 0.8125rem; color: $success; font-weight: 600; }
+.errorBanner   { background: rgba($danger,0.08); border: 1px solid rgba($danger,0.2); border-radius: $radius-md; padding: 0.75rem 1rem; font-size: 0.8125rem; color: $danger; }
+.empty         { text-align: center; padding: 3rem; color: var(--text-faint); font-size: 0.875rem; p { margin: 4px 0; } }
+
+// ── Schedule view ─────────────────────────────
+.scheduleGrid  { display: flex; flex-direction: column; gap: 1.5rem; }
+.scheduleGroup { }
+.groupLabel    { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 0.75rem; }
+.recordList    { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.recordCard {
+  display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-md;
+  padding: 0.875rem 1.125rem;
+}
+.recordDay { font-size: 0.875rem; font-weight: 700; color: $accent; min-width: 90px; padding-top: 2px; }
+.slotPills { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.slotPill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: 999px;
+  padding: 3px 10px; font-size: 0.75rem; color: var(--text-semi);
+  em { font-style: normal; font-size: 0.65rem; color: $warning; margin-left: 4px; font-weight: 700; }
+  &.booked { opacity: 0.5; }
+}
+
+// ── Form ─────────────────────────────────────
+.form { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 600px; }
+
+.formRow { display: flex; flex-direction: column; gap: 0.5rem; }
+.labelRow { @include flex-between; }
+.label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.defaultsLink { font-size: 0.78rem; color: $accent; background: none; border: none; cursor: pointer; padding: 0; &:hover { text-decoration: underline; } }
+
+.dayPicker { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.dayBtn {
+  padding: 0.4rem 0.75rem; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: var(--input-bg); color: var(--text-muted); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.13s;
+  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
+  &.dayActive { background: $primary; border-color: $primary; color: #fff; }
+}
+
+.slotEditor { display: flex; flex-direction: column; gap: 0.5rem; }
+.slotRow { display: flex; align-items: center; gap: 0.5rem; }
+.timeInput {
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: $radius-sm;
+  padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.875rem; font-family: inherit; outline: none;
+  &:focus { border-color: rgba($primary,0.5); }
+  color-scheme: dark;
+}
+.slotDash   { color: var(--text-faint); font-size: 0.875rem; }
+.removeSlotBtn {
+  width: 28px; height: 28px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: transparent; color: $danger; font-size: 0.75rem; cursor: pointer; flex-shrink: 0;
+  &:hover:not(:disabled) { background: rgba($danger,0.1); }
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+}
+.addSlotBtn {
+  align-self: flex-start; padding: 0.4rem 0.875rem; border-radius: $radius-sm;
+  border: 1px dashed $navy-border; background: transparent; color: var(--text-muted);
+  font-size: 0.8rem; cursor: pointer;
+  &:hover { border-color: rgba($primary,0.4); color: $accent; }
+}
+
+.dateInput {
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: $radius-sm;
+  padding: 0.5rem 0.875rem; color: var(--text); font-size: 0.875rem; font-family: inherit; outline: none;
+  &:focus { border-color: rgba($primary,0.5); }
+  color-scheme: dark;
+}
+
+.saveBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+}

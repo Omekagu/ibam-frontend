@@ -9,89 +9,92 @@
   @media (min-width: $bp-lg) { grid-template-columns: 1fr 1fr; }
 }
 
-// ─── Brand panel ──────────────────────────────────
+// ─── Brand panel — full-bleed frame slideshow ─────
 .brand {
   display: none;
-  background: $navy-dark;
+  background: #0A2810;
   position: relative;
   overflow: hidden;
-  padding: 3rem;
   flex-direction: column;
   justify-content: space-between;
+  padding: 2.5rem;
 
   @media (min-width: $bp-lg) { display: flex; }
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    width: 500px; height: 500px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba($primary, 0.22) 0%, transparent 70%);
-    bottom: -200px; right: -150px;
-    pointer-events: none;
-  }
-  &::after {
-    content: '';
-    position: absolute;
-    width: 300px; height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba($accent, 0.1) 0%, transparent 70%);
-    top: -100px; left: -100px;
-    pointer-events: none;
-  }
+// Frame images (absolutely positioned, crossfade)
+.slideImg {
+  position: absolute !important;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  z-index: 0;
+}
+.slideImgActive { opacity: 1; }
+
+// Dark scrim so text remains readable
+.brand::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(10,40,16,0.55) 0%,
+    rgba(10,40,16,0.1)  40%,
+    rgba(10,40,16,0.7)  100%
+  );
+  z-index: 1;
+  pointer-events: none;
 }
 
 .brandLogo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
   text-decoration: none;
   position: relative;
-  z-index: 1;
-
-  .mark {
-    width: 40px; height: 40px;
-    border-radius: $radius-sm;
-    background: $primary;
-    @include flex-center;
-    font-weight: 900; font-size: 0.875rem; color: $white;
-  }
-
-  .name { font-size: 1.25rem; font-weight: 700; color: $white; span { color: $primary; } }
+  z-index: 2;
+}
+.logoImg {
+  border-radius: $radius-sm;
+  display: block;
+}
+.name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: $white;
+  span { color: $accent; margin-left: 4px; }
 }
 
-.brandCopy {
+// Bottom caption + dots
+.slideBottom {
   position: relative;
-  z-index: 1;
-
-  h2 {
-    font-size: clamp(2rem, 3vw, 2.75rem);
-    font-weight: 900;
-    color: $white;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin-bottom: 1rem;
-  }
-
-  p { font-size: 1rem; color: rgba(255,255,255,0.6); line-height: 1.7; }
+  z-index: 2;
 }
-
-.brandTrust {
+.slideCaption {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+.slideDots {
   display: flex;
-  gap: 1rem;
-  position: relative;
-  z-index: 1;
-  flex-wrap: wrap;
-
-  .trustBadge {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 999px;
-    padding: 0.375rem 0.875rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: rgba(255,255,255,0.6);
-  }
+  gap: 0.5rem;
+}
+.slideDot {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  padding: 0;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.slideDotActive {
+  width: 24px;
+  background: $primary;
 }
 
 // ─── Form panel ───────────────────────────────────
@@ -115,15 +118,8 @@
   text-decoration: none;
   margin-bottom: 2.5rem;
 
-  .mark {
-    width: 36px; height: 36px;
-    border-radius: $radius-sm;
-    background: $primary;
-    @include flex-center;
-    font-weight: 900; font-size: 0.8rem; color: $white;
-  }
-
-  span { font-size: 1.125rem; font-weight: 700; color: $text-dark; em { font-style: normal; color: $primary; } }
+  img { border-radius: $radius-sm; }
+  span { font-size: 1.125rem; font-weight: 800; color: $text-dark; em { font-style: normal; color: $primary; } }
 
   @media (min-width: $bp-lg) { display: none; }
 }

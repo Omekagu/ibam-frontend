@@ -9,31 +9,28 @@ import s from './Hero.module.scss'
 */
 const SCENES = [
   {
-    bg: 'linear-gradient(145deg,#0A8F6C 0%,#00E5A0 55%,#065F46 100%)',
+    bg: 'linear-gradient(145deg,#0A2810 0%,#22C55E 60%,#15803D 100%)',
     imageSrc:
-      'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // "/images/scene-consult.jpg"
+      'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     icon: '',
-    // icon: '🩺',
     tag: 'Telemedicine',
     title: 'See a doctor\nin minutes',
     stat: '500+ verified physicians'
   },
   {
-    bg: 'linear-gradient(145deg,#0D1F35 0%,#0A8F6C 60%,#00E5A0 100%)',
+    bg: 'linear-gradient(145deg,#082208 0%,#0A2810 45%,#22C55E 100%)',
     imageSrc:
-      'https://plus.unsplash.com/premium_photo-1676325101955-1089267548d4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // "/images/scene-lab.jpg"
+      'https://plus.unsplash.com/premium_photo-1676325101955-1089267548d4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     icon: '',
-    // icon: '🔬',
     tag: 'Diagnostics',
     title: 'Lab results\nin 24 hours',
     stat: 'Home sample collection'
   },
   {
-    bg: 'linear-gradient(145deg,#050D1B 0%,#0D1B2A 45%,#0A8F6C 100%)',
+    bg: 'linear-gradient(145deg,#0A2810 0%,#15803D 45%,#F59E0B 100%)',
     imageSrc:
-      'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=1240&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // "/images/scene-pharmacy.jpg"
+      'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=1240&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     icon: '',
-    // icon: '💊',
     tag: 'Pharmacy',
     title: 'Medications\ndelivered today',
     stat: 'Same-day in Enugu & Abuja'

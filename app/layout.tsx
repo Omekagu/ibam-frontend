@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.scss";
 import ScrollReveal from "@/components/ScrollReveal";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito", weight: ["400","500","600","700","800","900"] });
 
 export const metadata: Metadata = {
   title: "iBam Health — Quality Healthcare, Delivered",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={geist.variable} suppressHydrationWarning>
+    <html lang="en" className={nunito.variable} suppressHydrationWarning>
       <head>
         {/* Prevent theme flash before hydration.
             Public/auth routes are always dark; portals use stored preference. */}

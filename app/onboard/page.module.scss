@@ -1,7 +1,7 @@
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
-.page { min-height: 100vh; background: #070F1C; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; }
+.page { min-height: 100vh; background: var(--bg-page); display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; }
 .wrap { width: 100%; max-width: 860px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
 
 .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-bottom: 0.5rem;

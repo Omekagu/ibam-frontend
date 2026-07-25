@@ -1,20 +1,33 @@
 'use client'
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { login } from '@/lib/auth'
 import s from './page.module.scss'
 
+const SLIDES = [
+  { src: '/Frame 1.png', label: 'Your health, always within reach' },
+  { src: '/Frame 2.png', label: 'Trusted healthcare platform' },
+  { src: '/Frame 7.png', label: 'iBam Health — Care that moves with you' },
+]
+
 type LoginMode = 'email' | 'phone'
 
 export default function LoginPage () {
   const router  = useRouter()
+  const [slide,    setSlide]    = useState(0)
   const [mode,     setMode]     = useState<LoginMode>('email')
   const [email,    setEmail]    = useState('')
   const [phone,    setPhone]    = useState('')
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
+
+  useEffect(() => {
+    const id = setInterval(() => setSlide(i => (i + 1) % SLIDES.length), 5000)
+    return () => clearInterval(id)
+  }, [])
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
@@ -42,20 +55,34 @@ export default function LoginPage () {
 
   return (
     <div className={s.page}>
-      {/* Brand panel */}
+      {/* Brand panel — full-bleed frame slideshow */}
       <div className={s.brand}>
+        {SLIDES.map((sl, i) => (
+          <Image
+            key={sl.src}
+            src={sl.src}
+            alt={sl.label}
+            fill
+            priority={i === 0}
+            className={`${s.slideImg} ${i === slide ? s.slideImgActive : ''}`}
+            style={{ objectFit: 'cover' }}
+          />
+        ))}
+
+        {/* Logo overlay */}
         <Link href='/' className={s.brandLogo}>
-          <span className={s.mark}>iB</span>
+          <Image src='/logo.png' alt='iBam Health' width={44} height={44} className={s.logoImg} />
           <span className={s.name}>iBam <span>Health</span></span>
         </Link>
-        <div className={s.brandCopy}>
-          <h2>Your health,<br />always within reach</h2>
-          <p>Access verified doctors, your complete medical history, lab results, and e-prescriptions — all from one secure platform.</p>
-        </div>
-        <div className={s.brandTrust}>
-          <span className={s.trustBadge}>MDCN Verified Doctors</span>
-          <span className={s.trustBadge}>NDPR Compliant</span>
-          <span className={s.trustBadge}>End-to-End Encrypted</span>
+
+        {/* Slide caption + dots */}
+        <div className={s.slideBottom}>
+          <p className={s.slideCaption}>{SLIDES[slide].label}</p>
+          <div className={s.slideDots}>
+            {SLIDES.map((_, i) => (
+              <button key={i} className={`${s.slideDot} ${i === slide ? s.slideDotActive : ''}`} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}`} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -63,7 +90,7 @@ export default function LoginPage () {
       <div className={s.formPanel}>
         <div className={s.formWrap}>
           <Link href='/' className={s.mobileHeader}>
-            <span className={s.mark}>iB</span>
+            <Image src='/logo.png' alt='iBam Health' width={36} height={36} />
             <span>iBam <em>Health</em></span>
           </Link>
 

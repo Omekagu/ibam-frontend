@@ -1,0 +1,90 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.pageHeader { display: flex; flex-direction: column; gap: 4px; }
+.title    { font-size: 1.25rem; font-weight: 800; color: $white; margin: 0; }
+.subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: 0; }
+
+.errorBanner {
+  background: rgba($danger,0.08); border: 1px solid rgba($danger,0.2);
+  border-radius: $radius-sm; padding: 10px 14px; color: $danger;
+  font-size: 0.875rem; margin: 0;
+}
+
+.empty { color: rgba(255,255,255,0.35); font-size: 0.875rem; }
+
+// ── Locate prompt ──
+.locateCard {
+  display: flex; align-items: center; gap: 1rem;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 1.25rem 1.5rem;
+}
+.locateEmoji { font-size: 2rem; }
+.locateText  { flex: 1; }
+.locateTitle { font-size: 0.9rem; font-weight: 700; color: $white; margin: 0 0 2px; }
+.locateSub   { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: 0; }
+.locateBtn {
+  padding: 9px 18px; border-radius: $radius-sm; border: none; cursor: pointer;
+  background: linear-gradient(135deg, $primary, $accent); color: $white;
+  font-size: 0.875rem; font-weight: 700; transition: opacity 0.15s; white-space: nowrap;
+  &:hover { opacity: 0.88; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ── Filters ──
+.filters { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.typeChips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.radiusRow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.radiusLabel { font-size: 0.78rem; color: rgba(255,255,255,0.4); font-weight: 600; }
+
+.chip, .radiusChip {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid $navy-border;
+  background: transparent; color: rgba(255,255,255,0.5); font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
+  &:hover { border-color: rgba($primary, 0.4); color: $white; }
+  &.chipActive { background: $primary; border-color: $primary; color: #fff; }
+}
+.radiusChip { padding: 5px 10px; font-size: 0.75rem; }
+
+// ── Results ──
+.list { display: flex; flex-direction: column; gap: 1rem; }
+
+.card {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem;
+}
+
+.cardTop {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+}
+.typeIcon { font-size: 1.6rem; line-height: 1; }
+.cardMeta { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.cardName {
+  font-size: 1rem; font-weight: 700; color: $white; margin: 0;
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.verifiedBadge {
+  font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: rgba($success,0.12); color: $success; border: 1px solid rgba($success,0.25);
+}
+.typeBadge {
+  font-size: 0.7rem; font-weight: 700; text-transform: capitalize; padding: 2px 8px;
+  border-radius: 999px; background: rgba($primary,0.12); color: rgba($primary,0.8);
+  border: 1px solid rgba($primary,0.2); align-self: flex-start;
+}
+
+.cardAddress { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin: 0; }
+.cardDetail  { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin: 0; }
+
+.cardActions {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; padding-top: 0.25rem;
+  border-top: 1px solid $navy-border; margin-top: 0.25rem;
+}
+.actionLink {
+  font-size: 0.8rem; font-weight: 600; color: rgba($primary, 0.9);
+  text-decoration: none; padding: 4px 0;
+  &:hover { color: $primary; text-decoration: underline; }
+}

@@ -1,8 +1,10 @@
 export const Colors = {
-  primary:       '#0A8F6C',
-  primaryLight:  '#E8F5F0',
-  primaryDark:   '#065F46',
-  accent:        '#00E5A0',   // web-only electric mint
+  // ── iBam brand palette ──────────────────────────
+  primary:       '#22C55E',   // iBam brand green
+  primaryLight:  '#DCFCE7',
+  primaryDark:   '#15803D',
+  accent:        '#F59E0B',   // iBam brand amber ("Health" badge)
+  accentLight:   '#FEF3C7',
 
   success:       '#10B981',
   successLight:  '#D1FAE5',
@@ -33,10 +35,10 @@ export const Colors = {
   textMuted:     '#9CA3AF',
   textOnPrimary: '#FFFFFF',
 
-  // Dark-mode / navy (web dashboard)
-  navy:          '#0D1B2A',
-  navyDark:      '#050D1B',
-  navyCard:      '#0D1F35',
+  // Dark-mode / brand forest green
+  navy:          '#0A2810',
+  navyDark:      '#082208',
+  navyCard:      '#0D2B0D',
 } as const
 
 export const Typography = {

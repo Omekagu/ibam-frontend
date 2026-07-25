@@ -47,6 +47,7 @@ export default function BookDoctor () {
   const [duration,     setDuration]     = useState(30)
   const [booking,      setBooking]      = useState(false)
   const [booked,       setBooked]       = useState(false)
+  const [paymentUrl,   setPaymentUrl]   = useState('')
   const [error,        setError]        = useState('')
 
   function typeFeeFor (doctor: Doctor, t: typeof TYPES[number]): number {
@@ -94,7 +95,7 @@ export default function BookDoctor () {
     setError('')
     try {
       const scheduledAt = new Date(`${date}T${slot.startTime}`).toISOString()
-      await api.post('/appointments/book', {
+      const apptRes = await api.post('/appointments/book', {
         doctorId: selected.user._id,
         scheduledAt,
         type,
@@ -103,6 +104,17 @@ export default function BookDoctor () {
         isUrgent,
         sessionDurationMinutes: duration,
       })
+      const appt = apptRes.data.data?.appointment
+      if (appt?.consultationFee > 0) {
+        // Initiate Paystack payment immediately after booking
+        const payRes = await api.post('/payments/initiate', {
+          type: 'consultation',
+          serviceId: appt._id,
+          amount: appt.consultationFee,
+        })
+        const url: string | undefined = payRes.data.data?.authorizationUrl
+        if (url) { setPaymentUrl(url); setBooked(true); return }
+      }
       setBooked(true)
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Booking failed. Please try again.')
@@ -114,8 +126,19 @@ export default function BookDoctor () {
     <div className={s.successBox}>
       <div className={s.successIcon}>✅</div>
       <h2>Appointment Booked!</h2>
-      <p>Your {type} consultation with {selected?.user.name} is scheduled for {date} at {slot?.startTime}.</p>
-      <button className={s.doneBtn} onClick={() => router.push('/patient/appointments')}>View My Appointments</button>
+      {paymentUrl ? (
+        <>
+          <p>Your <strong>{type}</strong> consultation with <strong>{selected?.user.name}</strong> is confirmed for {date} at {slot?.startTime}.</p>
+          <p style={{ fontSize: '0.875rem', opacity: 0.75 }}>Complete payment to confirm your session.</p>
+          <button className={s.doneBtn} onClick={() => { window.location.href = paymentUrl }}>Pay Now →</button>
+          <button className={s.skipBtn} onClick={() => router.push('/patient/appointments')}>Pay Later</button>
+        </>
+      ) : (
+        <>
+          <p>Your <strong>{type}</strong> consultation with <strong>{selected?.user.name}</strong> is scheduled for {date} at {slot?.startTime}.</p>
+          <button className={s.doneBtn} onClick={() => router.push('/patient/appointments')}>View My Appointments</button>
+        </>
+      )}
     </div>
   )
 

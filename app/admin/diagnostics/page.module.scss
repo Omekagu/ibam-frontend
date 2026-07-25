@@ -11,13 +11,13 @@
 
 .table { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; overflow: hidden; }
 .thead {
-  display: grid; grid-template-columns: 1.5fr 2fr 1fr 1.5fr 0.8fr 1fr 1fr;
+  display: grid; grid-template-columns: 1.4fr 2fr 0.9fr 1.3fr 0.8fr 1fr 0.8fr 1.6fr;
   padding: 0.75rem 1.25rem; border-bottom: 1px solid $navy-border;
   font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--text-faint);
 }
 .trow {
-  display: grid; grid-template-columns: 1.5fr 2fr 1fr 1.5fr 0.8fr 1fr 1fr;
+  display: grid; grid-template-columns: 1.4fr 2fr 0.9fr 1.3fr 0.8fr 1fr 0.8fr 1.6fr;
   padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border);
   align-items: center;
   &:last-child { border-bottom: none; }
@@ -37,3 +37,51 @@
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
 .pgBtn { padding: 6px 14px; border-radius: $radius-sm; border: 1px solid $navy-border; background: var(--input-bg); color: var(--text-semi); font-size: 0.8rem; cursor: pointer; &:hover:not(:disabled) { background: var(--input-hover-bg); } &:disabled { opacity: 0.3; cursor: not-allowed; } }
+
+// ─── Action column ─────────────────────────────────────────
+.actions { display: flex; flex-direction: column; gap: 6px; }
+
+.approvalBtns { display: flex; gap: 5px; }
+.approvalPending {
+  display: block; font-size: 0.65rem; font-weight: 700; color: $warning;
+  background: rgba($warning, 0.1); padding: 1px 7px; border-radius: 999px; margin-top: 3px; width: fit-content;
+}
+
+.approveBtn {
+  padding: 4px 10px; border-radius: $radius-sm; border: none; cursor: pointer; font-size: 0.73rem; font-weight: 700;
+  background: rgba($success, 0.15); color: $success;
+  &:hover:not(:disabled) { background: rgba($success, 0.25); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+.rejectBtn {
+  padding: 4px 10px; border-radius: $radius-sm; border: none; cursor: pointer; font-size: 0.73rem; font-weight: 700;
+  background: rgba($danger, 0.12); color: $danger;
+  &:hover:not(:disabled) { background: rgba($danger, 0.22); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.assignBtn {
+  padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($primary, 0.4);
+  background: rgba($primary, 0.1); color: $accent; font-size: 0.73rem; font-weight: 700; cursor: pointer;
+  &:hover { background: rgba($primary, 0.2); }
+}
+
+.assignRow { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.labSelect {
+  flex: 1; min-width: 120px; background: var(--input-bg); border: 1px solid $navy-border;
+  border-radius: $radius-sm; padding: 4px 8px; color: var(--text); font-size: 0.73rem; outline: none;
+  option { background: #0D1829; }
+}
+.confirmBtn {
+  padding: 4px 10px; border-radius: $radius-sm; border: none; cursor: pointer; font-size: 0.73rem; font-weight: 700;
+  background: $primary; color: #fff;
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+.cancelBtn {
+  padding: 4px 8px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: transparent; color: var(--text-muted); font-size: 0.73rem; cursor: pointer;
+  &:hover { color: var(--text); }
+}
+
+.assignedLabel { font-size: 0.72rem; color: $success; font-weight: 600; }

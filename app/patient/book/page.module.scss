@@ -270,3 +270,14 @@
   @include btn-primary;
   margin-top: 0.5rem;
 }
+
+.skipBtn {
+  background: transparent;
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  &:hover { color: var(--text); border-color: rgba($primary,0.4); }
+}

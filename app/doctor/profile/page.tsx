@@ -16,6 +16,7 @@ interface Doctor {
   urgentAvailable: boolean
   urgentSurcharge: number
   fees?: { video?: number; audio?: number; chat?: number }
+  bankAccount?: { bankName?: string; accountNumber?: string; accountName?: string; bankCode?: string }
   user: { name: string; email: string; phone?: string }
 }
 
@@ -56,6 +57,14 @@ export default function DoctorProfile () {
   const [audioFee, setAudioFee] = useState<number | ''>('')
   const [chatFee, setChatFee] = useState<number | ''>('')
 
+  // Bank account
+  const [bankName,   setBankName]   = useState('')
+  const [acctNumber, setAcctNumber] = useState('')
+  const [acctName,   setAcctName]   = useState('')
+  const [bankCode,   setBankCode]   = useState('')
+  const [bankSaving, setBankSaving] = useState(false)
+  const [bankSaved,  setBankSaved]  = useState(false)
+
   // Availability: multiple days
   const [avDays, setAvDays] = useState<boolean[]>(Array(7).fill(false))
   const [avSlots, setAvSlots] = useState<Slot[]>([
@@ -82,6 +91,10 @@ export default function DoctorProfile () {
         setVideoFee(d.fees?.video ?? '')
         setAudioFee(d.fees?.audio ?? '')
         setChatFee(d.fees?.chat ?? '')
+        setBankName(d.bankAccount?.bankName ?? '')
+        setAcctNumber(d.bankAccount?.accountNumber ?? '')
+        setAcctName(d.bankAccount?.accountName ?? '')
+        setBankCode(d.bankAccount?.bankCode ?? '')
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -145,6 +158,18 @@ export default function DoctorProfile () {
       setTimeout(() => setAvSaved(false), 3000)
     } catch {}
     setAvSaving(false)
+  }
+
+  async function saveBankAccount () {
+    setBankSaving(true); setBankSaved(false)
+    try {
+      await api.put('/doctors/my/profile', {
+        bankAccount: { bankName: bankName.trim(), accountNumber: acctNumber.trim(), accountName: acctName.trim(), bankCode: bankCode.trim() },
+      })
+      setBankSaved(true)
+      setTimeout(() => setBankSaved(false), 3000)
+    } catch {}
+    setBankSaving(false)
   }
 
   function addSlot () {
@@ -504,6 +529,41 @@ export default function DoctorProfile () {
             </button>
           </div>
         </form>
+
+        {/* ── Payout Bank Account ───────────────── */}
+        <div className={s.panel} style={{ marginTop: '1.25rem' }}>
+          <div className={s.panelHead}>
+            <h3>Payout Account</h3>
+          </div>
+          <div className={s.panelBody}>
+            <p className={s.hint} style={{ marginBottom: '1rem' }}>
+              Enter your bank details so the platform can pay your earnings directly to your account.
+            </p>
+            <div className={s.row2}>
+              <div className={s.field}>
+                <label>Bank Name</label>
+                <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder='e.g. GTBank' />
+              </div>
+              <div className={s.field}>
+                <label>Bank Code <span style={{ fontWeight: 400, textTransform: 'none', fontSize: '0.72rem', color: 'var(--text-faint)' }}>(optional)</span></label>
+                <input value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder='e.g. 058' />
+              </div>
+            </div>
+            <div className={s.row2}>
+              <div className={s.field}>
+                <label>Account Number</label>
+                <input value={acctNumber} onChange={e => setAcctNumber(e.target.value)} placeholder='10-digit NUBAN' maxLength={10} />
+              </div>
+              <div className={s.field}>
+                <label>Account Name</label>
+                <input value={acctName} onChange={e => setAcctName(e.target.value)} placeholder='As it appears on bank record' />
+              </div>
+            </div>
+            <button type='button' className={s.saveBtn} disabled={bankSaving || !bankName || !acctNumber || !acctName} onClick={saveBankAccount}>
+              {bankSaving ? 'Saving…' : bankSaved ? '✓ Saved' : 'Save Payout Account'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
