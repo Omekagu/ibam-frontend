@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageShell from '@/components/PageShell'
 import s from './page.module.scss'
+import {
+  VideoCameraIcon, BoltIcon, MicroscopeIcon, PillIcon, HospitalIcon, TruckIcon,
+} from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Services — iBam Health',
@@ -11,7 +14,7 @@ export const metadata: Metadata = {
 
 const SERVICES = [
   {
-    tag: '🎥',
+    tagIcon: <VideoCameraIcon size={16} />,
     tagLabel: 'Video & Audio',
     title: 'Telemedicine Consultations',
     desc: 'See a verified Nigerian doctor from anywhere in the country. Our secure video and audio consultations let you describe your symptoms, get examined, and receive clinical guidance — all without leaving home.',
@@ -23,13 +26,13 @@ const SERVICES = [
     ],
     cta: 'Find a Doctor',
     href: '/doctors',
-    visualIcon: '🎥',
+    visualIcon: <VideoCameraIcon size={64} />,
     visualLabel: 'Video Consultation',
     visualSub:
       'Encrypted end-to-end. Works on 3G. No app download required for patients.'
   },
   {
-    tag: '🧠',
+    tagIcon: <BoltIcon size={16} />,
     tagLabel: 'AI-Powered',
     title: 'Smart Triage System',
     desc: 'Not sure if you need a doctor? Our AI-powered triage tool analyses your symptoms against clinical guidelines and either reassures you with self-care advice or escalates to the right specialist immediately.',
@@ -41,13 +44,13 @@ const SERVICES = [
     ],
     cta: 'Try Triage',
     href: '/signup',
-    visualIcon: '🧠',
+    visualIcon: <BoltIcon size={64} />,
     visualLabel: 'AI Symptom Checker',
     visualSub:
       'Trained on Nigerian epidemiological data. Supports English, Yoruba, Hausa, Igbo.'
   },
   {
-    tag: '🔬',
+    tagIcon: <MicroscopeIcon size={16} />,
     tagLabel: 'Diagnostics',
     title: 'Lab Tests & Diagnostics',
     desc: "Order blood panels, imaging, and specialty tests directly from your doctor's consultation. A certified phlebotomist visits your home to collect samples, and results are uploaded securely to your health profile.",
@@ -59,13 +62,13 @@ const SERVICES = [
     ],
     cta: 'Book a Lab Test',
     href: '/signup',
-    visualIcon: '🔬',
+    visualIcon: <MicroscopeIcon size={64} />,
     visualLabel: 'Home Sample Collection',
     visualSub:
       'Partnership with 50+ NAFDAC-accredited diagnostic centres nationwide.'
   },
   {
-    tag: '💊',
+    tagIcon: <PillIcon size={16} />,
     tagLabel: 'Digital Prescriptions',
     title: 'E-Prescriptions',
     desc: 'Every prescription issued on iBam is digitally signed, tamper-proof, and directly routed to our pharmacy network. No paper. No forged prescriptions. No pharmacy confusion.',
@@ -77,13 +80,13 @@ const SERVICES = [
     ],
     cta: 'Get Started',
     href: '/signup',
-    visualIcon: '💊',
+    visualIcon: <PillIcon size={64} />,
     visualLabel: 'Digital Prescription',
     visualSub:
       'Accepted at over 200 pharmacies in Enugu, Abuja, Port Harcourt, and Kano.'
   },
   {
-    tag: '🏥',
+    tagIcon: <HospitalIcon size={16} />,
     tagLabel: 'Nearby Care',
     title: 'Hospital & Clinic Locator',
     desc: "When you need in-person care, iBam helps you find the nearest accredited facility, check wait times, and pre-register — so you're not scrambling during a health crisis.",
@@ -95,12 +98,12 @@ const SERVICES = [
     ],
     cta: 'Find Nearby Care',
     href: '/signup',
-    visualIcon: '🏥',
+    visualIcon: <HospitalIcon size={64} />,
     visualLabel: 'Facility Locator',
     visualSub: 'Real-time data from 500+ partner facilities across 36 states.'
   },
   {
-    tag: '🚚',
+    tagIcon: <TruckIcon size={16} />,
     tagLabel: 'Delivery',
     title: 'Pharmacy Delivery',
     desc: 'Medications, supplements, and medical supplies delivered to your door within hours. All orders are fulfilled by NAFDAC-registered pharmacies and delivered by temperature-controlled logistics partners.',
@@ -112,7 +115,7 @@ const SERVICES = [
     ],
     cta: 'Order Medications',
     href: '/signup',
-    visualIcon: '🚚',
+    visualIcon: <TruckIcon size={64} />,
     visualLabel: 'Same-Day Delivery',
     visualSub:
       'Cold-chain compliant. Tamper-evident packaging. Real-time order tracking.'
@@ -143,7 +146,7 @@ export default function ServicesPage () {
             <div key={svc.title} className={s.service}>
               <div className={`${s.serviceText} reveal`}>
                 <div className={s.tag}>
-                  <span>{svc.tag}</span>
+                  <span>{svc.tagIcon}</span>
                   {svc.tagLabel}
                 </div>
                 <h2>{svc.title}</h2>

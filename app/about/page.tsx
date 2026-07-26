@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import PageShell from '@/components/PageShell'
 import s from './page.module.scss'
+import {
+  ShieldCheckIcon, GlobeIcon, BoltIcon, LightbulbIcon, LockIcon, HandshakeIcon,
+  StethoscopeIcon, UserIcon,
+} from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'About — iBam Health',
@@ -17,32 +21,32 @@ const STATS = [
 
 const VALUES = [
   {
-    icon: '🛡️',
+    icon: <ShieldCheckIcon size={28} />,
     title: 'Trust & Safety',
     desc: 'Every doctor is MDCN-verified. Every consultation is encrypted. Your health data is yours alone.'
   },
   {
-    icon: '🌍',
+    icon: <GlobeIcon size={28} />,
     title: 'Accessibility',
     desc: 'We believe quality healthcare is a right, not a privilege. Built to work on affordable data and basic devices.'
   },
   {
-    icon: '⚡',
+    icon: <BoltIcon size={28} />,
     title: 'Speed & Reliability',
     desc: 'Triage in minutes. Doctor match in seconds. Lab results delivered before your next cup of tea.'
   },
   {
-    icon: '💡',
+    icon: <LightbulbIcon size={28} />,
     title: 'Clinical Excellence',
     desc: 'Our medical advisory board reviews clinical protocols quarterly to keep iBam at the frontier of evidence-based medicine.'
   },
   {
-    icon: '🔒',
+    icon: <LockIcon size={28} />,
     title: 'Privacy First',
     desc: 'NDPR compliant. End-to-end encrypted. We never sell your data to insurers, pharma, or any third party.'
   },
   {
-    icon: '🤝',
+    icon: <HandshakeIcon size={28} />,
     title: 'Community Impact',
     desc: '10% of profits fund rural health outreach programmes across underserved communities in Nigeria.'
   }
@@ -50,49 +54,49 @@ const VALUES = [
 
 const TEAM = [
   {
-    emoji: '👨🏿‍⚕️',
+    initials: 'EO',
     name: 'Dr. Emeka Okonkwo',
     role: 'Chief Medical Officer',
     dept: 'Internal Medicine, University of Enugu'
   },
   {
-    emoji: '👩🏾‍💻',
+    initials: 'ZB',
     name: 'Zainab Bello',
     role: 'CEO & Co-Founder',
     dept: 'Previously at Flutterwave, MIT Media Lab'
   },
   {
-    emoji: '👨🏽‍💼',
+    initials: 'TA',
     name: 'Tunde Adeyemi',
     role: 'CTO',
     dept: 'Ex-Google, MSc Software Engineering'
   },
   {
-    emoji: '👩🏿‍⚕️',
+    initials: 'FS',
     name: 'Dr. Fatima Suleiman',
     role: 'Head of Telemedicine',
     dept: 'OB-GYN, University of Abuja'
   },
   {
-    emoji: '👨🏾‍🔬',
+    initials: 'CO',
     name: 'Chidi Obi',
     role: 'Head of Diagnostics',
     dept: 'Clinical Pathologist, LUTH'
   },
   {
-    emoji: '👩🏽‍💼',
+    initials: 'AM',
     name: 'Aisha Mohammed',
     role: 'VP Operations',
     dept: 'MBA, Enugu Business School'
   },
   {
-    emoji: '👨🏿‍🎨',
+    initials: 'SA',
     name: 'Seun Adeleke',
     role: 'Head of Product Design',
     dept: 'UX Lead, ex-Andela'
   },
   {
-    emoji: '👩🏾‍⚕️',
+    initials: 'GE',
     name: 'Dr. Grace Eze',
     role: 'Medical Advisory Board',
     dept: 'Cardiology, University of Benin'
@@ -191,7 +195,7 @@ export default function AboutPage () {
           <div className={`${s.teamGrid} reveal-stagger`}>
             {TEAM.map(m => (
               <div key={m.name} className={`${s.teamCard} reveal`}>
-                <div className={s.avatar}>{m.emoji}</div>
+                <div className={s.avatar}>{m.initials}</div>
                 <h3>{m.name}</h3>
                 <div className={s.role}>{m.role}</div>
                 <div className={s.dept}>{m.dept}</div>

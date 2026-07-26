@@ -10,22 +10,22 @@ export const metadata: Metadata = {
 
 const INFO = [
   {
-    icon: '📧',
+    icon: <MailIcon size={22} />,
     title: 'Email Us',
     body: 'support@ibamhealth.ng\npartners@ibamhealth.ng'
   },
   {
-    icon: '📞',
+    icon: <PhoneIcon size={22} />,
     title: 'Call Us',
     body: '+234 700 IBAM HEALTH\nMon–Fri, 8 AM – 8 PM'
   },
   {
-    icon: '📍',
+    icon: <MapPinIcon size={22} />,
     title: 'Head Office',
     body: '14 Adeola Odeku Street\nVictoria Island, Enugu'
   },
   {
-    icon: '💬',
+    icon: <ChatIcon size={22} />,
     title: 'Live Chat',
     body: 'Available in the app 24/7\nAverage response: < 3 minutes'
   }
