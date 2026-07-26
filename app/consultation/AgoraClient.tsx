@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { AlertTriangleIcon, MicOffIcon } from '@/components/icons'
 import AgoraRTC, {
   IAgoraRTCClient,
   ICameraVideoTrack,
@@ -149,7 +150,7 @@ export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly
   if (error) {
     return (
       <div className={s.agoraError}>
-        <span>⚠️</span>
+        <AlertTriangleIcon size={24} />
         <p>{error}</p>
       </div>
     )
@@ -168,7 +169,7 @@ export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly
         {joining && <p className={s.connectingLabel}>Connecting…</p>}
         {!joining && !remoteJoined && <p className={s.connectingLabel}>Waiting for participant…</p>}
         {remoteJoined && <p className={s.connectedLabel}>● Connected</p>}
-        {!micOn && <div className={s.mutedBanner}>🔇 Mic muted</div>}
+        {!micOn && <div className={s.mutedBanner}><MicOffIcon size={14} /> Mic muted</div>}
       </div>
     )
   }

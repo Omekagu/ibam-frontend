@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { SearchIcon } from '@/components/icons'
 
 interface Patient {
   id: string
@@ -58,7 +59,7 @@ export default function DoctorPatients () {
       <div className={s.header}>
         <p className={s.count}>{patients.length} unique patient{patients.length !== 1 ? 's' : ''}</p>
         <div className={s.searchBar}>
-          <span className={s.searchIcon}>🔍</span>
+          <span className={s.searchIcon}><SearchIcon size={16} /></span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}

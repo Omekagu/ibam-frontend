@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, FormEvent, ChangeEvent } from 'react'
 import Image from 'next/image'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
 
 interface Doctor {
   bio?: string
@@ -251,7 +252,7 @@ export default function DoctorProfile () {
               onClick={() => avatarRef.current?.click()}
               title='Change photo'
             >
-              {avatarUploading ? '…' : '📷'}
+              {avatarUploading ? '…' : <CameraIcon size={14} />}
             </button>
             <input ref={avatarRef} type='file' accept='image/*' onChange={uploadAvatar} style={{ display: 'none' }} />
           </div>
@@ -402,7 +403,7 @@ export default function DoctorProfile () {
               </label>
               <div className={s.row3}>
                 <div>
-                  <p className={s.typeLabel}>📹 Video</p>
+                  <p className={s.typeLabel}><VideoCameraIcon size={14} /> Video</p>
                   <input
                     type='number'
                     min={0}
@@ -416,7 +417,7 @@ export default function DoctorProfile () {
                   />
                 </div>
                 <div>
-                  <p className={s.typeLabel}>📞 Audio</p>
+                  <p className={s.typeLabel}><PhoneIcon size={14} /> Audio</p>
                   <input
                     type='number'
                     min={0}
@@ -430,7 +431,7 @@ export default function DoctorProfile () {
                   />
                 </div>
                 <div>
-                  <p className={s.typeLabel}>💬 Chat</p>
+                  <p className={s.typeLabel}><ChatIcon size={14} /> Chat</p>
                   <input
                     type='number'
                     min={0}

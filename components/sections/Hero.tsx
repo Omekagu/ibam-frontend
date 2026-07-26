@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import s from './Hero.module.scss'
+import { StethoscopeIcon, VideoCameraIcon } from '@/components/icons'
 
 /* ── Flip carousel scenes ──────────────────────────────
    Drop images in /public/images/ to replace the gradient cards.
@@ -161,7 +162,7 @@ export default function Hero () {
                   <div className={s.sceneStrip}>
                     <div className={s.stripRow}>
                       <div className={s.stripDoc}>
-                        <span className={s.stripAvatar}>👨🏿‍⚕️</span>
+                        <span className={s.stripAvatar}><StethoscopeIcon size={18} /></span>
                         <div>
                           <div className={s.stripName}>Dr. Amara Nwosu</div>
                           <div className={s.stripSpec}>Cardiologist</div>
@@ -284,7 +285,7 @@ export default function Hero () {
               }}
             />
             <div className={s.videoPlaceholder}>
-              <div className={s.videoPlaceholderIcon}>🎥</div>
+              <div className={s.videoPlaceholderIcon}><VideoCameraIcon size={40} /></div>
               <p>
                 Drop your demo video at <code>/public/videos/demo.mp4</code>
               </p>

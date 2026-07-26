@@ -53,7 +53,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
       </Link>
       <div className={s.doctorCard}>
         <div className={s.avatar}>
-          {user?.name ? user.name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase() : '👨‍⚕️'}
+          {user?.name ? user.name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase() : 'Dr'}
         </div>
         <div className={s.doctorInfo}>
           <p>{user?.name ?? 'Doctor'}</p>

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, FormEvent } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { PillIcon, BeakerIcon } from '@/components/icons'
 
 interface SubItem  { name: string; price: number; qty: number }
 interface TestItem { name: string; price: number }
@@ -280,7 +281,7 @@ export default function SubscriptionsPage () {
                   <div className={s.cardTop}>
                     <div>
                       <span className={sub.type === 'drug' ? s.typeDrug : s.typeTest}>
-                        {sub.type === 'drug' ? '💊 Drugs' : '🧪 Tests'}
+                        {sub.type === 'drug' ? <><PillIcon size={13} /> Drugs</> : <><BeakerIcon size={13} /> Tests</>}
                       </span>
                       <p className={s.cardItems}>{items}</p>
                       <span className={s.cardMeta}>
