@@ -155,7 +155,7 @@ export default function DoctorAppointments () {
                       disabled={acting === a._id}
                       onClick={() => rejoinConsultation(a._id)}
                     >
-                      {acting === a._id ? '…' : '↩ Rejoin'}
+                      {acting === a._id ? '…' : 'Rejoin'}
                     </button>
                   )}
                   {isPending && !isSessionExpired(a.scheduledAt) && (
@@ -164,7 +164,7 @@ export default function DoctorAppointments () {
                       disabled={acting === a._id}
                       onClick={() => startConsultation(a._id)}
                     >
-                      {acting === a._id ? '…' : canStart ? '▶ Start Now' : 'Start'}
+                      {acting === a._id ? '…' : canStart ? 'Start Now' : 'Start'}
                     </button>
                   )}
                   {(isPending || isConfirmed) && (

@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import "./globals.scss";
 import ScrollReveal from "@/components/ScrollReveal";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import SessionSync from "@/components/SessionSync";
 
 const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito", weight: ["400","500","600","700","800","900"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
+          <SessionSync />
           {children}
           <ScrollReveal />
         </ThemeProvider>

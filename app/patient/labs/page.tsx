@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, FormEvent } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { MapPinIcon } from '@/components/icons'
 
 interface LabRequest {
   _id: string
@@ -155,7 +156,7 @@ export default function PatientLabs () {
                 <input type='text' value={homeAddr} onChange={e => setHomeAddr(e.target.value)}
                   placeholder='Your full address or nearest landmark…' className={s.locationInput} required />
                 <button type='button' className={s.gpsBtn} disabled={gpsLoading} onClick={useGPS}>
-                  {gpsLoading ? '…' : '📍 GPS'}
+                  {gpsLoading ? '…' : <><MapPinIcon size={13} /> GPS</>}
                 </button>
               </div>
               {homeCoords && <p className={s.coordsNote}>GPS: {homeCoords.lat.toFixed(5)}, {homeCoords.lng.toFixed(5)}</p>}

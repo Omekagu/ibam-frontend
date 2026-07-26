@@ -1,5 +1,6 @@
 import Link from "next/link";
 import s from "./AppDownload.module.scss";
+import { StethoscopeIcon, MicroscopeIcon, PillIcon, HeartPulseIcon, VideoCameraIcon } from "@/components/icons";
 
 const FEATURES = [
   "Secure biometric login",
@@ -77,27 +78,31 @@ export default function AppDownload() {
               </div>
 
               <div className={s.phoneCard}>
-                <p className={s.greeting}>Good morning 👋</p>
+                <p className={s.greeting}>Good morning</p>
                 <p className={s.sub}>John Doe</p>
                 <div className={s.scoreRow}>
                   <div>
                     <div className={s.scoreLabel}>Health Score</div>
                     <div className={s.scoreVal}>86 / 100</div>
                   </div>
-                  <span className={s.heart}>❤️</span>
+                  <span className={s.heart}><HeartPulseIcon size={18} /></span>
                 </div>
               </div>
 
               <div className={s.phoneGrid}>
-                {["👨‍⚕️ Doctor", "🔬 Lab Test", "💊 Pharmacy"].map((item) => (
-                  <div key={item} className={s.phoneGridItem}>{item}</div>
+                {[
+                  { label: 'Doctor',    icon: <StethoscopeIcon size={14} /> },
+                  { label: 'Lab Test',  icon: <MicroscopeIcon size={14} /> },
+                  { label: 'Pharmacy',  icon: <PillIcon size={14} /> },
+                ].map((item) => (
+                  <div key={item.label} className={s.phoneGridItem} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{item.icon} {item.label}</div>
                 ))}
               </div>
 
               <div className={s.phoneAppt}>
                 <div className={s.apptTitle}>Next Appointment</div>
                 <div className={s.apptRow}>
-                  <div className={s.apptAvatar}>🎥</div>
+                  <div className={s.apptAvatar}><VideoCameraIcon size={16} /></div>
                   <div>
                     <div className={s.apptName}>Dr. Amara Nwosu</div>
                     <div className={s.apptTime}>Tomorrow · 10:00 AM</div>

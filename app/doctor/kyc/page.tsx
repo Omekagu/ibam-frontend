@@ -3,6 +3,10 @@ import { useState, useRef, useEffect, DragEvent, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import {
+  CheckCircleIcon, HourglassIcon, SearchIcon, MailIcon,
+  FolderIcon, DocumentIcon, CameraIcon,
+} from '@/components/icons'
 
 const STEPS = ['MDCN Details', 'NIN Verify', 'Face Match', 'Upload Document']
 
@@ -249,7 +253,7 @@ export default function DoctorKYCPage () {
                 <img src={selfiePreview} className={s.selfiePreview} alt='Selfie preview' />
               ) : (
                 <div className={s.selfieEmpty}>
-                  <span>🤳</span>
+                  <CameraIcon size={32} />
                   <p>No photo yet</p>
                 </div>
               )}
@@ -264,7 +268,7 @@ export default function DoctorKYCPage () {
               />
 
               <button className={s.cameraBtn} onClick={() => selfieRef.current?.click()}>
-                📷 {selfiePreview ? 'Retake Photo' : 'Take Selfie / Upload'}
+                <CameraIcon size={14} /> {selfiePreview ? 'Retake Photo' : 'Take Selfie / Upload'}
               </button>
             </div>
 
@@ -302,14 +306,14 @@ export default function DoctorKYCPage () {
                 accept='.pdf,.jpg,.jpeg,.png'
                 onChange={e => e.target.files?.[0] && setFile(e.target.files[0])}
               />
-              <div className={s.uploadIcon}>📁</div>
+              <div className={s.uploadIcon}><FolderIcon size={32} /></div>
               <p className={s.uploadTitle}>{dragging ? 'Drop file here' : 'Click or drag & drop'}</p>
               <p className={s.uploadSub}>PDF, JPG, PNG up to 10 MB</p>
             </div>
 
             {file && (
               <div className={s.uploadedFile}>
-                <span>📄</span>
+                <DocumentIcon size={16} />
                 <p>{file.name}</p>
               </div>
             )}
@@ -330,7 +334,7 @@ export default function DoctorKYCPage () {
           <div className={s.awaiting}>
             {kycStatus === 'approved' ? (
               <>
-                <div className={`${s.awaitingIcon} ${s.approvedIcon}`}>✅</div>
+                <div className={`${s.awaitingIcon} ${s.approvedIcon}`}><CheckCircleIcon size={48} /></div>
                 <h2 className={s.awaitingTitle}>KYC Approved!</h2>
                 <p className={s.awaitingText}>
                   Your identity and credentials have been verified. You can now accept patient consultations on iBam Health.
@@ -338,7 +342,7 @@ export default function DoctorKYCPage () {
               </>
             ) : (
               <>
-                <div className={s.awaitingIcon}>⏳</div>
+                <div className={s.awaitingIcon}><HourglassIcon size={48} /></div>
                 <h2 className={s.awaitingTitle}>Application Submitted!</h2>
                 <p className={s.awaitingText}>
                   Your KYC is under review by our medical team. This usually takes 1–2 business days.
@@ -348,15 +352,15 @@ export default function DoctorKYCPage () {
             )}
 
             <div className={s.checklist}>
-              <div className={s.checkItem}><span>✅</span> MDCN number recorded</div>
-              <div className={s.checkItem}><span>✅</span> NIN identity verified</div>
-              <div className={s.checkItem}><span>✅</span> Face match complete</div>
-              <div className={s.checkItem}><span>✅</span> License document uploaded</div>
+              <div className={s.checkItem}><CheckCircleIcon size={14} /> MDCN number recorded</div>
+              <div className={s.checkItem}><CheckCircleIcon size={14} /> NIN identity verified</div>
+              <div className={s.checkItem}><CheckCircleIcon size={14} /> Face match complete</div>
+              <div className={s.checkItem}><CheckCircleIcon size={14} /> License document uploaded</div>
               {kycStatus === 'approved'
-                ? <div className={s.checkItem}><span>✅</span> Admin review complete</div>
-                : <div className={s.checkItem}><span>🔍</span> Admin review in progress</div>
+                ? <div className={s.checkItem}><CheckCircleIcon size={14} /> Admin review complete</div>
+                : <div className={s.checkItem}><SearchIcon size={14} /> Admin review in progress</div>
               }
-              <div className={s.checkItem}><span>📧</span> Email notification on approval</div>
+              <div className={s.checkItem}><MailIcon size={14} /> Email notification on approval</div>
             </div>
 
             <button className={s.nextBtn} onClick={() => router.push('/doctor')}>

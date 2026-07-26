@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
+import {
+  StethoscopeIcon, MicroscopeIcon, ClipboardIcon, ThermometerIcon,
+  PillIcon, CalendarIcon,
+} from '@/components/icons'
 
 interface Appointment {
   _id: string
@@ -22,10 +26,10 @@ interface PatientProfile {
 }
 
 const QUICK_ACTIONS = [
-  { icon: '🩺', bg: 'rgba(10,143,108,0.15)', label: 'Book Doctor',    sub: 'See a doctor now',    href: '/patient/book' },
-  { icon: '🔬', bg: 'rgba(59,130,246,0.12)', label: 'Lab Tests',      sub: 'Order diagnostics',   href: '/patient/labs' },
-  { icon: '📋', bg: 'rgba(245,158,11,0.12)', label: 'Health Records', sub: 'View prescriptions',  href: '/patient/records' },
-  { icon: '🤒', bg: 'rgba(239,68,68,0.1)',   label: 'Symptom Check',  sub: 'AI triage',           href: '/patient/triage' },
+  { icon: <StethoscopeIcon size={22} />, bg: 'rgba(10,143,108,0.15)', label: 'Book Doctor',    sub: 'See a doctor now',    href: '/patient/book' },
+  { icon: <MicroscopeIcon size={22} />,  bg: 'rgba(59,130,246,0.12)', label: 'Lab Tests',      sub: 'Order diagnostics',   href: '/patient/labs' },
+  { icon: <ClipboardIcon size={22} />,   bg: 'rgba(245,158,11,0.12)', label: 'Health Records', sub: 'View prescriptions',  href: '/patient/records' },
+  { icon: <ThermometerIcon size={22} />, bg: 'rgba(239,68,68,0.1)',   label: 'Symptom Check',  sub: 'AI triage',           href: '/patient/triage' },
 ]
 
 export default function PatientDashboard () {
@@ -64,14 +68,14 @@ export default function PatientDashboard () {
   return (
     <>
       <div className={s.greeting}>
-        <h1>Hello, {(user?.name ?? 'there').split(' ')[0]} 👋</h1>
+        <h1>Hello, {(user?.name ?? 'there').split(' ')[0]}</h1>
         <p>How are you feeling today? Your health is our priority.</p>
       </div>
 
       <div className={s.quickActions}>
         {QUICK_ACTIONS.map(q => (
           <Link key={q.label} href={q.href} className={s.quickCard}>
-            <div className={s.quickIcon} style={{ background: q.bg }}>{q.icon}</div>
+            <div className={s.quickIcon} style={{ background: q.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{q.icon}</div>
             <p className={s.quickLabel}>{q.label}</p>
             <p className={s.quickSub}>{q.sub}</p>
           </Link>
@@ -125,7 +129,7 @@ export default function PatientDashboard () {
               <div className={s.healthRow}><span>Medical History</span><span>{profile?.medicalHistory?.length ? profile.medicalHistory.length + ' records' : 'None'}</span></div>
             </div>
             <button className={s.triageBtn} onClick={() => router.push('/patient/triage')}>
-              🤒 Check Symptoms Now
+              <ThermometerIcon size={14} /> Check Symptoms Now
             </button>
           </div>
 
@@ -135,13 +139,13 @@ export default function PatientDashboard () {
             </div>
             <div className={s.recordLinks}>
               <Link href='/patient/records' className={s.recordLink}>
-                <span>💊</span><div><p>My Prescriptions</p><span>View all e-prescriptions</span></div>
+                <PillIcon size={18} /><div><p>My Prescriptions</p><span>View all e-prescriptions</span></div>
               </Link>
               <Link href='/patient/labs' className={s.recordLink}>
-                <span>🔬</span><div><p>Lab Results</p><span>View diagnostic results</span></div>
+                <MicroscopeIcon size={18} /><div><p>Lab Results</p><span>View diagnostic results</span></div>
               </Link>
               <Link href='/patient/appointments' className={s.recordLink}>
-                <span>📅</span><div><p>All Appointments</p><span>Past and upcoming</span></div>
+                <CalendarIcon size={18} /><div><p>All Appointments</p><span>Past and upcoming</span></div>
               </Link>
             </div>
           </div>

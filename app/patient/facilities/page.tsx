@@ -2,6 +2,10 @@
 import { useState } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import {
+  HospitalIcon, StethoscopeIcon, PillIcon, MicroscopeIcon, SirenIcon,
+  MapPinIcon, ClockIcon, PhoneIcon, GlobeIcon, MapIcon, CheckCircleIcon,
+} from '@/components/icons'
 
 interface Facility {
   _id: string
@@ -25,12 +29,16 @@ const TYPES = [
   { value: 'emergency', label: 'Emergency' },
 ]
 
-const TYPE_ICON: Record<string, string> = {
-  hospital:  '🏥',
-  clinic:    '🩺',
-  pharmacy:  '💊',
-  lab:       '🔬',
-  emergency: '🚨',
+function FacilityTypeIcon ({ type }: { type: string }) {
+  const p = { size: 20 as const }
+  switch (type) {
+    case 'hospital':  return <HospitalIcon {...p} />
+    case 'clinic':    return <StethoscopeIcon {...p} />
+    case 'pharmacy':  return <PillIcon {...p} />
+    case 'lab':       return <MicroscopeIcon {...p} />
+    case 'emergency': return <SirenIcon {...p} />
+    default:          return <HospitalIcon {...p} />
+  }
 }
 
 const RADII = [
@@ -101,7 +109,7 @@ export default function FacilitiesPage () {
       {/* Location prompt */}
       {!located && (
         <div className={s.locateCard}>
-          <span className={s.locateEmoji}>📍</span>
+          <span className={s.locateEmoji}><MapPinIcon size={24} /></span>
           <div className={s.locateText}>
             <p className={s.locateTitle}>Share your location</p>
             <p className={s.locateSub}>We need your location to find facilities nearby.</p>
@@ -153,32 +161,32 @@ export default function FacilitiesPage () {
           {facilities.map(f => (
             <div key={f._id} className={s.card}>
               <div className={s.cardTop}>
-                <span className={s.typeIcon}>{TYPE_ICON[f.type] ?? '🏥'}</span>
+                <span className={s.typeIcon}><FacilityTypeIcon type={f.type} /></span>
                 <div className={s.cardMeta}>
                   <h3 className={s.cardName}>
                     {f.name}
-                    {f.isVerified && <span className={s.verifiedBadge}>✓ Verified</span>}
+                    {f.isVerified && <span className={s.verifiedBadge}><CheckCircleIcon size={12} /> Verified</span>}
                   </h3>
                   <span className={s.typeBadge}>{f.type}</span>
                 </div>
               </div>
 
-              <p className={s.cardAddress}>📍 {f.address}</p>
+              <p className={s.cardAddress}><MapPinIcon size={13} /> {f.address}</p>
 
               {f.operatingHours && (
-                <p className={s.cardDetail}>🕐 {f.operatingHours}</p>
+                <p className={s.cardDetail}><ClockIcon size={13} /> {f.operatingHours}</p>
               )}
 
               {(f.services?.length ?? 0) > 0 && (
-                <p className={s.cardDetail}>🩺 {f.services!.join(', ')}</p>
+                <p className={s.cardDetail}><StethoscopeIcon size={13} /> {f.services!.join(', ')}</p>
               )}
 
               <div className={s.cardActions}>
                 {f.phone && (
-                  <a className={s.actionLink} href={`tel:${f.phone}`}>📞 Call</a>
+                  <a className={s.actionLink} href={`tel:${f.phone}`}><PhoneIcon size={13} /> Call</a>
                 )}
                 {f.website && (
-                  <a className={s.actionLink} href={f.website} target='_blank' rel='noopener noreferrer'>🌐 Website</a>
+                  <a className={s.actionLink} href={f.website} target='_blank' rel='noopener noreferrer'><GlobeIcon size={13} /> Website</a>
                 )}
                 {f.address && (
                   <a
@@ -187,7 +195,7 @@ export default function FacilitiesPage () {
                     target='_blank'
                     rel='noopener noreferrer'
                   >
-                    🗺 Directions
+                    <MapIcon size={13} /> Directions
                   </a>
                 )}
               </div>

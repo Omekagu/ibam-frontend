@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState, useRef, FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { MapPinIcon, PillIcon, CheckCircleIcon, TruckIcon } from '@/components/icons'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string; instructions?: string }
 interface Prescription {
@@ -310,7 +311,7 @@ function PharmacyContent () {
                     <button type='button' className={s.gpsBtn}
                       disabled={shopPickupLoading}
                       onClick={() => useGPS(setShopPickupAddr, setShopPickupCoords, setShopPickupLoading)}>
-                      {shopPickupLoading ? '…' : '📍 Use GPS'}
+                      {shopPickupLoading ? '…' : <><MapPinIcon size={13} /> Use GPS</>}
                     </button>
                   </div>
                   {shopPickupCoords && <p className={s.coordsNote}>GPS: {shopPickupCoords.lat.toFixed(5)}, {shopPickupCoords.lng.toFixed(5)}</p>}
@@ -401,7 +402,7 @@ function PharmacyContent () {
                       onChange={e => setRxPickupAddr(e.target.value)} placeholder='Your address or nearest landmark…' />
                     <button type='button' className={s.gpsBtn}
                       onClick={() => useGPS(setRxPickupAddr, setRxPickupCoords, () => {})}>
-                      📍 Use GPS
+                      <MapPinIcon size={13} /> Use GPS
                     </button>
                   </div>
                   {rxPickupCoords && <p className={s.coordsNote}>GPS: {rxPickupCoords.lat.toFixed(5)}, {rxPickupCoords.lng.toFixed(5)}</p>}
@@ -425,7 +426,7 @@ function PharmacyContent () {
                 <div key={o._id} className={s.orderCard}>
                   <div className={s.orderTop}>
                     <div className={s.orderLeft}>
-                      <div className={s.orderIcon}>💊</div>
+                      <div className={s.orderIcon}><PillIcon size={18} /></div>
                       <div className={s.orderInfo}>
                         <p>{itemNames}</p>
                         <span>{o.pharmacy?.name ?? 'Pharmacy'} · {o.fulfillmentType === 'delivery' ? 'Delivery' : 'Pickup'}</span>
@@ -450,7 +451,10 @@ function PharmacyContent () {
                   )}
                   {['ready', 'dispatched'].includes(o.status) && (
                     <div className={s.orderFooter}><p className={s.readyNote}>
-                      {o.status === 'ready' ? `✅ Ready! ${o.fulfillmentType === 'pickup' ? 'Visit the pharmacy.' : 'Delivery on the way.'}` : '🚚 Your order is on the way!'}
+                      {o.status === 'ready'
+                        ? <><CheckCircleIcon size={13} /> Ready! {o.fulfillmentType === 'pickup' ? 'Visit the pharmacy.' : 'Delivery on the way.'}</>
+                        : <><TruckIcon size={13} /> Your order is on the way!</>
+                      }
                     </p></div>
                   )}
                 </div>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { StethoscopeIcon, DocumentIcon, CheckIcon, XIcon } from '@/components/icons'
 
 interface Doctor {
   _id: string
@@ -94,7 +95,7 @@ export default function AdminDoctorsPage () {
               <tr key={d._id}>
                 <td>
                   <div className={s.doctor}>
-                    <div className={s.avatar}>👨‍⚕️</div>
+                    <div className={s.avatar}><StethoscopeIcon size={18} /></div>
                     <div>
                       <p className={s.doctorName}>{d.user?.name ?? '—'}</p>
                       <p className={s.doctorEmail}>{d.user?.email ?? '—'}</p>
@@ -133,7 +134,7 @@ export default function AdminDoctorsPage () {
           <aside className={s.drawer}>
             <div className={s.drawerHead}>
               <h2>KYC Review</h2>
-              <button className={s.closeBtn} onClick={() => setSelected(null)}>✕</button>
+              <button className={s.closeBtn} onClick={() => setSelected(null)}><XIcon size={14} /></button>
             </div>
 
             <div className={s.drawerBody}>
@@ -149,7 +150,7 @@ export default function AdminDoctorsPage () {
               <div className={s.drawerSection}>
                 <h4>License Document</h4>
                 <div className={s.docPreview}>
-                  <span>📄</span>
+                  <DocumentIcon size={20} />
                   <div>
                     <p>Medical License Certificate</p>
                     {selected.licenseDocument
@@ -168,14 +169,14 @@ export default function AdminDoctorsPage () {
                   onClick={() => approve(selected._id)}
                   disabled={acting}
                 >
-                  {acting ? 'Processing…' : '✓ Approve Doctor'}
+                  {acting ? 'Processing…' : <><CheckIcon size={14} /> Approve Doctor</>}
                 </button>
                 <button
                   className={s.rejectBtn}
                   onClick={() => reject(selected._id)}
                   disabled={acting}
                 >
-                  ✕ Reject
+                  <XIcon size={14} /> Reject
                 </button>
               </div>
             )}

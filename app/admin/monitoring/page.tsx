@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { XIcon } from '@/components/icons'
 
 interface Participant { _id: string; name: string; email: string; phone?: string }
 interface Consultation {
@@ -184,7 +185,7 @@ export default function MonitoringPage () {
                     Suspend Patient
                   </button>
                 )}
-                <button className={s.closeBtn} onClick={() => setViewing(null)}>✕</button>
+                <button className={s.closeBtn} onClick={() => setViewing(null)}><XIcon size={14} /></button>
               </div>
             </div>
             <div className={s.msgList}>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { PillIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string; instructions?: string }
 interface Prescription {
@@ -69,10 +70,10 @@ export default function HealthRecords () {
     <>
       <div className={s.tabs}>
         <button className={`${s.tab} ${tab === 'prescriptions' ? s.active : ''}`} onClick={() => setTab('prescriptions')}>
-          💊 Prescriptions
+          <PillIcon size={14} /> Prescriptions
         </button>
         <button className={`${s.tab} ${tab === 'labs' ? s.active : ''}`} onClick={() => setTab('labs')}>
-          🔬 Lab Results
+          <MicroscopeIcon size={14} /> Lab Results
         </button>
       </div>
 
@@ -87,7 +88,7 @@ export default function HealthRecords () {
               <div key={p._id} className={s.card}>
                 <div className={s.cardTop} onClick={() => setExpanding(expanding === p._id ? null : p._id)}>
                   <div className={s.cardLeft}>
-                    <div className={s.rxIcon}>💊</div>
+                    <div className={s.rxIcon}><PillIcon size={18} /></div>
                     <div>
                       <p className={s.cardTitle}>{p.medications.map(m => m.name).join(', ')}</p>
                       <span>Dr. {p.doctor?.name ?? '—'} · {new Date(p.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -118,7 +119,7 @@ export default function HealthRecords () {
                         disabled={forwarding === p._id}
                         onClick={() => forwardToPharmacy(p._id)}
                       >
-                        {forwarding === p._id ? 'Forwarding…' : '💊 Send to Pharmacy'}
+                        {forwarding === p._id ? 'Forwarding…' : 'Send to Pharmacy'}
                       </button>
                     )}
                   </div>
@@ -138,7 +139,7 @@ export default function HealthRecords () {
                 <div key={req._id} className={s.card}>
                   <div className={s.cardTop}>
                     <div className={s.cardLeft}>
-                      <div className={s.rxIcon}>🔬</div>
+                      <div className={s.rxIcon}><MicroscopeIcon size={18} /></div>
                       <div>
                         <p className={s.cardTitle}>{req.tests.join(', ')}</p>
                         <span>{req.lab?.name ?? 'Lab not assigned'} · {req.collectionType.replace('_', ' ')} · {new Date(req.createdAt).toLocaleDateString("en-NG")}</span>
@@ -153,7 +154,7 @@ export default function HealthRecords () {
                       <p className={s.resultReady}>Your results are ready.</p>
                       {result.notes && <p className={s.resultNotes}>{result.notes}</p>}
                       <a href={result.fileUrl} target='_blank' rel='noreferrer' className={s.downloadBtn}>
-                        📄 Download Report
+                        <DocumentIcon size={13} /> Download Report
                       </a>
                     </div>
                   )}

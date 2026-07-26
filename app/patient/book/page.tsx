@@ -3,6 +3,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { VideoCameraIcon, PhoneIcon, ChatIcon, CheckCircleIcon } from '@/components/icons'
 
 interface Doctor {
   _id: string
@@ -124,7 +125,7 @@ export default function BookDoctor () {
 
   if (booked) return (
     <div className={s.successBox}>
-      <div className={s.successIcon}>✅</div>
+      <div className={s.successIcon}><CheckCircleIcon size={48} /></div>
       <h2>Appointment Booked!</h2>
       {paymentUrl ? (
         <>
@@ -227,7 +228,7 @@ export default function BookDoctor () {
             <div className={s.typeRow}>
               {TYPES.map(t => {
                 const tFee = typeFeeFor(selected, t)
-                const icon = t === 'video' ? '📹' : t === 'audio' ? '📞' : '💬'
+                const icon = t === 'video' ? <VideoCameraIcon size={14} /> : t === 'audio' ? <PhoneIcon size={14} /> : <ChatIcon size={14} />
                 return (
                   <button
                     key={t}
@@ -235,7 +236,7 @@ export default function BookDoctor () {
                     className={`${s.typeBtn} ${type === t ? s.typeActive : ''}`}
                     onClick={() => setType(t)}
                   >
-                    <span>{icon} {t}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{icon} {t}</span>
                     {tFee > 0 && <small>₦{tFee.toLocaleString()}</small>}
                   </button>
                 )

@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import s from './Navbar.module.scss'
+import { isLoggedIn, getStoredUser } from '@/lib/auth'
+import { dashboardFor } from '@/hooks/useAuthRedirect'
 
 const NAV = [
   { label: 'Services', href: '/services' },
@@ -12,8 +14,21 @@ const NAV = [
 ]
 
 export default function Navbar () {
-  const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [scrolled,   setScrolled]   = useState(false)
+  const [open,       setOpen]       = useState(false)
+  const [loggedIn,   setLoggedIn]   = useState(false)
+  const [dashboard,  setDashboard]  = useState('/patient')
+
+  useEffect(() => {
+    function sync () {
+      const authed = isLoggedIn()
+      setLoggedIn(authed)
+      if (authed) setDashboard(dashboardFor(getStoredUser()?.role))
+    }
+    sync()
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -51,12 +66,16 @@ export default function Navbar () {
           </ul>
 
           <div className={s.ctas}>
-            <Link href='/login' className={s.loginBtn}>
-              Log In
-            </Link>
-            <Link href='/signup' className={s.getStartedBtn}>
-              Get Started
-            </Link>
+            {loggedIn ? (
+              <Link href={dashboard} className={s.getStartedBtn}>
+                Dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link href='/login' className={s.loginBtn}>Log In</Link>
+                <Link href='/signup' className={s.getStartedBtn}>Get Started</Link>
+              </>
+            )}
           </div>
 
           <button
@@ -138,12 +157,16 @@ export default function Navbar () {
           {/* Bottom CTA + trust */}
           <div className={s.menuBottom}>
             <div className={s.menuCtas}>
-              <Link href='/login' className={s.menuLoginBtn} onClick={close}>
-                Log In
-              </Link>
-              <Link href='/signup' className={s.menuStartBtn} onClick={close}>
-                Get Started →
-              </Link>
+              {loggedIn ? (
+                <Link href={dashboard} className={s.menuStartBtn} onClick={close}>
+                  Go to Dashboard →
+                </Link>
+              ) : (
+                <>
+                  <Link href='/login' className={s.menuLoginBtn} onClick={close}>Log In</Link>
+                  <Link href='/signup' className={s.menuStartBtn} onClick={close}>Get Started →</Link>
+                </>
+              )}
             </div>
             <div className={s.menuTrust}>
               {['MDCN Verified', 'NDPR Compliant', 'Encrypted'].map(t => (

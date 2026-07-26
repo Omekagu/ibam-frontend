@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
+import { CalendarIcon, WalletIcon, ChartBarIcon, CreditCardIcon, HourglassIcon } from '@/components/icons'
 
 interface Appointment {
   _id: string
@@ -71,37 +72,37 @@ export default function DoctorDashboard () {
     <>
       {isApproved === false && (
         <div className={s.kycBanner}>
-          ⏳ Your account is pending admin approval. Some features are restricted until approved.
+          <HourglassIcon size={14} /> Your account is pending admin approval. Some features are restricted until approved.
           <Link href='/doctor/kyc' className={s.kycLink}>Check KYC status →</Link>
         </div>
       )}
 
       <div className={s.greeting}>
-        <h1>Good {hour()}, {(user?.name ?? 'Doctor').split(' ')[0]} 👋</h1>
+        <h1>Good {hour()}, {(user?.name ?? 'Doctor').split(' ')[0]}</h1>
         <p>{today} · {confirmed} confirmed appointment{confirmed !== 1 ? 's' : ''} today</p>
       </div>
 
       <div className={s.statsGrid}>
         <div className={s.statCard}>
-          <div className={s.statIcon}>📅</div>
+          <div className={s.statIcon}><CalendarIcon size={20} /></div>
           <p className={s.statLabel}>Today</p>
           <p className={s.statValue}>{appts.length}</p>
           <p className={s.statSub}>Appointments</p>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon}>💰</div>
+          <div className={s.statIcon}><WalletIcon size={20} /></div>
           <p className={s.statLabel}>Pending Payout</p>
           <p className={s.statValue}>₦{totals.pending.toLocaleString()}</p>
           <p className={s.statSub}>Available to withdraw</p>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon}>📊</div>
+          <div className={s.statIcon}><ChartBarIcon size={20} /></div>
           <p className={s.statLabel}>Net Earned</p>
           <p className={s.statValue}>₦{totals.net.toLocaleString()}</p>
           <p className={s.statSub}>All time</p>
         </div>
         <div className={s.statCard}>
-          <div className={s.statIcon}>💳</div>
+          <div className={s.statIcon}><CreditCardIcon size={20} /></div>
           <p className={s.statLabel}>Gross Revenue</p>
           <p className={s.statValue}>₦{totals.gross.toLocaleString()}</p>
           <p className={s.statSub}>Before platform cut</p>

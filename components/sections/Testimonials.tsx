@@ -2,7 +2,7 @@ import s from './Testimonials.module.scss'
 
 const TESTIMONIALS = [
   {
-    emoji: '👩🏾',
+    initials: 'CA',
     name: 'Chioma A.',
     location: 'Enugu',
     condition: 'Hypertension',
@@ -11,7 +11,7 @@ const TESTIMONIALS = [
       'I was skeptical about telemedicine but iBam Health changed my mind completely. My doctor reviewed my BP logs, adjusted my medication, and I never had to leave home. The prescription was at my pharmacy within hours.'
   },
   {
-    emoji: '👨🏿',
+    initials: 'EO',
     name: 'Emmanuel O.',
     location: 'Abuja',
     condition: 'Diabetes Management',
@@ -20,7 +20,7 @@ const TESTIMONIALS = [
       'Managing my diabetes used to mean countless hospital visits. Now I get quarterly reviews online, my lab results sync automatically, and my doctor tracks my glucose trends in real time. Life-changing.'
   },
   {
-    emoji: '👩🏽',
+    initials: 'FB',
     name: 'Fatima B.',
     location: 'Kano',
     condition: 'Maternal Care',
@@ -61,7 +61,7 @@ export default function Testimonials () {
               </div>
               <p className={s.quote}>{t.quote}</p>
               <div className={s.author}>
-                <div className={s.avatar}>{t.emoji}</div>
+                <div className={s.avatar}>{t.initials}</div>
                 <div>
                   <div className={s.name}>{t.name}</div>
                   <div className={s.meta}>{t.location}</div>

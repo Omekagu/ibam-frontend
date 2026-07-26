@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { login } from '@/lib/auth'
+import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import s from './page.module.scss'
 
 const SLIDES = [
@@ -15,6 +16,7 @@ const SLIDES = [
 type LoginMode = 'email' | 'phone'
 
 export default function LoginPage () {
+  useAuthRedirect()
   const router  = useRouter()
   const [slide,    setSlide]    = useState(0)
   const [mode,     setMode]     = useState<LoginMode>('email')

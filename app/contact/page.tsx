@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import PageShell from '@/components/PageShell'
 import s from './page.module.scss'
+import { MailIcon, PhoneIcon, MapPinIcon, ChatIcon } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Contact — iBam Health',

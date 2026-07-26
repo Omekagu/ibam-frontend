@@ -3,6 +3,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { ThermometerIcon } from '@/components/icons'
 
 interface Question {
   id: string
@@ -144,7 +145,7 @@ export default function PatientTriage () {
 
   if (phase === 'intro') return (
     <div className={s.intro}>
-      <div className={s.introIcon}>🤒</div>
+      <div className={s.introIcon}><ThermometerIcon size={48} /></div>
       <h2>Symptom Checker</h2>
       <p>Answer a few quick questions and we'll assess your symptoms and recommend next steps.</p>
       <ul className={s.introList}>

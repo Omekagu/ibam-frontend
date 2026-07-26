@@ -3,7 +3,9 @@ import { useState, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { register } from '@/lib/auth'
+import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import s from './page.module.scss'
+import { UserIcon, StethoscopeIcon } from '@/components/icons'
 
 const SPECIALTIES = [
   'General Practice', 'Internal Medicine', 'Paediatrics', 'OB-GYN',
@@ -12,6 +14,7 @@ const SPECIALTIES = [
 ]
 
 export default function SignupPage () {
+  useAuthRedirect()
   const router = useRouter()
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
   const [firstName, setFirstName] = useState('')
@@ -75,7 +78,7 @@ export default function SignupPage () {
             className={`${s.roleBtn} ${role === 'patient' ? s.active : ''}`}
             onClick={() => setRole('patient')}
           >
-            <span className={s.roleIcon}>🧑‍⚕️</span>
+            <span className={s.roleIcon}><UserIcon size={24} /></span>
             <span className={s.roleLabel}>I&apos;m a Patient</span>
             <span className={s.roleDesc}>Book doctors, manage health records</span>
           </button>
@@ -84,7 +87,7 @@ export default function SignupPage () {
             className={`${s.roleBtn} ${role === 'doctor' ? s.active : ''}`}
             onClick={() => setRole('doctor')}
           >
-            <span className={s.roleIcon}>👨‍⚕️</span>
+            <span className={s.roleIcon}><StethoscopeIcon size={24} /></span>
             <span className={s.roleLabel}>I&apos;m a Doctor</span>
             <span className={s.roleDesc}>Join as a verified physician</span>
           </button>

@@ -1,8 +1,12 @@
 'use client'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import {
+  UsersIcon, StethoscopeIcon, CalendarIcon, WalletIcon,
+  CreditCardIcon, CurrencyIcon,
+} from '@/components/icons'
 
 interface Stats {
   totalUsers: number
@@ -38,10 +42,10 @@ export default function AdminDashboard () {
   return (
     <>
       <div className={s.statsGrid}>
-        <StatCard icon='👥' color='rgba(10,143,108,0.15)' label='Total Users'          value={stats?.totalUsers?.toLocaleString() ?? '—'} />
-        <StatCard icon='🩺' color='rgba(0,229,160,0.12)'  label='Active Doctors'       value={stats?.totalDoctors?.toLocaleString() ?? '—'} />
-        <StatCard icon='📅' color='rgba(245,158,11,0.12)' label='Total Appointments'   value={stats?.totalAppointments?.toLocaleString() ?? '—'} />
-        <StatCard icon='💰' color='rgba(59,130,246,0.12)'  label='Total Revenue'       value={stats ? '₦' + (stats.totalRevenue / 100).toLocaleString() : '—'} />
+        <StatCard icon={<UsersIcon size={20} />}      color='rgba(10,143,108,0.15)' label='Total Users'        value={stats?.totalUsers?.toLocaleString() ?? '—'} />
+        <StatCard icon={<StethoscopeIcon size={20} />} color='rgba(0,229,160,0.12)'  label='Active Doctors'     value={stats?.totalDoctors?.toLocaleString() ?? '—'} />
+        <StatCard icon={<CalendarIcon size={20} />}    color='rgba(245,158,11,0.12)' label='Total Appointments' value={stats?.totalAppointments?.toLocaleString() ?? '—'} />
+        <StatCard icon={<CurrencyIcon size={20} />}    color='rgba(59,130,246,0.12)' label='Total Revenue'      value={stats ? '₦' + (stats.totalRevenue / 100).toLocaleString() : '—'} />
       </div>
 
       <div className={s.grid2}>
@@ -87,11 +91,11 @@ export default function AdminDashboard () {
           <div className={s.panelHead}><h3>Quick Links</h3></div>
           <div className={s.quickLinks}>
             {[
-              { href: '/admin/appointments', icon: '📅', label: 'View Appointments' },
-              { href: '/admin/payments',     icon: '💳', label: 'Payment History' },
-              { href: '/admin/payouts',      icon: '💸', label: 'Process Payouts' },
-              { href: '/admin/doctors',      icon: '🩺', label: 'KYC Queue' },
-              { href: '/admin/users',        icon: '👥', label: 'Manage Users' },
+              { href: '/admin/appointments', icon: <CalendarIcon size={16} />,    label: 'View Appointments' },
+              { href: '/admin/payments',     icon: <CreditCardIcon size={16} />,  label: 'Payment History' },
+              { href: '/admin/payouts',      icon: <WalletIcon size={16} />,      label: 'Process Payouts' },
+              { href: '/admin/doctors',      icon: <StethoscopeIcon size={16} />, label: 'KYC Queue' },
+              { href: '/admin/users',        icon: <UsersIcon size={16} />,       label: 'Manage Users' },
             ].map(l => (
               <Link key={l.href} href={l.href} className={s.quickLink}>
                 <span className={s.quickIcon}>{l.icon}</span>
@@ -105,7 +109,7 @@ export default function AdminDashboard () {
   )
 }
 
-function StatCard ({ icon, color, label, value }: { icon: string; color: string; label: string; value: string }) {
+function StatCard ({ icon, color, label, value }: { icon: React.ReactNode; color: string; label: string; value: string }) {
   return (
     <div className={s.statCard}>
       <div className={s.statIcon} style={{ background: color }}>{icon}</div>

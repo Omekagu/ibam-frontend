@@ -1,6 +1,12 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import {
+  CalendarIcon, CheckCircleIcon, XCircleIcon, ClockIcon, VideoCameraIcon,
+  FlagIcon, PillIcon, PackageIcon, MicroscopeIcon, CreditCardIcon,
+  StarIcon, NoSymbolIcon, HandshakeIcon, ClipboardIcon, BeakerIcon,
+  WalletIcon, BellIcon as BellSvg,
+} from '@/components/icons'
 
 interface Notif {
   _id: string
@@ -11,26 +17,29 @@ interface Notif {
   createdAt: string
 }
 
-const TYPE_ICON: Record<string, string> = {
-  appointment_booked:      '📅',
-  appointment_confirmed:   '✅',
-  appointment_cancelled:   '❌',
-  appointment_reminder:    '⏰',
-  consultation_started:    '🎥',
-  consultation_ended:      '🏁',
-  prescription_ready:      '💊',
-  pharmacy_order_update:   '📦',
-  lab_result_ready:        '🔬',
-  payment_success:         '💳',
-  subscription_activated:  '⭐',
-  subscription_cancelled:  '🚫',
-  doctor_approved:         '✅',
-  partner_approved:        '🤝',
-  drug_approval:           '💊',
-  order_approval:          '📋',
-  test_request_approval:   '🧪',
-  payout_processed:        '💰',
-  general:                 '🔔',
+function NotifIcon ({ type }: { type: string }) {
+  const props = { size: 16, style: { color: 'var(--text-muted)' } }
+  switch (type) {
+    case 'appointment_booked':     return <CalendarIcon {...props} />
+    case 'appointment_confirmed':  return <CheckCircleIcon {...props} style={{ color: '#22C55E' }} />
+    case 'appointment_cancelled':  return <XCircleIcon {...props} style={{ color: '#EF4444' }} />
+    case 'appointment_reminder':   return <ClockIcon {...props} />
+    case 'consultation_started':   return <VideoCameraIcon {...props} style={{ color: '#22C55E' }} />
+    case 'consultation_ended':     return <FlagIcon {...props} />
+    case 'prescription_ready':     return <PillIcon {...props} style={{ color: '#22C55E' }} />
+    case 'pharmacy_order_update':  return <PackageIcon {...props} />
+    case 'lab_result_ready':       return <MicroscopeIcon {...props} />
+    case 'payment_success':        return <CreditCardIcon {...props} style={{ color: '#22C55E' }} />
+    case 'subscription_activated': return <StarIcon {...props} style={{ color: '#F59E0B' }} />
+    case 'subscription_cancelled': return <NoSymbolIcon {...props} style={{ color: '#EF4444' }} />
+    case 'doctor_approved':        return <CheckCircleIcon {...props} style={{ color: '#22C55E' }} />
+    case 'partner_approved':       return <HandshakeIcon {...props} style={{ color: '#22C55E' }} />
+    case 'drug_approval':          return <PillIcon {...props} />
+    case 'order_approval':         return <ClipboardIcon {...props} />
+    case 'test_request_approval':  return <BeakerIcon {...props} />
+    case 'payout_processed':       return <WalletIcon {...props} style={{ color: '#22C55E' }} />
+    default:                       return <BellSvg {...props} />
+  }
 }
 
 function timeAgo (iso: string) {
@@ -105,7 +114,7 @@ export default function NotificationBell () {
           flexShrink: 0,
         }}
       >
-        <BellIcon />
+        <BellSvg size={17} />
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -4, right: -4,
@@ -161,7 +170,7 @@ export default function NotificationBell () {
           <div style={{ maxHeight: 420, overflowY: 'auto' }}>
             {notifs.length === 0 ? (
               <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-faint)', fontSize: 13 }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>🔔</div>
+                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><BellSvg size={28} style={{ color: 'var(--text-faint)' }} /></div>
                 No notifications yet
               </div>
             ) : notifs.map(n => (
@@ -180,9 +189,8 @@ export default function NotificationBell () {
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   background: 'var(--input-bg)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16,
                 }}>
-                  {TYPE_ICON[n.type] ?? '🔔'}
+                  <NotifIcon type={n.type} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
@@ -216,11 +224,3 @@ export default function NotificationBell () {
   )
 }
 
-function BellIcon () {
-  return (
-    <svg width='17' height='17' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2'
-        d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' />
-    </svg>
-  )
-}
