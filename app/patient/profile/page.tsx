@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, FormEvent } from 'react'
 import api from '@/lib/api'
+import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
 
 interface Profile {
@@ -14,9 +15,12 @@ interface Profile {
 }
 
 export default function PatientProfile () {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [name,    setName]    = useState('')
+  const cached = getStoredUser()
+  const [profile, setProfile] = useState<Profile | null>(
+    cached ? { name: cached.name, email: cached.email, role: cached.role, isVerified: false } : null
+  )
+  const [refreshing, setRefreshing] = useState(true)
+  const [name,    setName]    = useState(cached?.name ?? '')
   const [phone,   setPhone]   = useState('')
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
@@ -32,7 +36,7 @@ export default function PatientProfile () {
         setPhone(u.phone ?? '')
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => setRefreshing(false))
   }, [])
 
   async function save (e: FormEvent) {
@@ -43,6 +47,8 @@ export default function PatientProfile () {
     try {
       await api.put('/users/profile', { name, phone })
       setProfile(prev => prev ? { ...prev, name, phone } : prev)
+      const stored = getStoredUser()
+      if (stored) localStorage.setItem('user', JSON.stringify({ ...stored, name, phone }))
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err: unknown) {
@@ -50,8 +56,6 @@ export default function PatientProfile () {
     }
     setSaving(false)
   }
-
-  if (loading) return <div className={s.loading}>Loading profile…</div>
 
   return (
     <div className={s.grid}>
@@ -61,7 +65,7 @@ export default function PatientProfile () {
           <div className={s.avatar}>{(profile?.name ?? 'P')[0]}</div>
         </div>
         <p className={s.name}>{profile?.name}</p>
-        <p className={s.email}>{profile?.email}</p>
+        <p className={s.email}>{profile?.email}{refreshing && <span className={s.refreshing}> …</span>}</p>
         <div className={s.badges}>
           <span className={s.roleBadge}>{profile?.role}</span>
           {profile?.isVerified && <span className={s.verBadge}>Verified</span>}

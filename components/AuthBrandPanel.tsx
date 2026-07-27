@@ -27,6 +27,7 @@ export default function AuthBrandPanel () {
           alt={sl.label}
           fill
           priority={i === 0}
+          sizes="(min-width: 1024px) 50vw, 100vw"
           className={`${s.slideImg} ${i === slide ? s.slideImgActive : ''}`}
           style={{ objectFit: 'cover' }}
         />

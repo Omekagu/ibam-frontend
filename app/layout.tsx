@@ -8,8 +8,42 @@ import SessionSync from "@/components/SessionSync";
 const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito", weight: ["400","500","600","700","800","900"] });
 
 export const metadata: Metadata = {
-  title: "iBam Health — Quality Healthcare, Delivered",
-  description: "Book consultations, run lab tests, get e-prescriptions, and access trusted pharmacy delivery — all in one platform.",
+  title: {
+    default: 'iBam Health — Quality Healthcare, Delivered',
+    template: '%s — iBam Health',
+  },
+  description:
+    'Book consultations, run lab tests, get e-prescriptions, and access trusted pharmacy delivery — all in one platform. Accessible healthcare across Nigeria.',
+  applicationName: 'iBam Health',
+  keywords: ['healthcare', 'telemedicine', 'diagnostics', 'Nigeria', 'doctor consultation', 'lab tests', 'pharmacy', 'iBam'],
+  authors: [{ name: 'iBam Health' }],
+  icons: {
+    icon: '/Ibam Logo Png.png',
+    shortcut: '/Ibam Logo Png.png',
+    apple: '/Ibam Logo Png.png',
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'iBam Health',
+    title: 'iBam Health — Quality Healthcare, Delivered',
+    description:
+      'Book consultations, run lab tests, get e-prescriptions, and access trusted pharmacy delivery — all in one platform.',
+    images: [
+      {
+        url: '/1.png',
+        width: 1200,
+        height: 630,
+        alt: 'iBam Health — Digital Healthcare Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'iBam Health — Quality Healthcare, Delivered',
+    description:
+      'Book consultations, run lab tests, get e-prescriptions, and access trusted pharmacy delivery — all in one platform.',
+    images: ['/1.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

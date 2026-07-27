@@ -75,6 +75,7 @@ export default function AboutPage () {
           alt='iBam Health'
           fill
           priority
+          sizes="100vw"
           style={{ objectFit: 'cover', objectPosition: 'center' }}
           className={s.heroBg}
         />

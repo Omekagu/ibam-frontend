@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, FormEvent, ChangeEvent } from 'react'
 import Image from 'next/image'
 import api from '@/lib/api'
+import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
 import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
 
@@ -41,6 +42,7 @@ const DAYS = [
 const DURATIONS = [15, 20, 30, 45, 60, 90]
 
 export default function DoctorProfile () {
+  const cached = getStoredUser()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -63,7 +65,7 @@ export default function DoctorProfile () {
 
   // Avatar upload
   const avatarRef = useRef<HTMLInputElement>(null)
-  const [avatarUrl,     setAvatarUrl]     = useState('')
+  const [avatarUrl,     setAvatarUrl]     = useState(cached?.avatar ?? '')
   const [avatarUploading, setAvatarUploading] = useState(false)
 
   // Display name + social
@@ -233,8 +235,6 @@ export default function DoctorProfile () {
     return `₦${fee.toLocaleString()} / min`
   }
 
-  if (loading) return <div className={s.loading}>Loading profile…</div>
-
   return (
     <div className={s.grid}>
       {/* ── Summary card ──────────────────────────── */}
@@ -244,7 +244,7 @@ export default function DoctorProfile () {
             {avatarUrl ? (
               <Image src={avatarUrl} alt='Profile photo' fill style={{ objectFit: 'cover', borderRadius: '50%' }} />
             ) : (
-              <span>{doctor?.user.name?.[0]?.toUpperCase() ?? '?'}</span>
+              <span>{(doctor?.user.name ?? cached?.name)?.[0]?.toUpperCase() ?? '?'}</span>
             )}
             <button
               type='button'
@@ -257,8 +257,8 @@ export default function DoctorProfile () {
             <input ref={avatarRef} type='file' accept='image/*' onChange={uploadAvatar} style={{ display: 'none' }} />
           </div>
           <div>
-            <p className={s.docName}>{doctor?.displayName || doctor?.user.name}</p>
-            <p className={s.docSpec}>{doctor?.specialization}</p>
+            <p className={s.docName}>{doctor?.displayName || doctor?.user.name || cached?.name}</p>
+            <p className={s.docSpec}>{doctor?.specialization ?? (loading ? '…' : '')}</p>
             <span
               className={`${s.kycBadge} ${
                 doctor?.isApproved ? s.approved : s.pending
