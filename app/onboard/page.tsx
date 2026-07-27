@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import s from './page.module.scss'
 
 export default function OnboardPage () {
@@ -6,7 +7,7 @@ export default function OnboardPage () {
     <div className={s.page}>
       <div className={s.wrap}>
         <Link href='/' className={s.logo}>
-          <span className={s.mark}>iB</span>
+          <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
           <span>iBam <em>Health</em></span>
         </Link>
         <h1 className={s.title}>Partner with iBam Health</h1>

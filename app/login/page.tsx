@@ -30,7 +30,8 @@ export default function LoginPage () {
       const { user } = await login(payload)
       if (user.role === 'admin') router.push('/admin')
       else if (user.role === 'doctor') router.push('/doctor')
-      else if (user.role === 'pharmacy_partner') router.push('/partner/pharmacy')
+      else if (user.role === 'pharmacy_partner')
+        router.push('/partner/pharmacy')
       else if (user.role === 'lab_partner') router.push('/partner/lab')
       else router.push('/patient')
     } catch (err: unknown) {
@@ -50,8 +51,15 @@ export default function LoginPage () {
       <div className={s.formPanel}>
         <div className={s.formWrap}>
           <Link href='/' className={s.mobileHeader}>
-            <Image src='/logo.png' alt='iBam Health' width={36} height={36} />
-            <span>iBam <em>Health</em></span>
+            <Image
+              src='/Ibam Logo Png.png'
+              alt='iBam Health'
+              width={36}
+              height={36}
+            />
+            <span>
+              iBam <em>Health</em>
+            </span>
           </Link>
 
           <h1 className={s.formTitle}>Welcome back</h1>
@@ -64,15 +72,25 @@ export default function LoginPage () {
           <div className={s.modeToggle}>
             <button
               type='button'
-              className={`${s.modeBtn} ${mode === 'email' ? s.modeBtnActive : ''}`}
-              onClick={() => { setMode('email'); setError('') }}
+              className={`${s.modeBtn} ${
+                mode === 'email' ? s.modeBtnActive : ''
+              }`}
+              onClick={() => {
+                setMode('email')
+                setError('')
+              }}
             >
               Email
             </button>
             <button
               type='button'
-              className={`${s.modeBtn} ${mode === 'phone' ? s.modeBtnActive : ''}`}
-              onClick={() => { setMode('phone'); setError('') }}
+              className={`${s.modeBtn} ${
+                mode === 'phone' ? s.modeBtnActive : ''
+              }`}
+              onClick={() => {
+                setMode('phone')
+                setError('')
+              }}
             >
               Phone Number
             </button>

@@ -36,6 +36,15 @@ function persist (data: AuthResponse) {
 }
 
 export async function login (payload: LoginPayload): Promise<AuthResponse> {
+  // Clear any existing session before establishing a new one so two accounts
+  // can never coexist in the same browser storage.
+  const existing = localStorage.getItem('access_token')
+  if (existing) {
+    try { await api.post('/auth/logout') } catch { /* ignore */ }
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+  }
   const res = await api.post('/auth/login', payload)
   const data: AuthResponse = res.data.data
   persist(data)

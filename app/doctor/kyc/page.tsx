@@ -40,8 +40,10 @@ export default function DoctorKYCPage () {
   useEffect(() => {
     api.get('/kyc/status')
       .then(res => {
-        const { kycStatus: status, doctor } = res.data
-        const st = status ?? 'pending'
+        const payload = res.data.data ?? res.data
+        const user   = payload.user ?? payload
+        const doctor = payload.doctor
+        const st = user?.kycStatus ?? 'pending'
         setKycStatus(st)
         if (st === 'approved') {
           setStep(4)

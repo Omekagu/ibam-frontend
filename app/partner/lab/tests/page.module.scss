@@ -34,7 +34,7 @@
 }
 
 .tableHead {
-  display: grid; grid-template-columns: 1fr 140px 160px 36px;
+  display: grid; grid-template-columns: 1fr 140px 160px;
   gap: 10px; padding: 10px 16px;
   background: rgba(255,255,255,0.03); border-bottom: 1px solid $navy-border;
   span { font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
@@ -44,12 +44,14 @@
 .tableBody { display: flex; flex-direction: column; }
 
 .tableRow {
-  display: grid; grid-template-columns: 1fr 140px 160px 36px;
+  display: grid; grid-template-columns: 1fr 140px 160px;
   gap: 10px; align-items: center; padding: 8px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
   &:last-child { border-bottom: none; }
   &:hover { background: rgba(255,255,255,0.015); }
 }
+
+.cell { font-size: 0.82rem; color: rgba(255,255,255,0.75); }
 
 .input {
   width: 100%; background: rgba(255,255,255,0.05); border: 1px solid $navy-border;

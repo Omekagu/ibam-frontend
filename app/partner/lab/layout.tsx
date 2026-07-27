@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { logout } from '@/lib/auth'
 import s from './layout.module.scss'
@@ -13,7 +14,7 @@ export default function LabPartnerLayout ({ children }: { children: React.ReactN
     <div className={s.shell}>
       <aside className={s.sidebar}>
         <Link href='/partner/lab' className={s.logo}>
-          <span className={s.mark}>iB</span>
+          <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
           <span>iBam <em>Partner</em></span>
         </Link>
         <div className={s.partnerBadge}>Lab Portal</div>

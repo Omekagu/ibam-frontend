@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { logout, getStoredUser } from '@/lib/auth'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -62,7 +63,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const sidebarInner = (
     <>
       <Link href='/patient' className={s.sidebarLogo}>
-        <div className={s.logoMark}><span>iB</span></div>
+        <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
         <div className={s.logoText}><span>iBam</span><em>Health</em></div>
       </Link>
       <div className={s.userCard}>

@@ -64,12 +64,24 @@
   color: $accent;
   text-transform: uppercase;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
 }
 
 .docInfo { flex: 1; min-width: 0; }
 .docName { font-size: 0.875rem; font-weight: 700; color: var(--text); }
 .docSpec { font-size: 0.75rem; color: var(--text-muted); display: block; margin: 1px 0; }
-.docFee  { font-size: 0.75rem; color: $success; font-weight: 600; }
+
+.docMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.docRating { font-size: 0.7rem; color: $warning; font-weight: 700; }
+.docExp    { font-size: 0.7rem; color: var(--text-faint); }
+.docFee    { font-size: 0.7rem; color: $success; font-weight: 600; }
 
 .tick {
   font-size: 0.875rem;
@@ -98,13 +110,78 @@
 }
 
 .bookHead {
-  h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.bookAvatarWrap {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba($primary,0.12);
+  @include flex-center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $accent;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.bookHeadInfo {
+  flex: 1;
+  min-width: 0;
+  h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 2px; }
 }
 
 .bookSpec {
   font-size: 0.8125rem;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin: 0 0 6px;
+}
+
+.bookMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.bookRating { font-size: 0.75rem; color: $warning; font-weight: 700; em { font-style: normal; font-weight: 400; color: var(--text-faint); } }
+.bookExp    { font-size: 0.75rem; color: var(--text-faint); }
+
+.socialLinks {
+  display: flex;
+  gap: 6px;
+}
+.socialBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: $radius-sm;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s;
+  svg { width: 13px; height: 13px; }
+  &:hover { color: $accent; border-color: rgba($primary,0.4); background: rgba($primary,0.08); }
+}
+
+.qualsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.qualBadge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 3px 8px;
 }
 
 .bio {

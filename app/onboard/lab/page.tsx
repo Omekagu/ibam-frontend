@@ -1,6 +1,7 @@
 'use client'
 import { useState, FormEvent } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import api from '@/lib/api'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { CheckCircleIcon, XIcon } from '@/components/icons'
@@ -81,7 +82,7 @@ export default function LabOnboardPage () {
       <div className={s.formPanel}>
         <div className={s.formWrap}>
           <Link href='/' className={s.mobileLogo}>
-            <span className={s.mark}>iB</span>
+            <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
             <span className={s.brandName}>iBam <em>Health</em></span>
           </Link>
 

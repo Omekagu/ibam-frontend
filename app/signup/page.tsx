@@ -77,7 +77,12 @@ export default function SignupPage () {
       <div className={s.formPanel}>
         <div className={s.formWrap}>
           <Link href='/' className={s.mobileHeader}>
-            <Image src='/logo.png' alt='iBam Health' width={36} height={36} />
+            <Image
+              src='/Ibam Logo Png.png'
+              alt='iBam Health'
+              width={36}
+              height={36}
+            />
             <span>
               iBam <em>Health</em>
             </span>

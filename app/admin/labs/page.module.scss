@@ -31,10 +31,91 @@
 .approveBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($success,0.3); background: rgba($success,0.08); color: $success; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($success,0.16); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
 .suspendBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($danger,0.3); background: rgba($danger,0.07); color: $danger; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($danger,0.14); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
 
-.testsList { padding: 0 1.25rem 1.25rem; border-bottom: 1px solid var(--border); padding-top: 1rem; }
-.testsTable {
-  width: 100%; border-collapse: collapse; font-size: 0.8rem;
-  th { text-align: left; padding: 6px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.06); }
-  td { padding: 8px 10px; color: var(--text-semi); border-bottom: 1px solid rgba(255,255,255,0.03); }
-  tr:last-child td { border-bottom: none; }
+// ─── Test editor ─────────────────────────────────────
+.testEditor {
+  border-top: 1px solid $navy-border;
+  padding: 1.25rem;
+  background: rgba(0,0,0,0.15);
+}
+
+.editorHead { margin-bottom: 1rem; }
+.editorTitle { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+.editorSub   { font-size: 0.75rem; color: var(--text-faint); margin: 3px 0 0; }
+.editorErr   { font-size: 0.8rem; color: $danger; margin-bottom: 0.75rem; padding: 6px 10px; background: rgba($danger,0.08); border-radius: $radius-sm; }
+
+.tableHead {
+  display: grid;
+  grid-template-columns: 1fr 120px 140px 36px;
+  gap: 6px;
+  padding: 0 4px 6px;
+  span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 700; }
+}
+
+.tableBody { display: flex; flex-direction: column; gap: 6px; margin-bottom: 0.875rem; }
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 120px 140px 36px;
+  gap: 6px;
+  align-items: center;
+}
+
+.input {
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 6px 9px;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+}
+
+.removeBtn {
+  width: 30px; height: 30px;
+  border: 1px solid rgba($danger,0.25);
+  background: rgba($danger,0.06);
+  color: $danger;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  font-size: 0.75rem;
+  @include flex-center;
+  &:hover { background: rgba($danger,0.14); }
+}
+
+.editorFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.addRowBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $accent;
+  background: rgba($primary,0.08);
+  border: 1px dashed rgba($primary,0.3);
+  border-radius: $radius-sm;
+  padding: 6px 14px;
+  cursor: pointer;
+  &:hover { background: rgba($primary,0.16); }
+}
+
+.saveTestsBtn {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: $white;
+  background: $primary;
+  border: none;
+  border-radius: $radius-sm;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover { background: $primary-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

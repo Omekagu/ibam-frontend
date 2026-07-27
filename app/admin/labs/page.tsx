@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
 
-interface Test { name: string; price: number; turnaroundHours: number }
+interface TestRow { name: string; price: number | ''; turnaroundHours: number | '' }
 interface Lab {
   _id: string
   name: string
@@ -12,20 +12,24 @@ interface Lab {
   email?: string
   licenseNumber?: string
   status: 'pending' | 'active' | 'inactive' | 'suspended'
-  testsOffered: Test[]
+  testsOffered: { name: string; price: number; turnaroundHours: number }[]
   coverageAreas: string[]
   createdAt: string
   user?: { name: string; email: string; isActive: boolean }
 }
 
 const STATUS_OPTS = ['pending', 'active', 'inactive', 'suspended'] as const
+const EMPTY_ROW: TestRow = { name: '', price: '', turnaroundHours: 24 }
 
 export default function AdminLabsPage () {
-  const [labs,     setLabs]     = useState<Lab[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [filter,   setFilter]   = useState('')
-  const [updating, setUpdating] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [labs,       setLabs]       = useState<Lab[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState('')
+  const [updating,   setUpdating]   = useState<string | null>(null)
+  const [editingId,  setEditingId]  = useState<string | null>(null)
+  const [draftTests, setDraftTests] = useState<TestRow[]>([])
+  const [saving,     setSaving]     = useState(false)
+  const [saveErr,    setSaveErr]    = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -46,6 +50,49 @@ export default function AdminLabsPage () {
       setLabs(prev => prev.map(l => l._id === id ? { ...l, status: status as Lab['status'] } : l))
     } catch { alert('Failed to update status.') }
     setUpdating(null)
+  }
+
+  function openEdit (lab: Lab) {
+    setSaveErr('')
+    const rows: TestRow[] = lab.testsOffered.length
+      ? lab.testsOffered.map(t => ({ name: t.name, price: t.price, turnaroundHours: t.turnaroundHours }))
+      : [{ ...EMPTY_ROW }]
+    setDraftTests(rows)
+    setEditingId(lab._id)
+  }
+
+  function updateRow (idx: number, field: keyof TestRow, value: string) {
+    setDraftTests(prev => prev.map((t, i) =>
+      i === idx ? { ...t, [field]: field === 'name' ? value : value === '' ? '' : Number(value) } : t
+    ))
+    setSaveErr('')
+  }
+
+  function addRow () { setDraftTests(prev => [...prev, { ...EMPTY_ROW }]) }
+
+  function removeRow (idx: number) {
+    if (draftTests.length === 1) { setDraftTests([{ ...EMPTY_ROW }]); return }
+    setDraftTests(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  async function saveTests (labId: string) {
+    const valid = draftTests.filter(t => t.name.trim() && t.price !== '')
+    if (!valid.length) { setSaveErr('Add at least one test with a name and price.'); return }
+    setSaving(true)
+    setSaveErr('')
+    try {
+      const r = await api.put(`/admin/labs/${labId}/tests`, {
+        testsOffered: valid.map(t => ({
+          name: t.name.trim(),
+          price: Number(t.price),
+          turnaroundHours: t.turnaroundHours === '' ? 24 : Number(t.turnaroundHours),
+        })),
+      })
+      const updated = r.data.data?.lab
+      setLabs(prev => prev.map(l => l._id === labId ? { ...l, testsOffered: updated.testsOffered } : l))
+      setEditingId(null)
+    } catch { setSaveErr('Failed to save. Please try again.') }
+    setSaving(false)
   }
 
   return (
@@ -78,7 +125,8 @@ export default function AdminLabsPage () {
                   <div className={s.metaRow}>
                     <span>{lab.phone}</span>
                     {lab.licenseNumber && <span>License: {lab.licenseNumber}</span>}
-                    <span>{lab.testsOffered.length} test{lab.testsOffered.length !== 1 ? 's' : ''} offered</span>
+                    <span>{lab.testsOffered.length} test{lab.testsOffered.length !== 1 ? 's' : ''}</span>
+                    {lab.user?.email && <span>{lab.user.email}</span>}
                   </div>
                 </div>
                 <div className={s.cardRight}>
@@ -86,9 +134,9 @@ export default function AdminLabsPage () {
                   <div className={s.actionRow}>
                     <button
                       className={s.testsBtn}
-                      onClick={() => setExpanded(expanded === lab._id ? null : lab._id)}
+                      onClick={() => editingId === lab._id ? setEditingId(null) : openEdit(lab)}
                     >
-                      {expanded === lab._id ? 'Hide Tests' : 'View Tests'}
+                      {editingId === lab._id ? 'Close' : 'Manage Tests'}
                     </button>
                     {lab.status !== 'active' && (
                       <button className={s.approveBtn} disabled={updating === lab._id} onClick={() => setStatus(lab._id, 'active')}>
@@ -109,26 +157,58 @@ export default function AdminLabsPage () {
                 </div>
               </div>
 
-              {expanded === lab._id && (
-                <div className={s.testsList}>
-                  {lab.testsOffered.length === 0 ? (
-                    <p className={s.noTests}>No tests listed yet.</p>
-                  ) : (
-                    <table className={s.testsTable}>
-                      <thead>
-                        <tr><th>Test Name</th><th>Price</th><th>Turnaround</th></tr>
-                      </thead>
-                      <tbody>
-                        {lab.testsOffered.map((t, i) => (
-                          <tr key={i}>
-                            <td>{t.name}</td>
-                            <td>₦{t.price.toLocaleString()}</td>
-                            <td>{t.turnaroundHours}h</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+              {editingId === lab._id && (
+                <div className={s.testEditor}>
+                  <div className={s.editorHead}>
+                    <span className={s.editorTitle}>Test Catalog — {lab.name}</span>
+                    <p className={s.editorSub}>Add, edit, or remove tests. Only admin can modify this catalog.</p>
+                  </div>
+
+                  {saveErr && <p className={s.editorErr}>{saveErr}</p>}
+
+                  <div className={s.tableHead}>
+                    <span>Test Name</span>
+                    <span>Price (₦)</span>
+                    <span>Turnaround (hrs)</span>
+                    <span />
+                  </div>
+
+                  <div className={s.tableBody}>
+                    {draftTests.map((row, i) => (
+                      <div key={i} className={s.tableRow}>
+                        <input
+                          className={s.input}
+                          placeholder='e.g. Full Blood Count'
+                          value={row.name}
+                          onChange={e => updateRow(i, 'name', e.target.value)}
+                        />
+                        <input
+                          className={s.input}
+                          type='number'
+                          min={0}
+                          placeholder='e.g. 3500'
+                          value={row.price}
+                          onChange={e => updateRow(i, 'price', e.target.value)}
+                        />
+                        <input
+                          className={s.input}
+                          type='number'
+                          min={1}
+                          placeholder='24'
+                          value={row.turnaroundHours}
+                          onChange={e => updateRow(i, 'turnaroundHours', e.target.value)}
+                        />
+                        <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'>✕</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={s.editorFooter}>
+                    <button className={s.addRowBtn} onClick={addRow}>+ Add Test</button>
+                    <button className={s.saveTestsBtn} onClick={() => saveTests(lab._id)} disabled={saving}>
+                      {saving ? 'Saving…' : 'Save Catalog'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

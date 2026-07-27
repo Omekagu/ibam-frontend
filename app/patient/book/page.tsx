@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import api from '@/lib/api'
 import s from './page.module.scss'
 import { VideoCameraIcon, PhoneIcon, ChatIcon, CheckCircleIcon } from '@/components/icons'
@@ -11,13 +12,16 @@ interface Doctor {
   specialization: string
   bio?: string
   consultationFee: number
-  yearsOfExperience: number
+  yearsOfExperience?: number
   ratings?: { average: number; count: number }
   rateType: 'per_session' | 'per_hour' | 'per_minute'
   sessionDurationMinutes: number
   urgentAvailable: boolean
   urgentSurcharge: number
   fees?: { video?: number; audio?: number; chat?: number }
+  socialLinks?: { twitter?: string; linkedin?: string; website?: string }
+  qualifications?: { degree: string; institution: string; year: number }[]
+  displayName?: string
 }
 
 interface Slot {
@@ -166,11 +170,23 @@ export default function BookDoctor () {
               className={`${s.docCard} ${selected?._id === d._id ? s.selected : ''}`}
               onClick={() => { setSelected(d); setDate(''); setSlots([]); setSlot(null) }}
             >
-              <div className={s.docAvatar}>{d.user.name[0]}</div>
+              <div className={s.docAvatar}>
+                {d.user.avatar
+                  ? <Image src={d.user.avatar} alt={d.user.name} fill sizes='40px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
+                  : d.user.name[0]}
+              </div>
               <div className={s.docInfo}>
-                <p className={s.docName}>{d.user.name}</p>
+                <p className={s.docName}>{d.displayName || d.user.name}</p>
                 <span className={s.docSpec}>{d.specialization}</span>
-                <p className={s.docFee}>₦{d.consultationFee.toLocaleString()} / session</p>
+                <div className={s.docMeta}>
+                  {(d.ratings?.average ?? 0) > 0 && (
+                    <span className={s.docRating}>★ {d.ratings!.average.toFixed(1)} ({d.ratings!.count})</span>
+                  )}
+                  {(d.yearsOfExperience ?? 0) > 0 && (
+                    <span className={s.docExp}>{d.yearsOfExperience}yr exp</span>
+                  )}
+                  <span className={s.docFee}>₦{d.consultationFee.toLocaleString()}</span>
+                </div>
               </div>
               {selected?._id === d._id && <span className={s.tick}>✓</span>}
             </div>
@@ -182,11 +198,53 @@ export default function BookDoctor () {
       {selected ? (
         <form className={s.bookPanel} onSubmit={book}>
           <div className={s.bookHead}>
-            <h3>Book {selected.user.name}</h3>
-            <p className={s.bookSpec}>{selected.specialization}</p>
+            <div className={s.bookAvatarWrap}>
+              {selected.user.avatar
+                ? <Image src={selected.user.avatar} alt={selected.user.name} fill sizes='56px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
+                : <span>{selected.user.name[0]}</span>}
+            </div>
+            <div className={s.bookHeadInfo}>
+              <h3>{selected.displayName || selected.user.name}</h3>
+              <p className={s.bookSpec}>{selected.specialization}</p>
+              <div className={s.bookMetaRow}>
+                {(selected.ratings?.average ?? 0) > 0 && (
+                  <span className={s.bookRating}>★ {selected.ratings!.average.toFixed(1)} <em>({selected.ratings!.count} reviews)</em></span>
+                )}
+                {(selected.yearsOfExperience ?? 0) > 0 && (
+                  <span className={s.bookExp}>{selected.yearsOfExperience} yrs experience</span>
+                )}
+              </div>
+              {(selected.socialLinks?.linkedin || selected.socialLinks?.twitter || selected.socialLinks?.website) && (
+                <div className={s.socialLinks}>
+                  {selected.socialLinks.linkedin && (
+                    <a href={selected.socialLinks.linkedin} target='_blank' rel='noopener noreferrer' className={s.socialBtn} title='LinkedIn'>
+                      <svg viewBox='0 0 24 24' fill='currentColor'><path d='M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z'/></svg>
+                    </a>
+                  )}
+                  {selected.socialLinks.twitter && (
+                    <a href={selected.socialLinks.twitter} target='_blank' rel='noopener noreferrer' className={s.socialBtn} title='Twitter / X'>
+                      <svg viewBox='0 0 24 24' fill='currentColor'><path d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.258 5.636 5.906-5.636zm-1.161 17.52h1.833L7.084 4.126H5.117z'/></svg>
+                    </a>
+                  )}
+                  {selected.socialLinks.website && (
+                    <a href={selected.socialLinks.website} target='_blank' rel='noopener noreferrer' className={s.socialBtn} title='Website'>
+                      <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2}><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {selected.bio && <p className={s.bio}>{selected.bio}</p>}
+
+          {selected.qualifications && selected.qualifications.length > 0 && (
+            <div className={s.qualsList}>
+              {selected.qualifications.map((q, i) => (
+                <span key={i} className={s.qualBadge}>{q.degree} — {q.institution} {q.year}</span>
+              ))}
+            </div>
+          )}
 
           <div className={s.field}>
             <label>Select Date</label>

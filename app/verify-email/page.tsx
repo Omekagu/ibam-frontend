@@ -1,6 +1,7 @@
 'use client'
 import { useState, FormEvent, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { sendEmailOTP, verifyEmailOTP } from '@/lib/auth'
 import s from './page.module.scss'
@@ -53,7 +54,7 @@ function VerifyEmailForm () {
   return (
     <div className={s.card}>
       <Link href='/' className={s.logo}>
-        <span className={s.mark}>iB</span>
+        <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
         <span>iBam <em>Health</em></span>
       </Link>
 

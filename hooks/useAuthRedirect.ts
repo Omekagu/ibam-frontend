@@ -13,10 +13,16 @@ export function dashboardFor (role?: string): string {
 
 /**
  * Redirect authenticated users away from public/auth pages.
- * Call this at the top of login, signup, and onboard pages.
+ * Call this at the top of login, signup, forgot-password, and reset-password pages.
  */
 export function useAuthRedirect () {
   const router = useRouter()
+
+  // Synchronous check on first render — avoids a visible flash of the auth form.
+  if (typeof window !== 'undefined' && isLoggedIn()) {
+    const user = getStoredUser()
+    router.replace(dashboardFor(user?.role))
+  }
 
   useEffect(() => {
     if (!isLoggedIn()) return

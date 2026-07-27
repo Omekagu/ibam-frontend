@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { logout } from '@/lib/auth'
@@ -76,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const sidebarInner = (
     <>
       <Link href='/admin' className={s.sidebarLogo}>
-        <span className={s.mark}>iB</span>
+        <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
         <span>iBam <em>Health</em></span>
       </Link>
       <div className={s.adminBadge}>Admin Console</div>
