@@ -91,7 +91,7 @@ export default function PatientLabs () {
         form.append('pickupLocation', JSON.stringify({ address: homeAddr, ...homeCoords }))
       }
 
-      const r = await api.post('/diagnostics/request', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      const r = await api.post('/diagnostics/request', form)
       setRequests(prev => [r.data.data?.request, ...prev])
       setSubmitted(true)
       setSelectedTests([]); setNotes(''); setReferralFile(null); setHomeAddr(''); setHomeCoords(null)

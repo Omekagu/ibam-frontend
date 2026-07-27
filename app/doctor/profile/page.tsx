@@ -129,9 +129,7 @@ export default function DoctorProfile () {
     try {
       const form = new FormData()
       form.append('avatar', f)
-      const r = await api.post('/doctors/my/avatar', form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const r = await api.post('/doctors/my/avatar', form)
       setAvatarUrl(r.data.data?.avatarUrl ?? '')
     } catch {}
     setAvatarUploading(false)

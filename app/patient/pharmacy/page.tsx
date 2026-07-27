@@ -171,7 +171,7 @@ function PharmacyContent () {
       }
       if (shopNotes) form.append('notes', shopNotes)
       if (rxFile) form.append('prescription', rxFile)
-      const r = await api.post('/pharmacy/order/direct', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      const r = await api.post('/pharmacy/order/direct', form)
       setOrders(prev => [r.data.data?.order, ...prev])
       setSuccessMsg(r.data.data?.requiresApproval
         ? 'Order submitted! Admin will review your prescription shortly.'

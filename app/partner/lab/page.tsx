@@ -49,9 +49,7 @@ export default function LabPartnerDashboard () {
       const form = new FormData()
       form.append('result', file)
       if (notes[requestId]) form.append('notes', notes[requestId])
-      await api.post(`/diagnostics/${requestId}/upload-result`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      await api.post(`/diagnostics/${requestId}/upload-result`, form)
       setRequests(prev => prev.map(r => r._id === requestId ? { ...r, status: 'completed' } : r))
       setSuccessMsg(prev => ({ ...prev, [requestId]: 'Result uploaded successfully!' }))
       if (fileInput) fileInput.value = ''

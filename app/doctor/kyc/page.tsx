@@ -168,10 +168,9 @@ export default function DoctorKYCPage () {
     setUploading(true)
     try {
       const form = new FormData()
-      form.append('file', file)
-      await api.post('/doctors/license', form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      form.append('license', file)
+      // Do NOT set Content-Type manually — axios sets it with the correct multipart boundary
+      await api.post('/doctors/license', form)
     } catch (err: any) {
       // 409 = already submitted; advance anyway
       if (err?.response?.status !== 409) {
