@@ -18,12 +18,6 @@ export function dashboardFor (role?: string): string {
 export function useAuthRedirect () {
   const router = useRouter()
 
-  // Synchronous check on first render — avoids a visible flash of the auth form.
-  if (typeof window !== 'undefined' && isLoggedIn()) {
-    const user = getStoredUser()
-    router.replace(dashboardFor(user?.role))
-  }
-
   useEffect(() => {
     if (!isLoggedIn()) return
     const user = getStoredUser()

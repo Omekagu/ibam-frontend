@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect, DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, useEffect, DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
@@ -8,34 +8,38 @@ import {
   FolderIcon, DocumentIcon, CameraIcon,
 } from '@/components/icons'
 
-const STEPS = ['MDCN Details', 'NIN Verify', 'Face Match', 'Upload Document']
+// Step 0: NIN  |  Step 1: Face  |  Step 2: Upload  |  Step 3: Done
+const STEPS = ['NIN Verify', 'Face Match', 'Upload Document']
 
 export default function DoctorKYCPage () {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [statusError, setStatusError] = useState('')
   const [kycStatus, setKycStatus] = useState('pending')
   const [step, setStep] = useState(0)
 
-  // Step 0
-  const [mdcn, setMdcn] = useState('')
-  const [specialty, setSpecialty] = useState('')
-
-  // Step 1 — NIN
+  // Step 0 — NIN
   const [nin, setNin] = useState('')
   const [ninLoading, setNinLoading] = useState(false)
   const [ninError, setNinError] = useState('')
 
-  // Step 2 — Face selfie
-  const selfieRef = useRef<HTMLInputElement>(null)
+  // Step 1 — Live camera face capture
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState('')
   const [selfiePreview, setSelfiePreview] = useState('')
   const [faceLoading, setFaceLoading] = useState(false)
   const [faceError, setFaceError] = useState('')
+  const [faceDone, setFaceDone] = useState(false)
 
-  // Step 3 — License upload
+  // Step 2 — License upload
   const fileRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     api.get('/kyc/status')
@@ -46,56 +50,106 @@ export default function DoctorKYCPage () {
         const st = user?.kycStatus ?? 'pending'
         setKycStatus(st)
         if (st === 'approved') {
-          setStep(4)
+          setFaceDone(true)
+          setSubmitted(true)
+          setStep(3)
         } else if (st === 'face_verified') {
-          setStep(doctor?.licenseDocument ? 4 : 3)
+          setFaceDone(true)
+          if (doctor?.licenseDocument) {
+            setSubmitted(true)
+            setStep(3)
+          } else {
+            setStep(2)
+          }
         } else if (st === 'nin_verified') {
-          setStep(2)
+          setStep(1)
         }
-        // pending / rejected → stay at step 0
+        // pending / rejected → step 0 (NIN)
       })
-      .catch(() => {})
+      .catch(() => {
+        setStatusError('Unable to load your verification status. Please refresh the page.')
+      })
       .finally(() => setLoading(false))
   }, [])
 
-  // ── Handlers ────────────────────────────────────
+  // Stop camera on unmount
+  useEffect(() => () => stopCamera(), [])
 
-  function submitDetails () {
-    if (!mdcn.trim() || !specialty) return
-    setStep(1)
+  // ── Camera helpers ─────────────────────────────────────────
+  function stopCamera () {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
   }
 
+  async function startCamera () {
+    setCameraError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      })
+      streamRef.current = stream
+      if (videoRef.current) videoRef.current.srcObject = stream
+      setCameraActive(true)
+    } catch {
+      setCameraError('Camera access denied. Please allow camera permissions in your browser and try again.')
+    }
+  }
+
+  function capturePhoto () {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    canvas.width  = video.videoWidth  || 640
+    canvas.height = video.videoHeight || 480
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    setSelfiePreview(canvas.toDataURL('image/jpeg', 0.8))
+    stopCamera()
+    setCameraActive(false)
+  }
+
+  function retakePhoto () {
+    setSelfiePreview('')
+    setFaceError('')
+    startCamera()
+  }
+
+  // ── Step handlers ──────────────────────────────────────────
   async function verifyNin () {
     if (nin.length !== 11) return
     setNinLoading(true)
     setNinError('')
     try {
       await api.post('/kyc/verify-nin', { nin })
-      setStep(2)
+      setStep(1)
     } catch (err: any) {
-      setNinError(err?.response?.data?.message ?? 'NIN verification failed. Check the number and try again.')
+      if (err?.response?.status === 409) {
+        setStep(1) // already done, silently advance
+      } else {
+        setNinError(err?.response?.data?.message ?? 'NIN verification failed. Check the number and try again.')
+      }
     } finally {
       setNinLoading(false)
     }
   }
 
-  function onSelfieChange (e: ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    const reader = new FileReader()
-    reader.onload = () => setSelfiePreview(reader.result as string)
-    reader.readAsDataURL(f)
-  }
-
   async function verifyFace () {
-    if (!selfiePreview) return
+    if (!selfiePreview || faceDone) return
     setFaceLoading(true)
     setFaceError('')
     try {
       await api.post('/kyc/verify-face', { selfie: selfiePreview })
-      setStep(3)
+      setFaceDone(true)
+      setStep(2)
     } catch (err: any) {
-      setFaceError(err?.response?.data?.message ?? 'Face match failed. Please retake your selfie and try again.')
+      if (err?.response?.status === 409) {
+        setFaceDone(true)
+        setStep(2)
+      } else {
+        setFaceError(err?.response?.data?.message ?? 'Face match failed. Please retake your selfie and try again.')
+      }
     } finally {
       setFaceLoading(false)
     }
@@ -109,26 +163,30 @@ export default function DoctorKYCPage () {
   }
 
   async function submitDocument () {
-    if (!file) return
+    if (!file || submitted) return
+    setSubmitted(true)
     setUploading(true)
     try {
       const form = new FormData()
       form.append('file', file)
-      form.append('licenseNumber', mdcn)
-      form.append('specialization', specialty)
       await api.post('/doctors/license', form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      setStep(4)
-    } catch {
-      setStep(4)
+    } catch (err: any) {
+      // 409 = already submitted; advance anyway
+      if (err?.response?.status !== 409) {
+        // upload failed — allow retry
+        setSubmitted(false)
+        setUploading(false)
+        return
+      }
     } finally {
       setUploading(false)
     }
+    setStep(3)
   }
 
-  // ── Loading ──────────────────────────────────────
-
+  // ── Loading ────────────────────────────────────────────────
   if (loading) {
     return (
       <div className={s.page}>
@@ -142,12 +200,24 @@ export default function DoctorKYCPage () {
     )
   }
 
+  if (statusError) {
+    return (
+      <div className={s.page}>
+        <div className={s.card}>
+          <p className={s.errorText}>{statusError}</p>
+          <button className={s.nextBtn} onClick={() => window.location.reload()}>
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={s.page}>
       <div className={s.card}>
 
-        {/* Step indicators — hide on review / approved */}
-        {step < 4 && (
+        {step < 3 && (
           <div className={s.steps}>
             {STEPS.map((label, i) => (
               <div
@@ -162,54 +232,14 @@ export default function DoctorKYCPage () {
           </div>
         )}
 
-        {/* Rejected banner */}
         {kycStatus === 'rejected' && step === 0 && (
           <div className={s.rejectedBanner}>
             Your previous submission was rejected. Please correct your details and resubmit.
           </div>
         )}
 
-        {/* ── Step 0 — MDCN Details ────────────────── */}
+        {/* ── Step 0 — NIN Verification ─────────────────── */}
         {step === 0 && (
-          <>
-            <h1 className={s.title}>Verify your credentials</h1>
-            <p className={s.sub}>
-              Enter your MDCN registration details. We verify every doctor before they go live on iBam Health.
-            </p>
-
-            <div className={s.field}>
-              <label>MDCN Registration Number</label>
-              <input
-                type='text'
-                placeholder='MDCN/R&S/2024/XXXXX'
-                value={mdcn}
-                onChange={e => setMdcn(e.target.value)}
-              />
-            </div>
-
-            <div className={s.field}>
-              <label>Medical Specialty</label>
-              <select value={specialty} onChange={e => setSpecialty(e.target.value)}>
-                <option value=''>Select specialty</option>
-                {['General Practice','Internal Medicine','Paediatrics','OB-GYN','Cardiology',
-                  'Dermatology','Psychiatry','Orthopaedics','ENT','Ophthalmology','Other'].map(sp => (
-                  <option key={sp}>{sp}</option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              className={s.nextBtn}
-              onClick={submitDetails}
-              disabled={!mdcn.trim() || !specialty}
-            >
-              Continue →
-            </button>
-          </>
-        )}
-
-        {/* ── Step 1 — NIN Verification ────────────── */}
-        {step === 1 && (
           <>
             <h1 className={s.title}>NIN Verification</h1>
             <p className={s.sub}>
@@ -238,57 +268,65 @@ export default function DoctorKYCPage () {
             >
               {ninLoading ? 'Verifying…' : 'Verify NIN →'}
             </button>
-            <button className={s.backBtn} onClick={() => setStep(0)}>← Back</button>
           </>
         )}
 
-        {/* ── Step 2 — Face Selfie ─────────────────── */}
-        {step === 2 && (
+        {/* ── Step 1 — Live Camera Face Capture ─────────── */}
+        {step === 1 && (
           <>
             <h1 className={s.title}>Face Verification</h1>
             <p className={s.sub}>
-              Take a clear selfie. We&apos;ll match it against your NIN photo to confirm your identity.
+              Take a live selfie using your camera. Gallery uploads are not accepted.
+              We&apos;ll match it against your NIN photo to confirm your identity.
             </p>
 
-            <div className={s.selfieWrap}>
+            <div className={s.cameraWrap}>
               {selfiePreview ? (
-                <img src={selfiePreview} className={s.selfiePreview} alt='Selfie preview' />
+                <img src={selfiePreview} className={s.selfiePreview} alt='Captured selfie' />
+              ) : cameraActive ? (
+                <video ref={videoRef} className={s.videoFeed} autoPlay playsInline muted />
               ) : (
                 <div className={s.selfieEmpty}>
-                  <CameraIcon size={32} />
-                  <p>No photo yet</p>
+                  <CameraIcon size={36} />
+                  <p>Press &ldquo;Open Camera&rdquo; to begin</p>
                 </div>
               )}
-
-              <input
-                ref={selfieRef}
-                type='file'
-                accept='image/*'
-                capture='user'
-                onChange={onSelfieChange}
-                style={{ display: 'none' }}
-              />
-
-              <button className={s.cameraBtn} onClick={() => selfieRef.current?.click()}>
-                <CameraIcon size={14} /> {selfiePreview ? 'Retake Photo' : 'Take Selfie / Upload'}
-              </button>
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
 
-            {faceError && <p className={s.errorText}>{faceError}</p>}
+            {cameraError && <p className={s.errorText}>{cameraError}</p>}
+            {faceError   && <p className={s.errorText}>{faceError}</p>}
+
+            <div className={s.cameraControls}>
+              {!selfiePreview && !cameraActive && (
+                <button className={s.cameraBtn} onClick={startCamera}>
+                  <CameraIcon size={14} /> Open Camera
+                </button>
+              )}
+              {cameraActive && (
+                <button className={s.captureBtn} onClick={capturePhoto}>
+                  Capture Photo
+                </button>
+              )}
+              {selfiePreview && !faceDone && (
+                <button className={s.cameraBtn} onClick={retakePhoto}>
+                  Retake Photo
+                </button>
+              )}
+            </div>
 
             <button
               className={s.nextBtn}
               onClick={verifyFace}
-              disabled={!selfiePreview || faceLoading}
+              disabled={!selfiePreview || faceLoading || faceDone}
             >
-              {faceLoading ? 'Matching…' : 'Verify Face →'}
+              {faceLoading ? 'Matching…' : faceDone ? 'Verified ✓' : 'Verify Face →'}
             </button>
-            <button className={s.backBtn} onClick={() => setStep(1)}>← Back</button>
           </>
         )}
 
-        {/* ── Step 3 — Upload License ──────────────── */}
-        {step === 3 && (
+        {/* ── Step 2 — Upload License ────────────────────── */}
+        {step === 2 && (
           <>
             <h1 className={s.title}>Upload license document</h1>
             <p className={s.sub}>
@@ -296,16 +334,17 @@ export default function DoctorKYCPage () {
             </p>
 
             <div
-              className={`${s.dropZone} ${dragging ? s.active : ''}`}
-              onDragOver={e => { e.preventDefault(); setDragging(true) }}
+              className={`${s.dropZone} ${dragging ? s.active : ''} ${submitted ? s.disabled : ''}`}
+              onDragOver={e => { if (!submitted) { e.preventDefault(); setDragging(true) } }}
               onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              onClick={() => fileRef.current?.click()}
+              onDrop={submitted ? undefined : onDrop}
+              onClick={() => !submitted && fileRef.current?.click()}
             >
               <input
                 ref={fileRef}
                 type='file'
                 accept='.pdf,.jpg,.jpeg,.png'
+                style={{ display: 'none' }}
                 onChange={e => e.target.files?.[0] && setFile(e.target.files[0])}
               />
               <div className={s.uploadIcon}><FolderIcon size={32} /></div>
@@ -323,16 +362,15 @@ export default function DoctorKYCPage () {
             <button
               className={s.nextBtn}
               onClick={submitDocument}
-              disabled={!file || uploading}
+              disabled={!file || uploading || submitted}
             >
-              {uploading ? 'Uploading…' : 'Submit for Review →'}
+              {uploading ? 'Uploading…' : submitted ? 'Submitted ✓' : 'Submit for Review →'}
             </button>
-            <button className={s.backBtn} onClick={() => setStep(2)}>← Back</button>
           </>
         )}
 
-        {/* ── Step 4 — Under Review / Approved ────── */}
-        {step === 4 && (
+        {/* ── Step 3 — Under Review / Approved ──────────── */}
+        {step === 3 && (
           <div className={s.awaiting}>
             {kycStatus === 'approved' ? (
               <>
@@ -354,7 +392,6 @@ export default function DoctorKYCPage () {
             )}
 
             <div className={s.checklist}>
-              <div className={s.checkItem}><CheckCircleIcon size={14} /> MDCN number recorded</div>
               <div className={s.checkItem}><CheckCircleIcon size={14} /> NIN identity verified</div>
               <div className={s.checkItem}><CheckCircleIcon size={14} /> Face match complete</div>
               <div className={s.checkItem}><CheckCircleIcon size={14} /> License document uploaded</div>

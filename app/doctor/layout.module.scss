@@ -260,6 +260,7 @@
   text-decoration: none;
   color: var(--text-faint);
   font-size: 0.625rem; font-weight: 600;
+  background: none; border: none; cursor: pointer;
   transition: color 0.15s ease;
   svg { opacity: 0.45; transition: opacity 0.15s ease; }
   &:hover { color: var(--text-muted); svg { opacity: 0.7; } }
@@ -268,4 +269,104 @@
 .mobileNavActive {
   color: var(--nav-active-text) !important;
   svg { opacity: 1 !important; }
+}
+
+// ─── More bottom sheet ────────────────────────────
+.sheetOverlay {
+  display: none;
+  @media (max-width: #{$bp-lg - 1px}) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 190;
+  }
+}
+
+.sheet {
+  display: none;
+  @media (max-width: #{$bp-lg - 1px}) {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    z-index: 200;
+    padding: 0 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0));
+    animation: sheet-up 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.sheetHandle {
+  width: 36px; height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 0.75rem auto 1rem;
+  flex-shrink: 0;
+}
+
+.sheetTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.5rem;
+}
+
+.sheetLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sheetLink {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 0.75rem;
+  border-radius: $radius-md;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--nav-text);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  svg { opacity: 0.6; }
+
+  &:hover { background: var(--nav-hover-bg); color: var(--text); svg { opacity: 1; } }
+}
+
+.sheetLinkActive {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text) !important;
+  svg { opacity: 1 !important; }
+}
+
+.sheetLogout {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 0.75rem;
+  border-radius: $radius-md;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--nav-logout);
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  transition: color 0.15s ease;
+  &:hover { color: $danger; }
 }

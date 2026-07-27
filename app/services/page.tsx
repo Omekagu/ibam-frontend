@@ -3,7 +3,12 @@ import Link from 'next/link'
 import PageShell from '@/components/PageShell'
 import s from './page.module.scss'
 import {
-  VideoCameraIcon, BoltIcon, MicroscopeIcon, PillIcon, HospitalIcon, TruckIcon,
+  VideoCameraIcon,
+  BoltIcon,
+  MicroscopeIcon,
+  PillIcon,
+  HospitalIcon,
+  TruckIcon
 } from '@/components/icons'
 
 export const metadata: Metadata = {
@@ -56,7 +61,7 @@ const SERVICES = [
     desc: "Order blood panels, imaging, and specialty tests directly from your doctor's consultation. A certified phlebotomist visits your home to collect samples, and results are uploaded securely to your health profile.",
     steps: [
       'Doctor orders lab tests as part of your consultation',
-      'Choose home sample collection or walk-in at a partner lab',
+      'Choose home sample collection or walk-in at a lab',
       'Results uploaded to your profile within 24–48 hours',
       'Doctor reviews results and follows up with next steps'
     ],

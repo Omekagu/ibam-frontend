@@ -130,9 +130,9 @@ export default function TermsPage () {
       <p>
         Diagnostic test requests are fulfilled by MLSCN-accredited partner
         laboratories. Sample collection, processing, and result reporting are
-        the responsibility of the partner laboratory. iBam Health is not liable
-        for inaccurate test results caused by laboratory error or improper
-        sample collection on the patient&rsquo;s part.
+        the responsibility of the laboratory. iBam Health is not liable for
+        inaccurate test results caused by laboratory error or improper sample
+        collection on the patient&rsquo;s part.
       </p>
 
       <h3>4.5 Health Triage</h3>

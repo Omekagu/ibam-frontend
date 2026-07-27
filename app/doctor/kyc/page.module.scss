@@ -3,7 +3,7 @@
 
 .page {
   min-height: 100vh;
-  background: $navy-dark;
+  background: var(--bg-page);
   @include flex-center;
   padding: 2rem 1.5rem;
 }
@@ -118,7 +118,7 @@
     &:focus { border-color: rgba($primary,0.6); }
   }
 
-  select option { background: $navy-card; }
+  select option { background: var(--bg-card); }
 }
 
 // ─── Upload drop zone ────────────────────────────
@@ -133,9 +133,15 @@
   transition: border-color 0.2s ease, background 0.2s ease;
   text-align: center;
 
-  &:hover, &.active {
+  &:hover:not(.disabled), &.active {
     border-color: $primary;
     background: rgba($primary,0.04);
+  }
+
+  &.disabled {
+    cursor: default;
+    opacity: 0.55;
+    pointer-events: none;
   }
 
   input { display: none; }
@@ -273,7 +279,47 @@
   line-height: 1.5;
 }
 
-// ─── Selfie / face step ──────────────────────────
+// ─── Camera / face step ──────────────────────────
+.cameraWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.videoFeed {
+  width: 100%;
+  max-width: 320px;
+  height: 240px;
+  border-radius: $radius-lg;
+  object-fit: cover;
+  border: 2px solid rgba($primary, 0.4);
+  background: #000;
+}
+
+.cameraControls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.captureBtn {
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  padding: 0.7rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover { opacity: 0.88; }
+}
+
+// ─── Selfie preview (shared) ─────────────────────
 .selfieWrap {
   display: flex;
   flex-direction: column;

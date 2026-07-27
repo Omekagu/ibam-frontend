@@ -12,6 +12,7 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ibamhealth.com'),
   title: {
     default: 'iBam Health — Quality Healthcare, Delivered',
     template: '%s — iBam Health'
@@ -75,8 +76,8 @@ export default function RootLayout ({
             __html: `
           (function(){
             var p = window.location.pathname;
-            var portals = ['/patient/','/doctor/','/admin/','/partner/'];
-            var isPortal = portals.some(function(x){ return p.startsWith(x); });
+            var roots = ['/patient','/doctor','/admin','/partner'];
+            var isPortal = roots.some(function(x){ return p === x || p.startsWith(x + '/'); });
             var t = isPortal ? (localStorage.getItem('theme') || 'light') : 'dark';
             if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
             else document.documentElement.removeAttribute('data-theme');

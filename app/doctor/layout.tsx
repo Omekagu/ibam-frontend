@@ -19,16 +19,21 @@ const NAV = [
   { href: '/doctor/kyc',            label: 'KYC',          icon: <ShieldIcon /> },
 ]
 
+// First 4 shown in bottom bar; the rest go in "More" sheet
+const BOTTOM_NAV  = NAV.slice(0, 4)
+const MORE_NAV    = NAV.slice(4)
+
 export default function DoctorLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<ReturnType<typeof getStoredUser>>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [online, setOnline] = useState(true)
   const [togglingOnline, setTogglingOnline] = useState(false)
 
   useEffect(() => { setUser(getStoredUser()) }, [])
-  useEffect(() => { setDrawerOpen(false) }, [path])
+  useEffect(() => { setDrawerOpen(false); setSheetOpen(false) }, [path])
 
   async function handleOnlineToggle (checked: boolean) {
     setTogglingOnline(true)
@@ -113,8 +118,9 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
 
         <main className={s.content}>{children}</main>
 
+        {/* Mobile bottom nav — 4 items + More */}
         <nav className={s.mobileNav}>
-          {NAV.map(item => (
+          {BOTTOM_NAV.map(item => (
             <Link
               key={item.href}
               href={item.href}
@@ -124,7 +130,40 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
               <span>{item.label.split(' ')[0]}</span>
             </Link>
           ))}
+          <button
+            className={`${s.mobileNavItem} ${MORE_NAV.some(i => i.href === path) ? s.mobileNavActive : ''}`}
+            onClick={() => setSheetOpen(true)}
+          >
+            <MoreIcon />
+            <span>More</span>
+          </button>
         </nav>
+
+        {/* More bottom sheet */}
+        {sheetOpen && (
+          <>
+            <div className={s.sheetOverlay} onClick={() => setSheetOpen(false)} />
+            <div className={s.sheet}>
+              <div className={s.sheetHandle} />
+              <p className={s.sheetTitle}>More</p>
+              <div className={s.sheetLinks}>
+                {MORE_NAV.map(item => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`${s.sheetLink} ${path === item.href ? s.sheetLinkActive : ''}`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+                <button className={s.sheetLogout} onClick={handleLogout}>
+                  <LogoutIcon /> Log Out
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -140,3 +179,4 @@ function UserIcon()    { return <svg width='15' height='15' fill='none' stroke='
 function LogoutIcon()  { return <svg width='14' height='14' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1' /></svg> }
 function HamburgerIcon(){ return <svg width='20' height='20' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' /></svg> }
 function CloseIcon()   { return <svg width='20' height='20' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' /></svg> }
+function MoreIcon()    { return <svg width='18' height='18' fill='none' stroke='currentColor' viewBox='0 0 24 24'><circle cx='5' cy='12' r='1.5' fill='currentColor'/><circle cx='12' cy='12' r='1.5' fill='currentColor'/><circle cx='19' cy='12' r='1.5' fill='currentColor'/></svg> }

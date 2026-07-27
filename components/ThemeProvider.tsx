@@ -4,8 +4,9 @@ import { usePathname } from 'next/navigation'
 
 type Theme = 'light' | 'dark'
 
-// Routes where the user's stored theme preference applies
-const PORTAL_PREFIXES = ['/patient/', '/doctor/', '/admin/', '/partner/']
+// Routes where the user's stored theme preference applies.
+// Match exact (/doctor) AND sub-paths (/doctor/kyc) but not partial (/doctorwhatever).
+const PORTAL_ROOTS = ['/patient', '/doctor', '/admin', '/partner']
 
 const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
   theme: 'light',
@@ -14,7 +15,7 @@ const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
 
 export function ThemeProvider ({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isPortal = PORTAL_PREFIXES.some(p => pathname.startsWith(p))
+  const isPortal = PORTAL_ROOTS.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   const [theme, setTheme] = useState<Theme>('light')
 

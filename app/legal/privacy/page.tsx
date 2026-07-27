@@ -185,10 +185,6 @@ export default function PrivacyPage () {
           <strong>Partner pharmacies</strong> see prescription details, patient
           name, and delivery address when an order is placed.
         </li>
-        <li>
-          <strong>Partner laboratories</strong> see the test request, patient
-          name, and collection details.
-        </li>
       </ul>
 
       <h3>4.2 Service Providers (Data Processors)</h3>
