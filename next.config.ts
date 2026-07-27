@@ -1,16 +1,16 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['10.0.1.15', '10.0.1.41'],
+  allowedDevOrigins: ['api.ibamhealth.com', 'api.ibamhealth.com'],
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        pathname: '/**',
-      },
-    ],
-  },
-};
+        pathname: '/**'
+      }
+    ]
+  }
+}
 
-export default nextConfig;
+export default nextConfig
