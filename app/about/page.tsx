@@ -1,21 +1,22 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
 import PageShell from '@/components/PageShell'
 import s from './page.module.scss'
 import {
   ShieldCheckIcon, GlobeIcon, BoltIcon, LightbulbIcon, LockIcon, HandshakeIcon,
-  StethoscopeIcon, UserIcon,
 } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'About — iBam Health',
   description:
-    "Learn about iBam Health's mission to deliver accessible, quality healthcare to every Nigerian."
+    'iBam Health is a digital health platform redefining how people access healthcare through accessible diagnostics, connected care, and innovative technology.'
 }
 
 const STATS = [
-  { val: '10K+', lbl: 'Registered Patients' },
-  { val: '500+', lbl: 'Verified Physicians' },
-  { val: '50+', lbl: 'Partner Facilities' },
+  { val: '10K+',  lbl: 'Registered Patients' },
+  { val: '500+',  lbl: 'Verified Physicians' },
+  { val: '50+',   lbl: 'Partner Facilities' },
   { val: '98.6%', lbl: 'Satisfaction Rate' }
 ]
 
@@ -23,12 +24,12 @@ const VALUES = [
   {
     icon: <ShieldCheckIcon size={28} />,
     title: 'Trust & Safety',
-    desc: 'Every doctor is MDCN-verified. Every consultation is encrypted. Your health data is yours alone.'
+    desc: 'Every doctor is MDCN-verified. Every consultation is end-to-end encrypted. Your health data belongs to you alone.'
   },
   {
     icon: <GlobeIcon size={28} />,
     title: 'Accessibility',
-    desc: 'We believe quality healthcare is a right, not a privilege. Built to work on affordable data and basic devices.'
+    desc: 'We believe quality healthcare is a right, not a privilege. Built to work on affordable data and basic devices across Nigeria.'
   },
   {
     icon: <BoltIcon size={28} />,
@@ -43,7 +44,7 @@ const VALUES = [
   {
     icon: <LockIcon size={28} />,
     title: 'Privacy First',
-    desc: 'NDPR compliant. End-to-end encrypted. We never sell your data to insurers, pharma, or any third party.'
+    desc: 'NDPR compliant. End-to-end encrypted. We never sell your health data to insurers, pharma, or any third party.'
   },
   {
     icon: <HandshakeIcon size={28} />,
@@ -53,120 +54,162 @@ const VALUES = [
 ]
 
 const TEAM = [
-  {
-    initials: 'EO',
-    name: 'Dr. Emeka Okonkwo',
-    role: 'Chief Medical Officer',
-    dept: 'Internal Medicine, University of Enugu'
-  },
-  {
-    initials: 'ZB',
-    name: 'Zainab Bello',
-    role: 'CEO & Co-Founder',
-    dept: 'Previously at Flutterwave, MIT Media Lab'
-  },
-  {
-    initials: 'TA',
-    name: 'Tunde Adeyemi',
-    role: 'CTO',
-    dept: 'Ex-Google, MSc Software Engineering'
-  },
-  {
-    initials: 'FS',
-    name: 'Dr. Fatima Suleiman',
-    role: 'Head of Telemedicine',
-    dept: 'OB-GYN, University of Abuja'
-  },
-  {
-    initials: 'CO',
-    name: 'Chidi Obi',
-    role: 'Head of Diagnostics',
-    dept: 'Clinical Pathologist, LUTH'
-  },
-  {
-    initials: 'AM',
-    name: 'Aisha Mohammed',
-    role: 'VP Operations',
-    dept: 'MBA, Enugu Business School'
-  },
-  {
-    initials: 'SA',
-    name: 'Seun Adeleke',
-    role: 'Head of Product Design',
-    dept: 'UX Lead, ex-Andela'
-  },
-  {
-    initials: 'GE',
-    name: 'Dr. Grace Eze',
-    role: 'Medical Advisory Board',
-    dept: 'Cardiology, University of Benin'
-  }
+  { initials: 'EO', name: 'Dr. Emeka Okonkwo',   role: 'Chief Medical Officer',   dept: 'Internal Medicine, University of Enugu' },
+  { initials: 'ZB', name: 'Zainab Bello',         role: 'CEO & Co-Founder',        dept: 'Previously at Flutterwave, MIT Media Lab' },
+  { initials: 'TA', name: 'Tunde Adeyemi',         role: 'CTO',                     dept: 'Ex-Google, MSc Software Engineering' },
+  { initials: 'FS', name: 'Dr. Fatima Suleiman',  role: 'Head of Telemedicine',    dept: 'OB-GYN, University of Abuja' },
+  { initials: 'CO', name: 'Chidi Obi',             role: 'Head of Diagnostics',     dept: 'Clinical Pathologist, LUTH' },
+  { initials: 'AM', name: 'Aisha Mohammed',        role: 'VP Operations',           dept: 'MBA, Lagos Business School' },
+  { initials: 'SA', name: 'Seun Adeleke',          role: 'Head of Product Design',  dept: 'UX Lead, ex-Andela' },
+  { initials: 'GE', name: 'Dr. Grace Eze',         role: 'Medical Advisory Board',  dept: 'Cardiology, University of Benin' },
 ]
 
 export default function AboutPage () {
   return (
     <PageShell>
-      {/* Hero */}
+
+      {/* ─── Hero ──────────────────────────────────── */}
       <section className={s.hero}>
+        <Image
+          src='/1.png'
+          alt='iBam Health'
+          fill
+          priority
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          className={s.heroBg}
+        />
+        <div className={s.heroOverlay} />
         <div className={s.heroInner}>
           <span className={s.eyebrow}>Our Story</span>
           <h1>
-            Built to fix Nigerian
-            <br />
-            healthcare, for real
+            Built to fix Nigerian<br />healthcare, for real
           </h1>
           <p>
-            iBam Health was born out of frustration — long queues, unavailable
-            specialists, surprise bills, and fragmented records. We built the
-            platform we wished existed.
+            iBam Health was born out of frustration — long queues, unavailable specialists,
+            surprise bills, and fragmented records. We built the platform we wished existed.
           </p>
-        </div>
-      </section>
-
-      {/* Mission */}
-      <section className={s.mission}>
-        <div className={s.missionInner}>
-          <div className={`${s.missionText} reveal`}>
-            <span className={s.label}>Our Mission</span>
-            <h2>Bringing world-class care to your doorstep</h2>
-            <p>
-              Nigeria has over 200 million people but fewer than 40,000
-              registered doctors — a ratio of roughly 1 doctor per 5,000
-              patients. We can't fix the supply overnight, but we can radically
-              improve the efficiency of every medical interaction.
-            </p>
-            <p>
-              iBam Health uses technology to connect patients with available,
-              verified physicians instantly — regardless of where they are in
-              Nigeria. We handle the logistics of prescriptions, diagnostics,
-              and pharmacy delivery so the doctor can focus on medicine.
-            </p>
-            <p>
-              Our goal is simple: no Nigerian should suffer or die from a
-              condition that could have been diagnosed and treated by a
-              qualified doctor.
-            </p>
-          </div>
-          <div className={`${s.missionStats} reveal-stagger`}>
-            {STATS.map(st => (
-              <div key={st.lbl} className={`${s.statCard} reveal`}>
-                <span className={s.val}>{st.val}</span>
-                <span className={s.lbl}>{st.lbl}</span>
-              </div>
-            ))}
+          <div className={s.heroCtas}>
+            <Link href='/signup' className={s.heroBtn}>Get started free</Link>
+            <Link href='/contact' className={s.heroLinkBtn}>Contact us →</Link>
           </div>
         </div>
       </section>
 
-      {/* Values */}
+      {/* ─── About ─────────────────────────────────── */}
+      <section className={s.about}>
+        <div className={s.aboutInner}>
+          <div className={`${s.aboutText} reveal`}>
+            <span className={s.label}>About iBam Health</span>
+            <h2>A connected healthcare ecosystem, from diagnosis to treatment</h2>
+            <p>
+              iBam Health is a digital health platform redefining how people access healthcare
+              by placing diagnostic services at the heart of the healthcare journey. We empower
+              individuals to request laboratory investigations with ease, facilitating safe sample
+              collection and transportation to accredited laboratories while ensuring timely access
+              to accurate results.
+            </p>
+            <p>
+              Built on the belief that informed healthcare begins with accurate diagnosis, iBam
+              simplifies the process of connecting patients to the tests they need before guiding
+              them to the right care. Users can also access virtual medical consultations and
+              pharmacy services within the same seamless ecosystem, creating a connected healthcare
+              experience from diagnosis to treatment.
+            </p>
+            <p>
+              Driven by innovation, trust, and accessibility, iBam Health is committed to
+              eliminating barriers to quality healthcare through technology. Our goal is to make
+              healthcare more convenient, efficient, and patient-centred.
+            </p>
+          </div>
+          <div className={`${s.aboutVisual} reveal`}>
+            <Image
+              src='/8.png'
+              alt='iBam Health app'
+              width={480}
+              height={480}
+              style={{ width: '100%', height: 'auto', borderRadius: 24 }}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Vision & Mission ──────────────────────── */}
+      <section className={s.vmSection}>
+        <div className={s.vmInner}>
+          <div className={`${s.vmCard} reveal`}>
+            <span className={s.vmTag}>Vision</span>
+            <h3>Africa&apos;s leading digital health ecosystem</h3>
+            <p>
+              To become Africa&apos;s leading digital health ecosystem, transforming healthcare through
+              accessible diagnostics, connected care, and innovative technology that empowers
+              healthier lives.
+            </p>
+          </div>
+          <div className={`${s.vmCard} reveal`}>
+            <span className={s.vmTag}>Mission</span>
+            <h3>Simplifying access to quality healthcare</h3>
+            <p>
+              To simplify access to quality healthcare by delivering a seamless digital platform
+              that connects people to trusted diagnostic services, healthcare professionals, and
+              essential health solutions — making informed care more accessible, efficient, and
+              patient-centred.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Stats ─────────────────────────────────── */}
+      <section className={s.stats}>
+        <div className={s.statsInner}>
+          {STATS.map(st => (
+            <div key={st.lbl} className={`${s.statCard} reveal`}>
+              <span className={s.val}>{st.val}</span>
+              <span className={s.lbl}>{st.lbl}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── App showcase ──────────────────────────── */}
+      <section className={s.appSection}>
+        <div className={s.appInner}>
+          <div className={`${s.appVisual} reveal`}>
+            <Image
+              src='/12.png'
+              alt='iBam Health app icon'
+              width={420}
+              height={420}
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </div>
+          <div className={`${s.appText} reveal`}>
+            <span className={s.label}>Available Now</span>
+            <h2>Healthcare in your pocket</h2>
+            <p>
+              From anywhere in Nigeria, iBam Health puts a verified doctor, a certified lab, and a
+              licensed pharmacy one tap away. No waiting rooms, no repeat queues, no lost records.
+            </p>
+            <div className={s.appStore}>
+              <Image
+                src='/13.png'
+                alt='Download iBam Health on the App Store'
+                width={460}
+                height={200}
+                style={{ width: '100%', height: 'auto', borderRadius: 16 }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Values ────────────────────────────────── */}
       <section className={s.values}>
         <div className={s.valuesInner}>
           <div className={`${s.sectionHeader} reveal`}>
             <span className={s.eyebrow}>What We Stand For</span>
             <h2>Our core values</h2>
             <p>
-              Principles that guide every product decision, every hire, and
-              every patient interaction.
+              Principles that guide every product decision, every hire, and every patient interaction.
             </p>
           </div>
           <div className={`${s.valuesGrid} reveal-stagger`}>
@@ -181,15 +224,14 @@ export default function AboutPage () {
         </div>
       </section>
 
-      {/* Team */}
+      {/* ─── Team ──────────────────────────────────── */}
       <section className={s.team}>
         <div className={s.teamInner}>
           <div className={`${s.sectionHeader} reveal`}>
             <span className={s.eyebrow}>The Team</span>
             <h2>People behind the platform</h2>
             <p>
-              Clinicians, engineers, and operators who've spent their careers
-              building for Africa.
+              Clinicians, engineers, and operators who&apos;ve spent their careers building for Africa.
             </p>
           </div>
           <div className={`${s.teamGrid} reveal-stagger`}>
@@ -204,6 +246,7 @@ export default function AboutPage () {
           </div>
         </div>
       </section>
+
     </PageShell>
   )
 }

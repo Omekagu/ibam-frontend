@@ -2,6 +2,8 @@
 import { useState, FormEvent } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
+import AuthBrandPanel from '@/components/AuthBrandPanel'
+import { CheckCircleIcon, XIcon } from '@/components/icons'
 import s from '../pharmacy/page.module.scss'
 
 interface TestRow { name: string; price: string; turnaroundHours: string }
@@ -56,14 +58,17 @@ export default function LabOnboardPage () {
   if (done) {
     return (
       <div className={s.page}>
-        <div className={s.card}>
-          <div className={s.successIcon}>✓</div>
-          <h2 className={s.successTitle}>Application Received!</h2>
-          <p className={s.successMsg}>
-            Your lab application has been submitted. Our team will review it and notify you by email
-            once approved. You can then log in with your credentials.
-          </p>
-          <Link href='/login' className={s.loginLink}>Go to Login</Link>
+        <AuthBrandPanel />
+        <div className={s.formPanel}>
+          <div className={s.formWrap} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div className={s.successIcon}><CheckCircleIcon size={28} /></div>
+            <h2 className={s.successTitle}>Application Received!</h2>
+            <p className={s.successMsg}>
+              Your lab application has been submitted. Our team will review it and notify you by email
+              once approved. You can then log in with your credentials.
+            </p>
+            <Link href='/login' className={s.loginLink}>Go to Login</Link>
+          </div>
         </div>
       </div>
     )
@@ -71,94 +76,101 @@ export default function LabOnboardPage () {
 
   return (
     <div className={s.page}>
-      <div className={s.card}>
-        <div className={s.brand}>
-          <span className={s.mark}>iB</span>
-          <span className={s.brandName}>iBam <em>Health</em></span>
-        </div>
-        <h1 className={s.title}>Register Your Laboratory</h1>
-        <p className={s.sub}>Join our network of trusted diagnostic labs</p>
+      <AuthBrandPanel />
 
-        <form className={s.form} onSubmit={submit}>
-          <div className={s.section}>
-            <h3 className={s.sectionTitle}>Lab Information</h3>
-            <div className={s.field}>
-              <label>Lab Name *</label>
-              <input value={form.name} onChange={set('name')} placeholder='e.g. LifePath Diagnostics' required />
-            </div>
-            <div className={s.field}>
-              <label>Full Address *</label>
-              <input value={form.address} onChange={set('address')} placeholder='Street, City, State' required />
-            </div>
-            <div className={s.row2}>
+      <div className={s.formPanel}>
+        <div className={s.formWrap}>
+          <Link href='/' className={s.mobileLogo}>
+            <span className={s.mark}>iB</span>
+            <span className={s.brandName}>iBam <em>Health</em></span>
+          </Link>
+
+          <h1 className={s.title}>Register Your Laboratory</h1>
+          <p className={s.sub}>Join our network of trusted diagnostic labs</p>
+
+          <form className={s.form} onSubmit={submit}>
+            <div className={s.section}>
+              <h3 className={s.sectionTitle}>Lab Information</h3>
               <div className={s.field}>
-                <label>Phone Number *</label>
-                <input value={form.phone} onChange={set('phone')} placeholder='08012345678' required />
+                <label>Lab Name *</label>
+                <input value={form.name} onChange={set('name')} placeholder='e.g. LifePath Diagnostics' required />
               </div>
               <div className={s.field}>
-                <label>License / Accreditation No.</label>
-                <input value={form.licenseNumber} onChange={set('licenseNumber')} placeholder='MLSCN-XXXXX' />
+                <label>Full Address *</label>
+                <input value={form.address} onChange={set('address')} placeholder='Street, City, State' required />
+              </div>
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Phone Number *</label>
+                  <input value={form.phone} onChange={set('phone')} placeholder='08012345678' required />
+                </div>
+                <div className={s.field}>
+                  <label>License / Accreditation No.</label>
+                  <input value={form.licenseNumber} onChange={set('licenseNumber')} placeholder='MLSCN-XXXXX' />
+                </div>
+              </div>
+              <div className={s.field}>
+                <label>Coverage Areas (comma separated)</label>
+                <input value={form.coverageAreas} onChange={set('coverageAreas')} placeholder='Ikeja, Surulere, Yaba' />
               </div>
             </div>
-            <div className={s.field}>
-              <label>Coverage Areas (comma separated)</label>
-              <input value={form.coverageAreas} onChange={set('coverageAreas')} placeholder='Ikeja, Surulere, Yaba' />
-            </div>
-          </div>
 
-          <div className={s.section}>
-            <h3 className={s.sectionTitle}>Tests Offered</h3>
-            {tests.map((t, i) => (
-              <div key={i} className={s.testRow}>
-                <div className={s.field} style={{ flex: 2 }}>
-                  <label>Test Name</label>
-                  <input value={t.name} onChange={e => setTest(i, 'name', e.target.value)} placeholder='e.g. Full Blood Count' />
+            <div className={s.section}>
+              <h3 className={s.sectionTitle}>Tests Offered</h3>
+              {tests.map((t, i) => (
+                <div key={i} className={s.testRow}>
+                  <div className={s.field} style={{ flex: 2 }}>
+                    <label>Test Name</label>
+                    <input value={t.name} onChange={e => setTest(i, 'name', e.target.value)} placeholder='e.g. Full Blood Count' />
+                  </div>
+                  <div className={s.field} style={{ flex: 1 }}>
+                    <label>Price (₦)</label>
+                    <input type='number' value={t.price} onChange={e => setTest(i, 'price', e.target.value)} placeholder='5000' min='0' />
+                  </div>
+                  <div className={s.field} style={{ flex: 1 }}>
+                    <label>Turnaround (hrs)</label>
+                    <input type='number' value={t.turnaroundHours} onChange={e => setTest(i, 'turnaroundHours', e.target.value)} placeholder='24' min='1' />
+                  </div>
+                  {tests.length > 1 && (
+                    <button type='button' className={s.removeTest} onClick={() => setTests(prev => prev.filter((_, idx) => idx !== i))}>
+                      <XIcon size={12} />
+                    </button>
+                  )}
                 </div>
-                <div className={s.field} style={{ flex: 1 }}>
-                  <label>Price (₦)</label>
-                  <input type='number' value={t.price} onChange={e => setTest(i, 'price', e.target.value)} placeholder='5000' min='0' />
-                </div>
-                <div className={s.field} style={{ flex: 1 }}>
-                  <label>Turnaround (hrs)</label>
-                  <input type='number' value={t.turnaroundHours} onChange={e => setTest(i, 'turnaroundHours', e.target.value)} placeholder='24' min='1' />
-                </div>
-                {tests.length > 1 && (
-                  <button type='button' className={s.removeTest} onClick={() => setTests(prev => prev.filter((_, idx) => idx !== i))}>✕</button>
-                )}
+              ))}
+              <button type='button' className={s.addTest}
+                onClick={() => setTests(prev => [...prev, { name: '', price: '', turnaroundHours: '24' }])}>
+                + Add Another Test
+              </button>
+            </div>
+
+            <div className={s.section}>
+              <h3 className={s.sectionTitle}>Account Credentials</h3>
+              <div className={s.field}>
+                <label>Email Address *</label>
+                <input type='email' value={form.email} onChange={set('email')} placeholder='lab@example.com' required />
               </div>
-            ))}
-            <button type='button' className={s.addTest}
-              onClick={() => setTests(prev => [...prev, { name: '', price: '', turnaroundHours: '24' }])}>
-              + Add Another Test
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Password *</label>
+                  <input type='password' value={form.password} onChange={set('password')} placeholder='Min 8 characters' required />
+                </div>
+                <div className={s.field}>
+                  <label>Confirm Password *</label>
+                  <input type='password' value={form.confirmPassword} onChange={set('confirmPassword')} placeholder='Repeat password' required />
+                </div>
+              </div>
+            </div>
+
+            {error && <p className={s.error}>{error}</p>}
+
+            <button type='submit' className={s.submit} disabled={submitting}>
+              {submitting ? 'Submitting…' : 'Submit Application'}
             </button>
-          </div>
+          </form>
 
-          <div className={s.section}>
-            <h3 className={s.sectionTitle}>Account Credentials</h3>
-            <div className={s.field}>
-              <label>Email Address *</label>
-              <input type='email' value={form.email} onChange={set('email')} placeholder='lab@example.com' required />
-            </div>
-            <div className={s.row2}>
-              <div className={s.field}>
-                <label>Password *</label>
-                <input type='password' value={form.password} onChange={set('password')} placeholder='Min 8 characters' required />
-              </div>
-              <div className={s.field}>
-                <label>Confirm Password *</label>
-                <input type='password' value={form.confirmPassword} onChange={set('confirmPassword')} placeholder='Repeat password' required />
-              </div>
-            </div>
-          </div>
-
-          {error && <p className={s.error}>{error}</p>}
-
-          <button type='submit' className={s.submit} disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Submit Application'}
-          </button>
-        </form>
-
-        <p className={s.loginHint}>Already have an account? <Link href='/login'>Log in</Link></p>
+          <p className={s.loginHint}>Already have an account? <Link href='/login'>Log in</Link></p>
+        </div>
       </div>
     </div>
   )

@@ -1,24 +1,37 @@
-"use client";
-import { useEffect } from "react";
+'use client'
+import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
-export default function ScrollReveal() {
+export default function ScrollReveal () {
+  const pathname = usePathname()
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
+            entry.target.classList.add('is-visible')
           }
-        });
+        })
       },
-      { threshold: 0.12, rootMargin: "0px 0px -48px 0px" }
-    );
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    )
 
-    const els = document.querySelectorAll(".reveal");
-    els.forEach((el) => observer.observe(el));
+    // Wait one frame so the new page's DOM is fully painted
+    const id = requestAnimationFrame(() => {
+      // Mark body so CSS hides un-observed reveals — only after observer is ready
+      document.body.classList.add('sr-ready')
 
-    return () => observer.disconnect();
-  }, []);
+      document.querySelectorAll('.reveal:not(.is-visible)').forEach((el) =>
+        observer.observe(el)
+      )
+    })
 
-  return null;
+    return () => {
+      cancelAnimationFrame(id)
+      observer.disconnect()
+    }
+  }, [pathname])
+
+  return null
 }

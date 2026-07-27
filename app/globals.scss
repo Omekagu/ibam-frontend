@@ -83,12 +83,19 @@ button { font-family: inherit; }
 
 // ────────────────────────────────────────────────
 // Scroll-reveal utility (toggled by IntersectionObserver)
+// Content is VISIBLE by default — the animation is an enhancement only.
+// If JS never runs (SSR, slow connection, no-JS), everything shows normally.
 // ────────────────────────────────────────────────
 .reveal {
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+// JS adds .sr-ready to <body> before observing, so elements are only
+// hidden after the observer is ready to show them.
+body.sr-ready .reveal:not(.is-visible) {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(28px);
 }
 
 .reveal.is-visible {
@@ -99,7 +106,7 @@ button { font-family: inherit; }
 // Stagger children
 @for $i from 1 through 8 {
   .reveal-stagger > *:nth-child(#{$i}) {
-    transition-delay: #{($i - 1) * 0.1}s;
+    transition-delay: #{($i - 1) * 0.08}s;
   }
 }
 

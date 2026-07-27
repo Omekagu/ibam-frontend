@@ -12,7 +12,7 @@ const INFO = [
   {
     icon: <MailIcon size={22} />,
     title: 'Email Us',
-    body: 'support@ibamhealth.ng\npartners@ibamhealth.ng'
+    body: 'support@ibamhealth.com\npartners@ibamhealth.com'
   },
   {
     icon: <PhoneIcon size={22} />,

@@ -1,11 +1,11 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.15:5000/api'
 
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 30_000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json' }
 })
 
 // ─── Attach access token from localStorage ────────────────────
@@ -29,7 +29,9 @@ function flushQueue (token: string) {
 api.interceptors.response.use(
   res => res,
   async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const original = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean
+    }
 
     const isAuthRoute = original.url?.includes('/auth/')
     if (error.response?.status !== 401 || original._retry || isAuthRoute) {

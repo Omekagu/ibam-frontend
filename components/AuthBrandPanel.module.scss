@@ -1,0 +1,85 @@
+@use '../styles/variables' as *;
+
+.brand {
+  display: none;
+  background: #0A2810;
+  position: relative;
+  overflow: hidden;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+
+  @media (min-width: $bp-lg) { display: flex; }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(10,40,16,0.55) 0%,
+      rgba(10,40,16,0.1)  40%,
+      rgba(10,40,16,0.7)  100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+.slideImg {
+  position: absolute !important;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  z-index: 0;
+}
+.slideImgActive { opacity: 1; }
+
+.brandLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
+}
+.logoImg {
+  border-radius: $radius-sm;
+  display: block;
+}
+.name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: $white;
+  span { color: $accent; margin-left: 4px; }
+}
+
+.slideBottom {
+  position: relative;
+  z-index: 2;
+}
+.slideCaption {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+.slideDots {
+  display: flex;
+  gap: 0.5rem;
+}
+.slideDot {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  padding: 0;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.slideDotActive {
+  width: 24px;
+  background: $primary;
+}

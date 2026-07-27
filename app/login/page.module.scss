@@ -9,94 +9,6 @@
   @media (min-width: $bp-lg) { grid-template-columns: 1fr 1fr; }
 }
 
-// ─── Brand panel — full-bleed frame slideshow ─────
-.brand {
-  display: none;
-  background: #0A2810;
-  position: relative;
-  overflow: hidden;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 2.5rem;
-
-  @media (min-width: $bp-lg) { display: flex; }
-}
-
-// Frame images (absolutely positioned, crossfade)
-.slideImg {
-  position: absolute !important;
-  inset: 0;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.9s ease;
-  z-index: 0;
-}
-.slideImgActive { opacity: 1; }
-
-// Dark scrim so text remains readable
-.brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(10,40,16,0.55) 0%,
-    rgba(10,40,16,0.1)  40%,
-    rgba(10,40,16,0.7)  100%
-  );
-  z-index: 1;
-  pointer-events: none;
-}
-
-.brandLogo {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  text-decoration: none;
-  position: relative;
-  z-index: 2;
-}
-.logoImg {
-  border-radius: $radius-sm;
-  display: block;
-}
-.name {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: $white;
-  span { color: $accent; margin-left: 4px; }
-}
-
-// Bottom caption + dots
-.slideBottom {
-  position: relative;
-  z-index: 2;
-}
-.slideCaption {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.85);
-  margin: 0 0 1rem;
-  line-height: 1.5;
-}
-.slideDots {
-  display: flex;
-  gap: 0.5rem;
-}
-.slideDot {
-  width: 8px; height: 8px;
-  border-radius: 999px;
-  border: none;
-  background: rgba(255,255,255,0.3);
-  cursor: pointer;
-  padding: 0;
-  transition: width 0.3s ease, background 0.3s ease;
-}
-.slideDotActive {
-  width: 24px;
-  background: $primary;
-}
-
 // ─── Form panel ───────────────────────────────────
 .formPanel {
   background: $white;
@@ -195,37 +107,6 @@
   &:disabled { opacity: 0.65; cursor: not-allowed; }
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  color: $text-muted;
-  font-size: 0.75rem;
-
-  &::before, &::after { content: ''; flex: 1; height: 1px; background: $border; }
-}
-
-.googleBtn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  border: 1.5px solid $border;
-  border-radius: $radius-md;
-  padding: 0.8rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: $text-dark;
-  background: $white;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-  text-decoration: none;
-
-  &:hover { background: $off-white; border-color: $text-muted; }
-}
-
 .signup {
   text-align: center;
   margin-top: 1.5rem;
@@ -267,39 +148,4 @@
   margin-top: 0.75rem;
   font-size: 0.8125rem;
   a { color: $primary; text-decoration: none; font-weight: 600; &:hover { text-decoration: underline; } }
-}
-
-.partnerLinks {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid $border;
-  text-align: center;
-
-  p {
-    font-size: 0.78rem;
-    color: $text-muted;
-    margin: 0 0 0.625rem;
-  }
-}
-
-.partnerRow {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.partnerLink {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: $accent;
-  text-decoration: none;
-  padding: 5px 12px;
-  border: 1px solid rgba($primary, 0.25);
-  border-radius: 999px;
-  transition: background 0.15s, border-color 0.15s;
-
-  &:hover {
-    background: rgba($primary, 0.08);
-    border-color: rgba($primary, 0.5);
-  }
 }

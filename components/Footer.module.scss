@@ -34,11 +34,7 @@
       width: 36px;
       height: 36px;
       border-radius: $radius-sm;
-      background: $primary;
-      @include flex-center;
-      font-size: 0.8rem;
-      font-weight: 900;
-      color: $white;
+      display: block;
       flex-shrink: 0;
     }
 
