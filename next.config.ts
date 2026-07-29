@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['api.ibamhealth.com', 'api.ibamhealth.com'],
+  allowedDevOrigins: ['api.ibamhealth.com'],
   images: {
     remotePatterns: [
       {

@@ -76,6 +76,31 @@
   }
 }
 
+.fieldInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input { padding-right: 2.75rem; }
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s ease;
+
+  &:hover { color: $text-dark; }
+  svg { width: 18px; height: 18px; }
+}
+
 .meta {
   display: flex;
   align-items: center;

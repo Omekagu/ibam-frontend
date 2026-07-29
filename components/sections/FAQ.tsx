@@ -5,7 +5,7 @@ import s from './FAQ.module.scss'
 const FAQS = [
   {
     q: 'Is iBam Health available across Nigeria?',
-    a: 'Yes. Our telemedicine service is available to anyone in Nigeria with a smartphone and internet connection. Pharmacy delivery currently covers Enugu, Abuja, Port Harcourt, Kano, and Ibadan, with more cities launching soon.'
+    a: 'Yes. Our telemedicine service is available to anyone in Nigeria with a smartphone and internet connection. Pharmacy delivery currently covers Enugu with more cities launching soon.'
   },
   {
     q: 'Are the doctors on iBam Health real and verified?',

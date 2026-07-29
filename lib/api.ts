@@ -5,8 +5,7 @@ const BASE_URL =
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30_000,
-  headers: { 'Content-Type': 'application/json' }
+  timeout: 30_000
 })
 
 // ─── Attach access token from localStorage ────────────────────

@@ -10,6 +10,15 @@ import { StethoscopeIcon, VideoCameraIcon } from '@/components/icons'
 */
 const SCENES = [
   {
+    bg: 'linear-gradient(145deg,#082208 0%,#0A2810 45%,#22C55E 100%)',
+    imageSrc:
+      'https://plus.unsplash.com/premium_photo-1676325101955-1089267548d4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    icon: '',
+    tag: 'Diagnostics',
+    title: 'Lab results\nready in 1 hour',
+    stat: 'Home or walk-in sample collection'
+  },
+  {
     bg: 'linear-gradient(145deg,#0A2810 0%,#22C55E 60%,#15803D 100%)',
     imageSrc:
       'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -17,15 +26,6 @@ const SCENES = [
     tag: 'Telemedicine',
     title: 'See a doctor\nin minutes',
     stat: '500+ verified physicians'
-  },
-  {
-    bg: 'linear-gradient(145deg,#082208 0%,#0A2810 45%,#22C55E 100%)',
-    imageSrc:
-      'https://plus.unsplash.com/premium_photo-1676325101955-1089267548d4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    icon: '',
-    tag: 'Diagnostics',
-    title: 'Lab results\nin 24 hours',
-    stat: 'Home sample collection'
   },
   {
     bg: 'linear-gradient(145deg,#0A2810 0%,#15803D 45%,#F59E0B 100%)',
@@ -72,7 +72,7 @@ export default function Hero () {
         <div className={s.bg}>
           {/* Optional photo bg — uncomment and set src when image is ready */}
           <img
-            src='https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=1240&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+            src='https://images.pexels.com/photos/28585011/pexels-photo-28585011.jpeg'
             className={s.bgPhoto}
             alt=''
             aria-hidden
@@ -90,7 +90,7 @@ export default function Hero () {
           <div className={s.copy}>
             <div className={s.badge}>
               <span className={s.badgeDot} />
-              Telemedicine · Diagnostics · Pharmacy
+              Diagnostics · Telemedicine · Pharmacy
             </div>
 
             <h1 className={s.headline}>
@@ -99,14 +99,14 @@ export default function Hero () {
             </h1>
 
             <p className={s.sub}>
-              Consult certified doctors, order lab tests, get e-prescriptions,
-              and access trusted pharmacy delivery — from wherever you are in
-              Nigeria.
+              Consult verified doctors, order lab tests with results in as
+              little as 1 hour, and get medications delivered — all from your
+              phone, anywhere in Nigeria.
             </p>
 
             <div className={s.ctaRow}>
               <Link href='/signup' className={s.btnPrimary}>
-                Book a Consultation <ArrowRight />
+                ORDER A LAB TEST <ArrowRight />
               </Link>
               <button className={s.btnVideo} onClick={() => setVideoOpen(true)}>
                 <PlayIcon /> Watch Demo
@@ -162,7 +162,9 @@ export default function Hero () {
                   <div className={s.sceneStrip}>
                     <div className={s.stripRow}>
                       <div className={s.stripDoc}>
-                        <span className={s.stripAvatar}><StethoscopeIcon size={18} /></span>
+                        <span className={s.stripAvatar}>
+                          <StethoscopeIcon size={18} />
+                        </span>
                         <div>
                           <div className={s.stripName}>Dr. Amara Nwosu</div>
                           <div className={s.stripSpec}>Cardiologist</div>
@@ -207,27 +209,33 @@ export default function Hero () {
             </div>
 
             {/* Floating badges */}
-            <div className={`${s.badgeFloat} ${s.badgeTop}`}>
+            <div
+              className={`${s.badgeFloat} ${s.badgeTop}`}
+              suppressHydrationWarning
+            >
               <div
                 className={s.badgeIcon}
                 style={{ background: 'rgba(16,185,129,0.15)' }}
               >
                 <CheckCircle color='#10B981' />
               </div>
-              <div>
-                <p className={s.badgeLabel}>Triage Complete</p>
-                <p className={s.badgeSub}>Green — Low Risk</p>
+              <div suppressHydrationWarning>
+                <p className={s.badgeLabel}>Lab Result Ready</p>
+                <p className={s.badgeSub}>Malaria Test · 45 mins</p>
               </div>
             </div>
 
-            <div className={`${s.badgeFloat} ${s.badgeBottom}`}>
+            <div
+              className={`${s.badgeFloat} ${s.badgeBottom}`}
+              suppressHydrationWarning
+            >
               <div
                 className={s.badgeIcon}
                 style={{ background: 'rgba(10,143,108,0.15)' }}
               >
                 <DocIcon color='#0A8F6C' />
               </div>
-              <div>
+              <div suppressHydrationWarning>
                 <p className={s.badgeLabel}>E-Prescription Sent</p>
                 <p className={s.badgeSub}>Amoxicillin 500mg · 5 days</p>
               </div>
@@ -285,7 +293,9 @@ export default function Hero () {
               }}
             />
             <div className={s.videoPlaceholder}>
-              <div className={s.videoPlaceholderIcon}><VideoCameraIcon size={40} /></div>
+              <div className={s.videoPlaceholderIcon}>
+                <VideoCameraIcon size={40} />
+              </div>
               <p>
                 Drop your demo video at <code>/public/videos/demo.mp4</code>
               </p>
