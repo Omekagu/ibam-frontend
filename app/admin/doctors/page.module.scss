@@ -297,3 +297,109 @@
 
   &:hover { background: rgba($danger,0.18); }
 }
+
+// ─── Register button ──────────────────────────────
+.btnPrimary {
+  @include btn-primary;
+  padding: 0.5rem 1.125rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+// ─── Form fields ─────────────────────────────────
+.formErr {
+  font-size: 0.8rem;
+  color: $danger;
+  background: rgba($danger,0.08);
+  border: 1px solid rgba($danger,0.2);
+  border-radius: $radius-md;
+  padding: 0.5rem 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+
+  label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+}
+
+.input {
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+}
+
+.textarea {
+  @extend .input;
+  resize: vertical;
+  min-height: 72px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text-semi);
+  input[type='checkbox'] { accent-color: $primary; width: 15px; height: 15px; cursor: pointer; }
+}
+
+// ─── Manual KYC ──────────────────────────────────
+.kycRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.kycSelect {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  option { background: #0D1829; }
+}
+
+.kycBtn {
+  padding: 0.45rem 1rem;
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: $primary-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.kycReasonInput {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+}

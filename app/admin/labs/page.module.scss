@@ -106,6 +106,46 @@
   &:hover { background: rgba($primary,0.16); }
 }
 
+.kycRow { display: flex; gap: 0.5rem; align-items: stretch; }
+.editorSuccess { background: rgba($success,0.08); color: $success; border-color: rgba($success,0.2); }
+
+.registerBtn {
+  padding: 6px 14px;
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: $primary-dark; }
+}
+
+// ─── Modal ───────────────────────────────────────
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 500; backdrop-filter: blur(4px); }
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(600px, 95vw);
+  max-height: 90vh; overflow-y: auto;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-xl; z-index: 501;
+  display: flex; flex-direction: column;
+}
+.modalHead { @include flex-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid $navy-border; flex-shrink: 0;
+  h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
+}
+.closeBtn { width: 30px; height: 30px; border-radius: 50%; background: var(--input-hover-bg); border: 1px solid $navy-border; color: var(--text-semi); cursor: pointer; font-size: 0.85rem; @include flex-center; &:hover { background: rgba(255,255,255,0.12); } }
+.modalBody { padding: 1.5rem; flex: 1; }
+.modalFooter { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid $navy-border; margin-top: 1rem; }
+.cancelBtn { padding: 7px 16px; background: var(--input-hover-bg); border: 1px solid $navy-border; border-radius: $radius-md; font-size: 0.8125rem; font-weight: 600; color: var(--text-semi); cursor: pointer; &:hover { background: rgba(255,255,255,0.1); } }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+.fieldGroup { display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+}
+.checkRow { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.8125rem; color: var(--text-semi);
+  input[type='checkbox'] { accent-color: $primary; width: 15px; height: 15px; cursor: pointer; }
+}
+
 .saveTestsBtn {
   font-size: 0.8rem;
   font-weight: 700;

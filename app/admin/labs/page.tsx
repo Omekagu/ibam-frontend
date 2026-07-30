@@ -15,11 +15,17 @@ interface Lab {
   testsOffered: { name: string; price: number; turnaroundHours: number }[]
   coverageAreas: string[]
   createdAt: string
-  user?: { name: string; email: string; isActive: boolean }
+  user?: { _id?: string; name: string; email: string; isActive: boolean }
 }
 
 const STATUS_OPTS = ['pending', 'active', 'inactive', 'suspended'] as const
 const EMPTY_ROW: TestRow = { name: '', price: '', turnaroundHours: 24 }
+
+const BLANK = {
+  name: '', email: '', phone: '', password: '',
+  address: '', licenseNumber: '', cacNumber: '',
+  coverageAreas: '', autoActivate: false,
+}
 
 export default function AdminLabsPage () {
   const [labs,       setLabs]       = useState<Lab[]>([])
@@ -31,13 +37,26 @@ export default function AdminLabsPage () {
   const [saving,     setSaving]     = useState(false)
   const [saveErr,    setSaveErr]    = useState('')
 
+  // Register modal
+  const [showRegister, setShowRegister] = useState(false)
+  const [form,         setForm]         = useState(BLANK)
+  const [formErr,      setFormErr]      = useState('')
+  const [creating,     setCreating]     = useState(false)
+
+  // Manual KYC
+  const [kycLabId,  setKycLabId]  = useState<string | null>(null)
+  const [kycStatus, setKycStatus] = useState<'pending'|'approved'|'rejected'>('approved')
+  const [kycReason, setKycReason] = useState('')
+  const [kycSaving, setKycSaving] = useState(false)
+  const [kycMsg,    setKycMsg]    = useState('')
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const params = filter ? `?status=${filter}` : ''
       const r = await api.get(`/admin/labs${params}`)
       setLabs(r.data.data?.labs ?? [])
-    } catch { }
+    } catch {}
     setLoading(false)
   }, [filter])
 
@@ -78,8 +97,7 @@ export default function AdminLabsPage () {
   async function saveTests (labId: string) {
     const valid = draftTests.filter(t => t.name.trim() && t.price !== '')
     if (!valid.length) { setSaveErr('Add at least one test with a name and price.'); return }
-    setSaving(true)
-    setSaveErr('')
+    setSaving(true); setSaveErr('')
     try {
       const r = await api.put(`/admin/labs/${labId}/tests`, {
         testsOffered: valid.map(t => ({
@@ -95,6 +113,47 @@ export default function AdminLabsPage () {
     setSaving(false)
   }
 
+  async function submitRegister (e: React.FormEvent) {
+    e.preventDefault()
+    setFormErr('')
+    if (!form.name || !form.email || !form.password || !form.address) {
+      setFormErr('Name, email, password and address are required.')
+      return
+    }
+    setCreating(true)
+    try {
+      const r = await api.post('/admin/labs', form)
+      const newLab: Lab = {
+        ...r.data.data.lab,
+        user: r.data.data.user,
+      }
+      setLabs(prev => [newLab, ...prev])
+      setForm(BLANK)
+      setShowRegister(false)
+    } catch (err: any) {
+      setFormErr(err?.response?.data?.message ?? 'Failed to create lab.')
+    }
+    setCreating(false)
+  }
+
+  async function submitKyc (lab: Lab) {
+    const userId = lab.user?._id
+    if (!userId) { setKycMsg('User ID not available.'); return }
+    setKycSaving(true); setKycMsg('')
+    try {
+      await api.put(`/admin/kyc/${userId}/verify`, { kycStatus, reason: kycReason })
+      setLabs(prev => prev.map(l =>
+        l._id === lab._id
+          ? { ...l, status: kycStatus === 'approved' ? 'active' : kycStatus === 'rejected' ? 'suspended' : l.status }
+          : l
+      ))
+      setKycMsg('KYC status updated.')
+    } catch (err: any) {
+      setKycMsg(err?.response?.data?.message ?? 'Failed to update KYC.')
+    }
+    setKycSaving(false)
+  }
+
   return (
     <div className={s.wrap}>
       <div className={s.header}>
@@ -102,10 +161,15 @@ export default function AdminLabsPage () {
           <h2 className={s.title}>Diagnostic Labs</h2>
           <span className={s.countBadge}>{labs.length}</span>
         </div>
-        <select className={s.filter} value={filter} onChange={e => setFilter(e.target.value)}>
-          <option value=''>All statuses</option>
-          {STATUS_OPTS.map(o => <option key={o} value={o}>{cap(o)}</option>)}
-        </select>
+        <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+          <select className={s.filter} value={filter} onChange={e => setFilter(e.target.value)}>
+            <option value=''>All statuses</option>
+            {STATUS_OPTS.map(o => <option key={o} value={o}>{cap(o)}</option>)}
+          </select>
+          <button className={s.registerBtn} onClick={() => { setForm(BLANK); setFormErr(''); setShowRegister(true) }}>
+            + Register Lab
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -134,9 +198,22 @@ export default function AdminLabsPage () {
                   <div className={s.actionRow}>
                     <button
                       className={s.testsBtn}
-                      onClick={() => editingId === lab._id ? setEditingId(null) : openEdit(lab)}
+                      onClick={() => {
+                        if (editingId === lab._id) { setEditingId(null); setKycLabId(null) }
+                        else { openEdit(lab); setKycLabId(null) }
+                      }}
                     >
                       {editingId === lab._id ? 'Close' : 'Manage Tests'}
+                    </button>
+                    <button
+                      className={s.testsBtn}
+                      onClick={() => {
+                        setKycLabId(kycLabId === lab._id ? null : lab._id)
+                        setKycMsg(''); setKycReason(''); setKycStatus('approved')
+                        setEditingId(null)
+                      }}
+                    >
+                      {kycLabId === lab._id ? 'Close KYC' : 'Verify KYC'}
                     </button>
                     {lab.status !== 'active' && (
                       <button className={s.approveBtn} disabled={updating === lab._id} onClick={() => setStatus(lab._id, 'active')}>
@@ -157,52 +234,58 @@ export default function AdminLabsPage () {
                 </div>
               </div>
 
+              {/* KYC panel */}
+              {kycLabId === lab._id && (
+                <div className={s.testEditor}>
+                  <div className={s.editorHead}>
+                    <span className={s.editorTitle}>Manual KYC Verification — {lab.name}</span>
+                    <p className={s.editorSub}>Override the KYC / verification status for this lab partner.</p>
+                  </div>
+                  {kycMsg && <p className={`${s.editorErr} ${kycMsg.includes('updated') ? s.editorSuccess : ''}`}>{kycMsg}</p>}
+                  <div className={s.kycRow}>
+                    <select className={s.input} value={kycStatus} onChange={e => setKycStatus(e.target.value as any)}>
+                      <option value='approved'>Approved — activate lab</option>
+                      <option value='rejected'>Rejected — suspend lab</option>
+                      <option value='pending'>Pending — reset to pending</option>
+                    </select>
+                    <button className={s.saveTestsBtn} onClick={() => submitKyc(lab)} disabled={kycSaving}>
+                      {kycSaving ? 'Saving…' : 'Apply KYC'}
+                    </button>
+                  </div>
+                  <input
+                    className={s.input}
+                    style={{ marginTop: '0.5rem' }}
+                    placeholder='Reason / note (optional)'
+                    value={kycReason}
+                    onChange={e => setKycReason(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Test catalog editor */}
               {editingId === lab._id && (
                 <div className={s.testEditor}>
                   <div className={s.editorHead}>
                     <span className={s.editorTitle}>Test Catalog — {lab.name}</span>
                     <p className={s.editorSub}>Add, edit, or remove tests. Only admin can modify this catalog.</p>
                   </div>
-
                   {saveErr && <p className={s.editorErr}>{saveErr}</p>}
-
                   <div className={s.tableHead}>
-                    <span>Test Name</span>
-                    <span>Price (₦)</span>
-                    <span>Turnaround (hrs)</span>
-                    <span />
+                    <span>Test Name</span><span>Price (₦)</span><span>Turnaround (hrs)</span><span />
                   </div>
-
                   <div className={s.tableBody}>
                     {draftTests.map((row, i) => (
                       <div key={i} className={s.tableRow}>
-                        <input
-                          className={s.input}
-                          placeholder='e.g. Full Blood Count'
-                          value={row.name}
-                          onChange={e => updateRow(i, 'name', e.target.value)}
-                        />
-                        <input
-                          className={s.input}
-                          type='number'
-                          min={0}
-                          placeholder='e.g. 3500'
-                          value={row.price}
-                          onChange={e => updateRow(i, 'price', e.target.value)}
-                        />
-                        <input
-                          className={s.input}
-                          type='number'
-                          min={1}
-                          placeholder='24'
-                          value={row.turnaroundHours}
-                          onChange={e => updateRow(i, 'turnaroundHours', e.target.value)}
-                        />
+                        <input className={s.input} placeholder='e.g. Full Blood Count' value={row.name}
+                          onChange={e => updateRow(i, 'name', e.target.value)} />
+                        <input className={s.input} type='number' min={0} placeholder='e.g. 3500' value={row.price}
+                          onChange={e => updateRow(i, 'price', e.target.value)} />
+                        <input className={s.input} type='number' min={1} placeholder='24' value={row.turnaroundHours}
+                          onChange={e => updateRow(i, 'turnaroundHours', e.target.value)} />
                         <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'>✕</button>
                       </div>
                     ))}
                   </div>
-
                   <div className={s.editorFooter}>
                     <button className={s.addRowBtn} onClick={addRow}>+ Add Test</button>
                     <button className={s.saveTestsBtn} onClick={() => saveTests(lab._id)} disabled={saving}>
@@ -214,6 +297,75 @@ export default function AdminLabsPage () {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Register Lab modal ── */}
+      {showRegister && (
+        <>
+          <div className={s.modalOverlay} onClick={() => setShowRegister(false)} />
+          <div className={s.modal}>
+            <div className={s.modalHead}>
+              <h3>Register Diagnostic Lab</h3>
+              <button className={s.closeBtn} onClick={() => setShowRegister(false)}>✕</button>
+            </div>
+            <form className={s.modalBody} onSubmit={submitRegister}>
+              {formErr && <p className={s.editorErr}>{formErr}</p>}
+              <div className={s.formGrid}>
+                <div className={s.fieldGroup}>
+                  <label>Lab Name *</label>
+                  <input className={s.input} placeholder='e.g. MedLab Diagnostics' value={form.name}
+                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup}>
+                  <label>Email *</label>
+                  <input className={s.input} type='email' placeholder='lab@example.com' value={form.email}
+                    onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup}>
+                  <label>Phone</label>
+                  <input className={s.input} placeholder='+234 800 000 0000' value={form.phone}
+                    onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup}>
+                  <label>Temporary Password *</label>
+                  <input className={s.input} type='password' placeholder='Min 8 characters' value={form.password}
+                    onChange={e => setForm(p => ({ ...p, password: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup} style={{ gridColumn: '1 / -1' }}>
+                  <label>Address *</label>
+                  <input className={s.input} placeholder='Full address' value={form.address}
+                    onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup}>
+                  <label>License Number</label>
+                  <input className={s.input} placeholder='Lab license no.' value={form.licenseNumber}
+                    onChange={e => setForm(p => ({ ...p, licenseNumber: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup}>
+                  <label>CAC Number</label>
+                  <input className={s.input} placeholder='RC000000' value={form.cacNumber}
+                    onChange={e => setForm(p => ({ ...p, cacNumber: e.target.value }))} />
+                </div>
+                <div className={s.fieldGroup} style={{ gridColumn: '1 / -1' }}>
+                  <label>Coverage Areas (comma-separated)</label>
+                  <input className={s.input} placeholder='Lagos, Abuja, Port Harcourt' value={form.coverageAreas}
+                    onChange={e => setForm(p => ({ ...p, coverageAreas: e.target.value }))} />
+                </div>
+                <label className={s.checkRow} style={{ gridColumn: '1 / -1' }}>
+                  <input type='checkbox' checked={form.autoActivate}
+                    onChange={e => setForm(p => ({ ...p, autoActivate: e.target.checked }))} />
+                  <span>Auto-activate (skip review workflow)</span>
+                </label>
+              </div>
+              <div className={s.modalFooter}>
+                <button type='button' className={s.cancelBtn} onClick={() => setShowRegister(false)}>Cancel</button>
+                <button type='submit' className={s.saveTestsBtn} disabled={creating}>
+                  {creating ? 'Creating…' : 'Create Lab'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
       )}
     </div>
   )
