@@ -54,9 +54,13 @@ export default function LoginPage () {
       else if (user.role === 'lab_partner') router.push('/partner/lab')
       else router.push('/patient')
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Invalid credentials'
+      const e = err as { response?: { status?: number; data?: { message?: string } } }
+      const msg = e?.response?.data?.message ?? 'Invalid credentials'
+      if (e?.response?.status === 403 && msg.toLowerCase().includes('verify your email')) {
+        const target = mode === 'email' ? email : ''
+        router.push(`/verify-email${target ? `?email=${encodeURIComponent(target)}` : ''}`)
+        return
+      }
       setError(msg)
     } finally {
       setLoading(false)

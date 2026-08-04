@@ -26,6 +26,7 @@ export interface AuthResponse {
     email: string
     role: string
     avatar?: string
+    isVerified: boolean
   }
 }
 
@@ -83,6 +84,13 @@ export function getStoredUser (): AuthResponse['user'] | null {
 export function isLoggedIn (): boolean {
   if (typeof window === 'undefined') return false
   return !!localStorage.getItem('access_token')
+}
+
+export function updateStoredUser (updates: Partial<AuthResponse['user']>): void {
+  if (typeof window === 'undefined') return
+  const user = getStoredUser()
+  if (!user) return
+  localStorage.setItem('user', JSON.stringify({ ...user, ...updates }))
 }
 
 export async function sendEmailOTP (email: string): Promise<void> {

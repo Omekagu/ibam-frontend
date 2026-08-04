@@ -1,34 +1,51 @@
 'use client'
-import { useState, FormEvent, useEffect, Suspense } from 'react'
-import Link from 'next/link'
+import { useState, useRef, useEffect, KeyboardEvent, Suspense } from 'react'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
-import { sendEmailOTP, verifyEmailOTP } from '@/lib/auth'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { sendEmailOTP, verifyEmailOTP, getStoredUser, updateStoredUser } from '@/lib/auth'
+import AuthBrandPanel from '@/components/AuthBrandPanel'
 import s from './page.module.scss'
+
+const BOXES = 6
+
+function MailIcon () {
+  return (
+    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={1.8} strokeLinecap='round' strokeLinejoin='round'>
+      <path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z' />
+      <polyline points='22,6 12,13 2,6' />
+    </svg>
+  )
+}
 
 function VerifyEmailForm () {
   const params = useSearchParams()
+  const router = useRouter()
+
   const [email,   setEmail]   = useState(params.get('email') ?? '')
-  const [otp,     setOtp]     = useState('')
+  const [digits,  setDigits]  = useState<string[]>(Array(BOXES).fill(''))
   const [sent,    setSent]    = useState(false)
   const [done,    setDone]    = useState(false)
   const [error,   setError]   = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Auto-send if email pre-filled from query param
+  const boxRefs = useRef<(HTMLInputElement | null)[]>([])
+
   useEffect(() => {
     const q = params.get('email')
-    if (q) { setEmail(q); handleSend(q) }
+    if (q) handleSend(q)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSend (emailArg?: string) {
-    const target = emailArg ?? email
+    const target = (emailArg ?? email).trim()
     if (!target) { setError('Enter your email address.'); return }
     setSending(true); setError('')
     try {
       await sendEmailOTP(target)
+      setEmail(target)
       setSent(true)
+      setTimeout(() => boxRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -37,12 +54,36 @@ function VerifyEmailForm () {
     } finally { setSending(false) }
   }
 
-  async function handleVerify (e: FormEvent) {
-    e.preventDefault()
+  function onType (text: string, i: number) {
+    const val = text.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[i] = val
+    setDigits(next)
+    if (val && i < BOXES - 1) boxRefs.current[i + 1]?.focus()
+  }
+
+  function onKeyDown (e: KeyboardEvent<HTMLInputElement>, i: number) {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) {
+      boxRefs.current[i - 1]?.focus()
+    }
+  }
+
+  async function handleVerify () {
+    const otp = digits.join('')
+    if (otp.length < BOXES) return
     setLoading(true); setError('')
     try {
       await verifyEmailOTP(email, otp)
+      updateStoredUser({ isVerified: true })
       setDone(true)
+      const user = getStoredUser()
+      const dest =
+        user?.role === 'doctor'            ? '/doctor/kyc'        :
+        user?.role === 'admin'             ? '/admin'             :
+        user?.role === 'pharmacy_partner'  ? '/partner/pharmacy'  :
+        user?.role === 'lab_partner'       ? '/partner/lab'       :
+        '/patient'
+      setTimeout(() => router.replace(dest), 1500)
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -51,82 +92,113 @@ function VerifyEmailForm () {
     } finally { setLoading(false) }
   }
 
-  return (
-    <div className={s.card}>
-      <Link href='/' className={s.logo}>
-        <Image src='/Ibam Logo Png.png' alt='iBam' width={28} height={28} style={{ borderRadius: 8 }} />
-        <span>iBam <em>Health</em></span>
-      </Link>
+  const filled = digits.every(d => d.length > 0)
 
-      {done ? (
-        <div className={s.success}>
-          <div className={s.successIcon}>✓</div>
-          <h2>Email verified!</h2>
-          <p>Your email address has been confirmed. You can now log in.</p>
-          <Link href='/login' className={s.backBtn}>Go to Login →</Link>
-        </div>
-      ) : (
+  if (done) {
+    return (
+      <div className={s.success}>
+        <div className={s.successIcon}>✓</div>
+        <h2>Email verified!</h2>
+        <p>Your email address has been confirmed.<br />Taking you to your dashboard…</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className={s.iconBadge}><MailIcon /></div>
+
+      {!sent ? (
         <>
-          <h1 className={s.title}>Verify your email</h1>
-          <p className={s.sub}>
-            {sent
-              ? `We sent a 6-digit code to ${email}. Enter it below.`
-              : 'Enter your email and we\'ll send you a verification code.'}
+          <h1 className={s.formTitle}>Verify your email</h1>
+          <p className={s.formSub}>
+            Enter your email and we&apos;ll send you a 6-digit verification code.
           </p>
 
-          {error && <p className={s.error}>{error}</p>}
+          {error && <p className={s.errorBanner}>{error}</p>}
 
-          <form onSubmit={handleVerify}>
-            <div className={s.field}>
-              <label>Email Address</label>
+          <div className={s.field}>
+            <label htmlFor='ve-email'>Email Address</label>
+            <input
+              id='ve-email'
+              type='email'
+              placeholder='you@example.com'
+              value={email}
+              onChange={e => { setEmail(e.target.value); setSent(false) }}
+              required
+            />
+          </div>
+
+          <button className={s.submit} disabled={sending || !email.trim()} onClick={() => handleSend()}>
+            {sending ? 'Sending…' : 'Send Code →'}
+          </button>
+        </>
+      ) : (
+        <>
+          <h1 className={s.formTitle}>Check your email</h1>
+          <p className={s.formSub}>
+            We sent a 6-digit code to <strong>{email}</strong>.
+            Enter it below to verify your account.
+          </p>
+
+          {error && <p className={s.errorBanner}>{error}</p>}
+
+          <div className={s.otpRow}>
+            {digits.map((d, i) => (
               <input
-                type='email' value={email} placeholder='you@example.com'
-                onChange={e => { setEmail(e.target.value); setSent(false) }}
-                required
+                key={i}
+                ref={r => { boxRefs.current[i] = r }}
+                className={`${s.otpBox} ${d ? s.otpBoxFilled : ''}`}
+                type='text'
+                inputMode='numeric'
+                maxLength={1}
+                value={d}
+                onChange={e => onType(e.target.value, i)}
+                onKeyDown={e => onKeyDown(e, i)}
               />
-            </div>
+            ))}
+          </div>
 
-            {sent && (
-              <div className={s.field}>
-                <label>Verification Code</label>
-                <input
-                  type='text' inputMode='numeric' placeholder='000000'
-                  maxLength={6} value={otp}
-                  onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                  className={s.otpInput} required
-                />
-              </div>
-            )}
+          <button className={s.submit} disabled={!filled || loading} onClick={handleVerify}>
+            {loading ? 'Verifying…' : 'Verify Email →'}
+          </button>
 
-            {!sent ? (
-              <button type='button' className={s.btn} disabled={sending} onClick={() => handleSend()}>
-                {sending ? 'Sending…' : 'Send Code'}
-              </button>
-            ) : (
-              <>
-                <button type='submit' className={s.btn} disabled={loading}>
-                  {loading ? 'Verifying…' : 'Verify Email'}
-                </button>
-                <button type='button' className={s.resendBtn} disabled={sending} onClick={() => handleSend()}>
-                  {sending ? 'Resending…' : 'Resend code'}
-                </button>
-              </>
-            )}
-          </form>
+          <button className={s.resendBtn} disabled={sending} onClick={() => handleSend()}>
+            {sending ? 'Resending…' : 'Resend code'}
+          </button>
 
-          <Link href='/login' className={s.backLink}>← Back to Login</Link>
+          <button
+            className={s.backLink}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}
+            onClick={() => { setSent(false); setDigits(Array(BOXES).fill('')) }}
+          >
+            ← Change email
+          </button>
         </>
       )}
-    </div>
+
+      <Link href='/login' className={s.backLink}>← Back to Login</Link>
+    </>
   )
 }
 
 export default function VerifyEmailPage () {
   return (
     <div className={s.page}>
-      <Suspense>
-        <VerifyEmailForm />
-      </Suspense>
+      <AuthBrandPanel />
+
+      <div className={s.formPanel}>
+        <div className={s.formWrap}>
+          <Link href='/' className={s.mobileHeader}>
+            <Image src='/Ibam Logo Png.png' alt='iBam Health' width={36} height={36} />
+            <span>iBam <em>Health</em></span>
+          </Link>
+
+          <Suspense>
+            <VerifyEmailForm />
+          </Suspense>
+        </div>
+      </div>
     </div>
   )
 }

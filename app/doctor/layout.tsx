@@ -32,7 +32,12 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
   const [online, setOnline] = useState(true)
   const [togglingOnline, setTogglingOnline] = useState(false)
 
-  useEffect(() => { setUser(getStoredUser()) }, [])
+  useEffect(() => {
+    const u = getStoredUser()
+    if (!u) { router.replace('/login'); return }
+    if (!u.isVerified) { router.replace(`/verify-email?email=${encodeURIComponent(u.email)}`); return }
+    setUser(u)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setDrawerOpen(false); setSheetOpen(false) }, [path])
 
   async function handleOnlineToggle (checked: boolean) {

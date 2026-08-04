@@ -5,8 +5,8 @@
 
 .pageHeader {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-  .title    { font-size: 1.25rem; font-weight: 800; color: $white; margin: 0; }
-  .subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: 4px 0 0; }
+  .title    { font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0; }
+  .subtitle { font-size: 0.8rem; color: var(--text-sub); margin: 4px 0 0; }
 }
 
 .newBtn {
@@ -25,7 +25,7 @@
   border-radius: $radius-sm; padding: 10px 14px; color: $danger; font-size: 0.875rem;
 }
 
-.empty { color: rgba(255,255,255,0.35); font-size: 0.875rem; }
+.empty { color: var(--text-faint); font-size: 0.875rem; }
 
 // ── Plan grid ──
 .planGrid {
@@ -35,7 +35,7 @@
 }
 
 .planCard {
-  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: $radius-lg;
   padding: 1.25rem; display: flex; flex-direction: column; gap: 0.875rem;
   transition: border-color 0.18s;
 
@@ -46,9 +46,9 @@
   display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
 }
 
-.planName  { font-size: 1rem; font-weight: 800; color: $white; margin: 0; }
+.planName  { font-size: 1rem; font-weight: 800; color: var(--text); margin: 0; }
 .planPrice { font-size: 0.8rem; color: $accent; font-weight: 600; margin: 3px 0 0; }
-.planDesc  { font-size: 0.8125rem; color: rgba(255,255,255,0.45); line-height: 1.5; margin: 0; }
+.planDesc  { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
 
 .statusBadge {
   font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: $radius-full;
@@ -61,7 +61,7 @@
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-direction: column; gap: 4px;
 
-  li { font-size: 0.8rem; color: rgba(255,255,255,0.55); display: flex; align-items: center; gap: 6px; }
+  li { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 }
 
 .featureDot {
@@ -70,8 +70,8 @@
 }
 
 .paystackCode {
-  font-size: 0.75rem; color: rgba(255,255,255,0.3); margin: 0;
-  code { color: rgba(255,255,255,0.5); }
+  font-size: 0.75rem; color: var(--text-faint); margin: 0;
+  code { color: var(--text-muted); }
 }
 
 .planActions { display: flex; gap: 0.5rem; margin-top: auto; }
@@ -82,10 +82,10 @@
 }
 
 .toggleBtn {
-  background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: $radius-sm;
-  font-size: 0.8rem; color: rgba(255,255,255,0.4); padding: 5px 14px; cursor: pointer;
+  background: transparent; border: 1px solid var(--border); border-radius: $radius-sm;
+  font-size: 0.8rem; color: var(--text-faint); padding: 5px 14px; cursor: pointer;
   transition: all 0.18s;
-  &:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+  &:hover { border-color: var(--border); color: var(--text-muted); }
 }
 
 // ── Modal overlay ──
@@ -95,21 +95,21 @@
 }
 
 .modal {
-  background: $navy-card; border: 1px solid $navy-border; border-radius: $radius-xl;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: $radius-xl;
   width: 100%; max-width: 540px; max-height: 90vh;
   display: flex; flex-direction: column; overflow: hidden;
 }
 
 .modalHead {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 1.25rem 1.5rem; border-bottom: 1px solid $navy-border;
-  h2 { font-size: 1rem; font-weight: 800; color: $white; margin: 0; }
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+  h2 { font-size: 1rem; font-weight: 800; color: var(--text); margin: 0; }
 }
 
 .closeBtn {
-  background: transparent; border: none; color: rgba(255,255,255,0.4);
+  background: transparent; border: none; color: var(--text-faint);
   font-size: 1.125rem; cursor: pointer; padding: 4px;
-  &:hover { color: $white; }
+  &:hover { color: var(--text); }
 }
 
 .modalBody {
@@ -118,7 +118,7 @@
 
 .modalFoot {
   display: flex; justify-content: flex-end; gap: 0.75rem;
-  padding: 1.25rem 1.5rem; border-top: 1px solid $navy-border;
+  padding: 1.25rem 1.5rem; border-top: 1px solid var(--border);
 }
 
 // ── Form fields ──
@@ -130,7 +130,7 @@
   label { font-size: 0.8125rem; font-weight: 600; color: var(--text-semi); }
 
   input, select, textarea {
-    background: var(--input-bg); border: 1px solid $navy-border;
+    background: var(--input-bg); border: 1px solid var(--border);
     border-radius: $radius-md; padding: 0.625rem 0.875rem;
     font-size: 0.9rem; color: var(--text); outline: none;
     font-family: inherit; resize: vertical;
@@ -138,7 +138,7 @@
     &::placeholder { color: var(--text-faint); }
   }
 
-  select option { background: $navy-card; }
+  select option { background: var(--bg-card); }
 }
 
 .hint { font-weight: 400; font-size: 0.72rem; color: var(--text-faint); }
@@ -153,7 +153,7 @@
   border-radius: $radius-full; padding: 3px 10px 3px 12px;
   font-size: 0.78rem; color: var(--text);
 
-  button { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; &:hover { color: $danger; } }
+  button { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; &:hover { color: $danger; } }
 }
 
 .featureInput {
@@ -175,10 +175,10 @@
 
 .toggle {
   width: 44px; height: 24px; border-radius: $radius-full;
-  background: rgba(255,255,255,0.1); border: none; cursor: pointer;
+  background: var(--input-bg); border: 1px solid var(--border); cursor: pointer;
   position: relative; transition: background 0.2s;
 
-  &.toggleOn { background: $primary; }
+  &.toggleOn { background: $primary; border-color: $primary; }
 }
 
 .toggleThumb {

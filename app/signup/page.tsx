@@ -1,5 +1,5 @@
 'use client'
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,16 @@ import s from './page.module.scss'
 
 function EyeIcon () {
   return (
-    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round' width={18} height={18}>
+    <svg
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={2}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      width={18}
+      height={18}
+    >
       <path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z' />
       <circle cx='12' cy='12' r='3' />
     </svg>
@@ -25,31 +34,43 @@ function EyeIcon () {
 
 function EyeOffIcon () {
   return (
-    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round' width={18} height={18}>
+    <svg
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={2}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      width={18}
+      height={18}
+    >
       <path d='M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24' />
       <line x1='1' y1='1' x2='23' y2='23' />
     </svg>
   )
 }
 
-const SPECIALTIES = [
-  'General Practice',
-  'Internal Medicine',
-  'Paediatrics',
-  'OB-GYN',
-  'Cardiology',
-  'Dermatology',
-  'Psychiatry',
-  'Orthopaedics',
-  'ENT',
-  'Ophthalmology',
-  'Other'
+const FALLBACK_SPECIALTIES = [
+  'General Practice', 'Internal Medicine', 'Paediatrics', 'OB-GYN',
+  'Cardiology', 'Dermatology', 'Psychiatry', 'Orthopaedics', 'ENT',
+  'Ophthalmology', 'Other',
 ]
 
 export default function SignupPage () {
   useAuthRedirect()
   const router = useRouter()
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
+  const [specialties, setSpecialties] = useState<string[]>(FALLBACK_SPECIALTIES)
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://10.220.99.88:5000/api'}/admin/public/content`)
+      .then(r => r.json())
+      .then(body => {
+        const names: string[] = (body?.data?.specializations ?? []).map((s: { name: string }) => s.name)
+        if (names.length) setSpecialties(names)
+      })
+      .catch(() => {})
+  }, [])
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -77,8 +98,7 @@ export default function SignupPage () {
           ? { dateOfBirth: dob }
           : { specialization: specialty, licenseNumber: mdcn })
       })
-      if (role === 'doctor') router.push('/doctor/kyc')
-      else router.push('/patient')
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -209,7 +229,7 @@ export default function SignupPage () {
                     required
                   >
                     <option value=''>Select your specialty</option>
-                    {SPECIALTIES.map(sp => (
+                    {specialties.map(sp => (
                       <option key={sp}>{sp}</option>
                     ))}
                   </select>
@@ -240,7 +260,13 @@ export default function SignupPage () {
                   minLength={8}
                   required
                 />
-                <button type='button' className={s.eyeBtn} onClick={() => setShowPw(v => !v)} tabIndex={-1} aria-label={showPw ? 'Hide password' : 'Show password'}>
+                <button
+                  type='button'
+                  className={s.eyeBtn}
+                  onClick={() => setShowPw(v => !v)}
+                  tabIndex={-1}
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                >
                   {showPw ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
@@ -267,12 +293,12 @@ export default function SignupPage () {
                 </span>
                 Register Pharmacy
               </Link>
-              <Link href='/onboard/lab' className={s.partnerLink}>
+              {/* <Link href='/onboard/lab' className={s.partnerLink}>
                 <span className={s.partnerIcon}>
                   <MicroscopeIcon size={15} />
                 </span>
                 Register Lab
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

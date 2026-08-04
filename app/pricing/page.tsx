@@ -9,103 +9,48 @@ export const metadata: Metadata = {
   description: "Simple, transparent pricing. Choose the plan that works for you.",
 };
 
-const PLANS = [
-  {
-    name: "Free",
-    price: "₦0",
-    period: "forever",
-    featured: false,
-    features: [
-      { label: "Smart symptom triage",         yes: true  },
-      { label: "1 consultation per month",      yes: true  },
-      { label: "Basic health profile",          yes: true  },
-      { label: "Unlimited consultations",       yes: false },
-      { label: "E-prescriptions",               yes: false },
-      { label: "Lab test ordering",             yes: false },
-      { label: "Pharmacy delivery",             yes: false },
-      { label: "Family accounts",               yes: false },
-      { label: "Priority booking",              yes: false },
-      { label: "24/7 on-call support",          yes: false },
-    ],
-    cta: "Get Started Free",
-    href: "/signup",
-  },
-  {
-    name: "Personal",
-    price: "₦2,500",
-    period: "/ month",
-    featured: true,
-    features: [
-      { label: "Smart symptom triage",         yes: true  },
-      { label: "Unlimited consultations",      yes: true  },
-      { label: "E-prescriptions",              yes: true  },
-      { label: "Lab test ordering",            yes: true  },
-      { label: "Pharmacy delivery",            yes: true  },
-      { label: "Full health record storage",   yes: true  },
-      { label: "Prescription history",         yes: true  },
-      { label: "Family accounts",              yes: false },
-      { label: "Priority booking",             yes: false },
-      { label: "24/7 on-call support",         yes: false },
-    ],
-    cta: "Get Personal",
-    href: "/signup?plan=personal",
-  },
-  {
-    name: "Family",
-    price: "₦5,000",
-    period: "/ month",
-    featured: false,
-    features: [
-      { label: "Smart symptom triage",         yes: true },
-      { label: "Unlimited consultations",      yes: true },
-      { label: "E-prescriptions",              yes: true },
-      { label: "Lab test ordering",            yes: true },
-      { label: "Pharmacy delivery",            yes: true },
-      { label: "Full health record storage",   yes: true },
-      { label: "Up to 6 family members",       yes: true },
-      { label: "Priority booking",             yes: true },
-      { label: "24/7 on-call support",         yes: true },
-      { label: "Dedicated care manager",       yes: false },
-    ],
-    cta: "Get Family",
-    href: "/signup?plan=family",
-  },
-  {
-    name: "Corporate",
-    price: "Custom",
-    period: "contact us",
-    featured: false,
-    features: [
-      { label: "Smart symptom triage",         yes: true },
-      { label: "Unlimited consultations",      yes: true },
-      { label: "E-prescriptions",              yes: true },
-      { label: "Lab test ordering",            yes: true },
-      { label: "Pharmacy delivery",            yes: true },
-      { label: "Full health record storage",   yes: true },
-      { label: "Unlimited employee accounts",  yes: true },
-      { label: "Priority booking",             yes: true },
-      { label: "24/7 on-call support",         yes: true },
-      { label: "Dedicated care manager",       yes: true },
-    ],
-    cta: "Contact Sales",
-    href: "/contact",
-  },
-];
+interface Plan {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: string;
+  features: string[];
+  featured: boolean;
+}
 
-const TABLE_ROWS = [
-  { label: "Monthly price",            vals: ["₦0", "₦2,500", "₦5,000", "Custom"] },
-  { label: "Consultations",            vals: ["1/mo", "Unlimited", "Unlimited", "Unlimited"] },
-  { label: "Family members",           vals: ["–", "1", "Up to 6", "Unlimited"] },
-  { label: "E-prescriptions",          vals: ["–", "✓", "✓", "✓"] },
-  { label: "Lab test ordering",        vals: ["–", "✓", "✓", "✓"] },
-  { label: "Pharmacy delivery",        vals: ["–", "✓", "✓", "✓"] },
-  { label: "Priority booking",         vals: ["–", "–", "✓", "✓"] },
-  { label: "24/7 on-call support",     vals: ["–", "–", "✓", "✓"] },
-  { label: "Dedicated care manager",   vals: ["–", "–", "–", "✓"] },
-  { label: "NHIS/HMO billing",         vals: ["–", "–", "–", "✓"] },
-];
+async function fetchPlans (): Promise<Plan[]> {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.220.99.88:5000/api';
+    const res = await fetch(`${base}/admin/public/content`, { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const body = await res.json();
+    return (body?.data?.plans ?? []) as Plan[];
+  } catch {
+    return [];
+  }
+}
 
-function CheckIcon({ yes }: { yes: boolean }) {
+function formatPrice (price: number, name: string) {
+  if (name.toLowerCase() === 'corporate' && price === 0) return 'Custom';
+  if (price === 0) return '₦0';
+  return `₦${price.toLocaleString('en-NG')}`;
+}
+
+function formatPeriod (price: number, interval: string, name: string) {
+  if (name.toLowerCase() === 'corporate' && price === 0) return 'contact us';
+  if (price === 0) return 'forever';
+  return interval === 'yearly' ? '/ year' : '/ month';
+}
+
+function planCta (name: string) {
+  const lower = name.toLowerCase();
+  if (lower === 'free') return { label: 'Get Started Free', href: '/signup' };
+  if (lower === 'corporate') return { label: 'Contact Sales', href: '/contact' };
+  return { label: `Get ${name}`, href: `/signup?plan=${lower}` };
+}
+
+function CheckIcon ({ yes }: { yes: boolean }) {
   if (yes) {
     return (
       <svg className={s.check} viewBox="0 0 20 20" fill="currentColor">
@@ -120,7 +65,22 @@ function CheckIcon({ yes }: { yes: boolean }) {
   );
 }
 
-export default function PricingPage() {
+const TABLE_ROWS = [
+  { label: "Monthly price",           vals: ["₦0", "₦2,500", "₦5,000", "Custom"] },
+  { label: "Consultations",           vals: ["1/mo", "Unlimited", "Unlimited", "Unlimited"] },
+  { label: "Family members",          vals: ["–", "1", "Up to 6", "Unlimited"] },
+  { label: "E-prescriptions",         vals: ["–", "✓", "✓", "✓"] },
+  { label: "Lab test ordering",       vals: ["–", "✓", "✓", "✓"] },
+  { label: "Pharmacy delivery",       vals: ["–", "✓", "✓", "✓"] },
+  { label: "Priority booking",        vals: ["–", "–", "✓", "✓"] },
+  { label: "24/7 on-call support",    vals: ["–", "–", "✓", "✓"] },
+  { label: "Dedicated care manager",  vals: ["–", "–", "–", "✓"] },
+  { label: "NHIS/HMO billing",        vals: ["–", "–", "–", "✓"] },
+];
+
+export default async function PricingPage() {
+  const plans = await fetchPlans();
+
   return (
     <PageShell>
       <section className={s.hero}>
@@ -134,23 +94,27 @@ export default function PricingPage() {
       <section className={s.plans}>
         <div className={s.plansInner}>
           <div className={`${s.grid} reveal-stagger`}>
-            {PLANS.map((plan) => (
-              <div key={plan.name} className={`${s.card} ${plan.featured ? s.featured : ""} reveal`}>
-                <div className={s.planName}>{plan.name}</div>
-                <div className={s.price}>{plan.price}</div>
-                <div className={s.period}>{plan.period}</div>
-                <hr className={s.divider} />
-                <ul className={s.featureList}>
-                  {plan.features.map((f) => (
-                    <li key={f.label} className={s.featureItem}>
-                      <CheckIcon yes={f.yes} />
-                      <span className={s.featureName}>{f.label}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.href} className={s.cta}>{plan.cta}</Link>
-              </div>
-            ))}
+            {plans.map((plan) => {
+              const { label, href } = planCta(plan.name);
+              return (
+                <div key={plan._id} className={`${s.card} ${plan.featured ? s.featured : ""} reveal`}>
+                  <div className={s.planName}>{plan.name}</div>
+                  <div className={s.price}>{formatPrice(plan.price, plan.name)}</div>
+                  <div className={s.period}>{formatPeriod(plan.price, plan.interval, plan.name)}</div>
+                  {plan.description && <p className={s.planDesc}>{plan.description}</p>}
+                  <hr className={s.divider} />
+                  <ul className={s.featureList}>
+                    {plan.features.map((f) => (
+                      <li key={f} className={s.featureItem}>
+                        <CheckIcon yes />
+                        <span className={s.featureName}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={href} className={s.cta}>{label}</Link>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

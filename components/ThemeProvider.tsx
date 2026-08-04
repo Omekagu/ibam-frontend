@@ -26,7 +26,7 @@ export function ThemeProvider ({ children }: { children: React.ReactNode }) {
       return
     }
     const stored = localStorage.getItem('theme') as Theme | null
-    const initial = stored ?? 'light'
+    const initial = stored ?? 'dark'
     setTheme(initial)
     applyTheme(initial)
   }, [isPortal])

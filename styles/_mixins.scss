@@ -106,18 +106,18 @@
   align-items: center;
   gap: 0.5rem;
   background: transparent;
-  color: $white;
+  color: var(--text);
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.875rem 1.75rem;
   border-radius: $radius-lg;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: border-color 0.25s ease, background 0.25s ease, transform 0.2s ease;
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--text-muted);
+    background: var(--input-bg);
     transform: translateY(-2px);
   }
 }
