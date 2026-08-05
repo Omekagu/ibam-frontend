@@ -104,7 +104,7 @@ export default function SignupPage () {
   useEffect(() => {
     fetch(
       `${
-        process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+        process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
       }/admin/public/content`
     )
       .then(r => r.json())
@@ -146,7 +146,11 @@ export default function SignupPage () {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? 'Registration failed. Please try again.'
-      modal.show({ variant: 'declined', title: 'Registration Failed', message: msg })
+      modal.show({
+        variant: 'declined',
+        title: 'Registration Failed',
+        message: msg
+      })
     } finally {
       setLoading(false)
     }
@@ -309,7 +313,11 @@ export default function SignupPage () {
             </p>
 
             <button type='submit' className={s.submit} disabled={loading}>
-              {loading ? <Loader inline size='sm' label='Creating account…' /> : 'Create Account →'}
+              {loading ? (
+                <Loader inline size='sm' label='Creating account…' />
+              ) : (
+                'Create Account →'
+              )}
             </button>
           </form>
 
@@ -324,7 +332,8 @@ export default function SignupPage () {
             className={s.googleBtn}
             onClick={() => {
               const api =
-                process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+                process.env.NEXT_PUBLIC_API_URL ??
+                'https://api.ibamhealth.com/api'
               const cb = window.location.origin + '/auth/google/callback'
               window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                 cb

@@ -90,7 +90,12 @@ function LoginInner () {
 
   useEffect(() => {
     const msg = searchParams.get('error')
-    if (msg) modal.show({ variant: 'declined', title: 'Login Error', message: decodeURIComponent(msg) })
+    if (msg)
+      modal.show({
+        variant: 'declined',
+        title: 'Login Error',
+        message: decodeURIComponent(msg)
+      })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit (e: FormEvent) {
@@ -232,7 +237,11 @@ function LoginInner () {
             </div>
 
             <button type='submit' className={s.submit} disabled={loading}>
-              {loading ? <Loader inline size='sm' label='Logging in…' /> : 'Log In →'}
+              {loading ? (
+                <Loader inline size='sm' label='Logging in…' />
+              ) : (
+                'Log In →'
+              )}
             </button>
           </form>
 
@@ -247,7 +256,8 @@ function LoginInner () {
             className={s.googleBtn}
             onClick={() => {
               const api =
-                process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+                process.env.NEXT_PUBLIC_API_URL ??
+                'https://api.ibamhealth.com/api'
               const cb = window.location.origin + '/auth/google/callback'
               window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                 cb

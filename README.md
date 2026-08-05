@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://10.0.1.19:5000](http://10.0.1.19:5000) with your browser to see the result.
+Open [https://api.ibamhealth.com](https://api.ibamhealth.com) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
