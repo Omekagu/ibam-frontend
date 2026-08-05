@@ -93,6 +93,16 @@ export function updateStoredUser (updates: Partial<AuthResponse['user']>): void 
   localStorage.setItem('user', JSON.stringify({ ...user, ...updates }))
 }
 
+export function persistFromOAuth (
+  accessToken: string,
+  refreshToken: string,
+  user: AuthResponse['user']
+): void {
+  localStorage.setItem('access_token', accessToken)
+  localStorage.setItem('refresh_token', refreshToken)
+  if (user) localStorage.setItem('user', JSON.stringify(user))
+}
+
 export async function sendEmailOTP (email: string): Promise<void> {
   await api.post('/auth/send-email-otp', { email })
 }

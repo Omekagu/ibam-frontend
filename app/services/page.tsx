@@ -32,12 +32,12 @@ interface PlatformService {
 
 type IconSize = { size: number }
 const ICON_MAP: Record<string, (p: IconSize) => JSX.Element> = {
-  video:    (p) => <VideoCameraIcon {...p} />,
-  ai:       (p) => <BoltIcon {...p} />,
-  lab:      (p) => <MicroscopeIcon {...p} />,
-  pharmacy: (p) => <PillIcon {...p} />,
-  hospital: (p) => <HospitalIcon {...p} />,
-  truck:    (p) => <TruckIcon {...p} />,
+  video: p => <VideoCameraIcon {...p} />,
+  ai: p => <BoltIcon {...p} />,
+  lab: p => <MicroscopeIcon {...p} />,
+  pharmacy: p => <PillIcon {...p} />,
+  hospital: p => <HospitalIcon {...p} />,
+  truck: p => <TruckIcon {...p} />
 }
 
 function getIcon (name: string, size: number) {
@@ -47,8 +47,11 @@ function getIcon (name: string, size: number) {
 
 async function fetchServices (): Promise<PlatformService[]> {
   try {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.220.99.88:5000/api'
-    const res = await fetch(`${base}/admin/public/content`, { next: { revalidate: 300 } })
+    const base =
+      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+    const res = await fetch(`${base}/admin/public/content`, {
+      next: { revalidate: 300 }
+    })
     if (!res.ok) return []
     const body = await res.json()
     return (body?.data?.services ?? []) as PlatformService[]

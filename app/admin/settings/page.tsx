@@ -5,6 +5,7 @@ import s from './page.module.scss'
 
 // ─── Payment settings ─────────────────────────────────────────────────────────
 interface PaymentSettings {
+  paystackEnabled: boolean
   directPaymentEnabled: boolean
   companyBankName: string
   companyAccountNumber: string
@@ -14,6 +15,7 @@ interface PaymentSettings {
 }
 
 const DEFAULT_PAYMENT: PaymentSettings = {
+  paystackEnabled: true,
   directPaymentEnabled: false,
   companyBankName: '',
   companyAccountNumber: '',
@@ -57,6 +59,28 @@ function PaymentTab() {
     <div className={s.card}>
       {saved  && <p className={s.successBanner}>Settings saved successfully.</p>}
       {error  && <p className={s.errorBanner}>{error}</p>}
+
+      <h2 className={s.sectionTitle}>Paystack</h2>
+      <p className={s.subtext}>
+        Paystack keys are configured via server environment variables (<code>PAYSTACK_SECRET_KEY</code>).
+        Use this toggle to enable or disable Paystack as a payment option for patients.
+      </p>
+
+      <div className={s.toggleRow}>
+        <div>
+          <p className={s.toggleLabel}>Accept Paystack Payments</p>
+          <p className={s.toggleSub}>Card, bank transfer, USSD, and more via Paystack</p>
+        </div>
+        <button
+          className={`${s.toggle} ${settings.paystackEnabled ? s.toggleOn : ''}`}
+          onClick={() => { setSettings(p => ({ ...p, paystackEnabled: !p.paystackEnabled })); setSaved(false) }}
+          aria-pressed={settings.paystackEnabled}
+        >
+          <span className={s.toggleThumb} />
+        </button>
+      </div>
+
+      <div className={s.divider} />
 
       <h2 className={s.sectionTitle}>Direct Bank Transfer</h2>
       <p className={s.subtext}>
@@ -485,13 +509,219 @@ function ServicesTab() {
   )
 }
 
+// ─── Lab Test Catalog ─────────────────────────────────────────────────────────
+interface LabTestItem {
+  _id: string
+  name: string
+  category?: string
+  walkInPrice?: number
+  homeVisitPrice?: number
+  estimatedPrice?: number
+  turnaroundHours: number
+  isActive: boolean
+}
+
+const DEFAULT_CATEGORIES = [
+  'Haematology', 'Biochemistry', 'Microbiology', 'Serology',
+  'Endocrinology', 'Immunology', 'Oncology', 'Radiology',
+  'Cardiology', 'Pathology', 'Genetics', 'Other',
+]
+
+const EMPTY_LAB_TEST = { name: '', category: '', walkInPrice: '', homeVisitPrice: '', turnaroundHours: '24' }
+
+function LabTestsTab() {
+  const [items,   setItems]   = useState<LabTestItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState('')
+  const [modal,   setModal]   = useState<'add' | 'edit' | null>(null)
+  const [editing, setEditing] = useState<LabTestItem | null>(null)
+  const [form,    setForm]    = useState(EMPTY_LAB_TEST)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/admin/lab-tests')
+      .then(r => setItems(r.data.data?.labTests ?? []))
+      .catch(() => setError('Failed to load lab tests.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  function openAdd() {
+    setForm(EMPTY_LAB_TEST)
+    setEditing(null)
+    setModal('add')
+  }
+
+  function openEdit(item: LabTestItem) {
+    setForm({
+      name: item.name,
+      category: item.category ?? '',
+      walkInPrice:    item.walkInPrice    != null ? String(item.walkInPrice)    : item.estimatedPrice != null ? String(item.estimatedPrice) : '',
+      homeVisitPrice: item.homeVisitPrice != null ? String(item.homeVisitPrice) : '',
+      turnaroundHours: String(item.turnaroundHours),
+    })
+    setEditing(item)
+    setModal('edit')
+  }
+
+  async function submit() {
+    if (!form.name.trim()) return
+    setSaving(true); setError('')
+    const payload = {
+      name: form.name.trim(),
+      category: form.category || undefined,
+      walkInPrice:    form.walkInPrice    !== '' ? Number(form.walkInPrice)    : undefined,
+      homeVisitPrice: form.homeVisitPrice !== '' ? Number(form.homeVisitPrice) : undefined,
+      estimatedPrice: form.walkInPrice    !== '' ? Number(form.walkInPrice)    : undefined,
+      turnaroundHours: form.turnaroundHours !== '' ? Number(form.turnaroundHours) : 24,
+    }
+    try {
+      if (modal === 'add') {
+        await api.post('/admin/lab-tests', payload)
+      } else if (editing) {
+        await api.put(`/admin/lab-tests/${editing._id}`, payload)
+      }
+      setModal(null)
+      load()
+    } catch { setError('Failed to save lab test.') }
+    setSaving(false)
+  }
+
+  async function toggle(item: LabTestItem) {
+    try {
+      await api.put(`/admin/lab-tests/${item._id}`, { isActive: !item.isActive })
+      load()
+    } catch { setError('Failed to update.') }
+  }
+
+  async function remove(item: LabTestItem) {
+    if (!confirm(`Delete "${item.name}"?`)) return
+    try {
+      await api.delete(`/admin/lab-tests/${item._id}`)
+      load()
+    } catch { setError('Failed to delete.') }
+  }
+
+  const byCategory = items.reduce<Record<string, LabTestItem[]>>((acc, t) => {
+    const cat = t.category || 'Other'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(t)
+    return acc
+  }, {})
+
+  return (
+    <div className={s.card}>
+      {error && <p className={s.errorBanner}>{error}</p>}
+
+      <div className={s.listHeader}>
+        <p className={s.listTitle}>Lab Test Catalog <span style={{ fontSize: '0.8rem', color: 'var(--text-faint)', fontWeight: 400 }}>({items.length} tests)</span></p>
+        <button className={s.addBtn} onClick={openAdd}>+ Add Test</button>
+      </div>
+
+      {loading ? (
+        <p className={s.empty}>Loading…</p>
+      ) : items.length === 0 ? (
+        <p className={s.empty}>No lab tests configured yet.</p>
+      ) : (
+        Object.entries(byCategory).map(([cat, tests]) => (
+          <div key={cat}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0.75rem 0 4px' }}>{cat}</p>
+            <div className={s.itemList}>
+              {tests.map(item => (
+                <div key={item._id} className={`${s.itemRow} ${item.isActive ? '' : s.inactive}`}>
+                  <span className={s.itemName}>{item.name}</span>
+                  <span className={s.itemSub}>
+                    {item.walkInPrice   != null ? `Walk-in: ₦${item.walkInPrice.toLocaleString('en-NG')}` : ''}
+                    {item.walkInPrice   != null && item.homeVisitPrice != null ? ' · ' : ''}
+                    {item.homeVisitPrice != null ? `Home: ₦${item.homeVisitPrice.toLocaleString('en-NG')}` : ''}
+                    {(item.walkInPrice != null || item.homeVisitPrice != null) ? ` · ${item.turnaroundHours}h` : `${item.turnaroundHours}h`}
+                  </span>
+                  <span className={`${s.badge} ${item.isActive ? s.badgeActive : s.badgeInactive}`}>
+                    {item.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                  <div className={s.rowActions}>
+                    <button className={s.iconBtn} onClick={() => openEdit(item)}>Edit</button>
+                    <button className={s.iconBtn} onClick={() => toggle(item)}>
+                      {item.isActive ? 'Disable' : 'Enable'}
+                    </button>
+                    <button className={`${s.iconBtn} ${s.danger}`} onClick={() => remove(item)}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+
+      {modal && (
+        <div className={s.overlay} onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
+          <div className={s.modal}>
+            <div className={s.modalHead}>
+              <h2>{modal === 'add' ? 'Add Lab Test' : 'Edit Lab Test'}</h2>
+              <button className={s.closeBtn} onClick={() => setModal(null)}>×</button>
+            </div>
+            <div className={s.modalBody}>
+              <div className={s.field}>
+                <label>Test Name *</label>
+                <input className={s.input} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Full Blood Count (FBC)" />
+              </div>
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Category <span className={s.hint}>(type to create new)</span></label>
+                  <input
+                    className={s.input}
+                    list="lab-categories"
+                    value={form.category}
+                    onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+                    placeholder="e.g. Haematology"
+                    autoComplete="off"
+                  />
+                  <datalist id="lab-categories">
+                    {Array.from(new Set([
+                      ...DEFAULT_CATEGORIES,
+                      ...items.map(t => t.category).filter(Boolean) as string[],
+                    ])).map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+                <div className={s.field}>
+                  <label>Turnaround <span className={s.hint}>(hours)</span></label>
+                  <input className={s.input} type="number" min={1} value={form.turnaroundHours} onChange={e => setForm(p => ({ ...p, turnaroundHours: e.target.value }))} placeholder="24" />
+                </div>
+              </div>
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Walk-in Price <span className={s.hint}>(₦, at lab)</span></label>
+                  <input className={s.input} type="number" min={0} value={form.walkInPrice} onChange={e => setForm(p => ({ ...p, walkInPrice: e.target.value }))} placeholder="e.g. 3500" />
+                </div>
+                <div className={s.field}>
+                  <label>Home Visit Price <span className={s.hint}>(₦, extra)</span></label>
+                  <input className={s.input} type="number" min={0} value={form.homeVisitPrice} onChange={e => setForm(p => ({ ...p, homeVisitPrice: e.target.value }))} placeholder="e.g. 5500" />
+                </div>
+              </div>
+            </div>
+            <div className={s.modalFoot}>
+              <button className={s.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
+              <button className={s.confirmBtn} onClick={submit} disabled={saving || !form.name.trim()}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
-type Tab = 'payment' | 'specializations' | 'services'
+type Tab = 'payment' | 'specializations' | 'services' | 'lab-tests'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'payment',         label: 'Payment' },
   { id: 'specializations', label: 'Specializations' },
   { id: 'services',        label: 'Services' },
+  { id: 'lab-tests',       label: 'Lab Tests' },
 ]
 
 export default function AdminSettingsPage() {
@@ -501,7 +731,7 @@ export default function AdminSettingsPage() {
     <div className={s.wrap}>
       <div className={s.pageHeader}>
         <h1 className={s.title}>Platform Settings</h1>
-        <p className={s.subtitle}>Manage payment methods, doctor specializations, and platform services.</p>
+        <p className={s.subtitle}>Manage payment methods, doctor specializations, platform services, and lab test catalog.</p>
       </div>
 
       <div className={s.tabs}>
@@ -519,6 +749,7 @@ export default function AdminSettingsPage() {
       {tab === 'payment'         && <PaymentTab />}
       {tab === 'specializations' && <SpecializationsTab />}
       {tab === 'services'        && <ServicesTab />}
+      {tab === 'lab-tests'       && <LabTestsTab />}
     </div>
   )
 }

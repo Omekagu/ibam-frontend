@@ -47,7 +47,8 @@
 }
 
 .sectionTitle { font-size: 0.875rem; font-weight: 700; color: var(--text); margin: 0 0 -0.25rem; }
-.subtext { font-size: 0.8rem; color: var(--text-sub); margin: -0.5rem 0 0; }
+.subtext { font-size: 0.8rem; color: var(--text-sub); margin: -0.5rem 0 0; code { font-size: 0.75rem; background: var(--input-bg); padding: 1px 5px; border-radius: 4px; } }
+.divider { height: 1px; background: var(--border); margin: 0.25rem 0; }
 
 // ── Toggle switch ──
 .toggleRow {

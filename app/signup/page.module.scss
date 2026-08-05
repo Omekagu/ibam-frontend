@@ -180,6 +180,65 @@
   &:disabled { opacity: 0.65; cursor: not-allowed; }
 }
 
+// ─── Divider ──────────────────────────────────────
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: $border;
+  display: block;
+}
+.dividerLabel {
+  font-size: 0.78rem;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+// ─── Google button ────────────────────────────────
+.googleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid $border;
+  border-radius: $radius-md;
+  background: $white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-dark;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 1rem;
+
+  &:hover {
+    border-color: #4285F4;
+    background: rgba(66, 133, 244, 0.04);
+  }
+}
+
+.googleIconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4285F4;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 // ─── Partner section ──────────────────────────────
 .partnerSection {
   margin-top: 2rem;

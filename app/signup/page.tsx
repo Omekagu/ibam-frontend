@@ -51,9 +51,17 @@ function EyeOffIcon () {
 }
 
 const FALLBACK_SPECIALTIES = [
-  'General Practice', 'Internal Medicine', 'Paediatrics', 'OB-GYN',
-  'Cardiology', 'Dermatology', 'Psychiatry', 'Orthopaedics', 'ENT',
-  'Ophthalmology', 'Other',
+  'General Practice',
+  'Internal Medicine',
+  'Paediatrics',
+  'OB-GYN',
+  'Cardiology',
+  'Dermatology',
+  'Psychiatry',
+  'Orthopaedics',
+  'ENT',
+  'Ophthalmology',
+  'Other'
 ]
 
 export default function SignupPage () {
@@ -63,10 +71,16 @@ export default function SignupPage () {
   const [specialties, setSpecialties] = useState<string[]>(FALLBACK_SPECIALTIES)
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://10.220.99.88:5000/api'}/admin/public/content`)
+    fetch(
+      `${
+        process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+      }/admin/public/content`
+    )
       .then(r => r.json())
       .then(body => {
-        const names: string[] = (body?.data?.specializations ?? []).map((s: { name: string }) => s.name)
+        const names: string[] = (body?.data?.specializations ?? []).map(
+          (s: { name: string }) => s.name
+        )
         if (names.length) setSpecialties(names)
       })
       .catch(() => {})
@@ -77,7 +91,6 @@ export default function SignupPage () {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [dob, setDob] = useState('')
   const [specialty, setSpecialty] = useState('')
   const [mdcn, setMdcn] = useState('')
   const [error, setError] = useState('')
@@ -206,18 +219,6 @@ export default function SignupPage () {
               />
             </div>
 
-            {role === 'patient' && (
-              <div className={s.field}>
-                <label htmlFor='dob'>Date of Birth</label>
-                <input
-                  id='dob'
-                  type='date'
-                  value={dob}
-                  onChange={e => setDob(e.target.value)}
-                />
-              </div>
-            )}
-
             {role === 'doctor' && (
               <>
                 <div className={s.field}>
@@ -283,6 +284,29 @@ export default function SignupPage () {
               {loading ? 'Creating account…' : 'Create Account →'}
             </button>
           </form>
+
+          <div className={s.dividerRow}>
+            <span className={s.dividerLine} />
+            <span className={s.dividerLabel}>or sign up with</span>
+            <span className={s.dividerLine} />
+          </div>
+
+          <button
+            type='button'
+            className={s.googleBtn}
+            onClick={() => {
+              const api =
+                process.env.NEXT_PUBLIC_API_URL ??
+                'https://api.ibamhealth.com/api'
+              const cb = window.location.origin + '/auth/google/callback'
+              window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
+                cb
+              )}`
+            }}
+          >
+            <span className={s.googleIconWrap}>G</span>
+            Continue with Google
+          </button>
 
           <div className={s.partnerSection}>
             <p className={s.partnerHeading}>Are you a healthcare partner?</p>

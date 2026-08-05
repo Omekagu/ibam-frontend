@@ -75,8 +75,8 @@ export default function Footer () {
               </span>
             </Link>
             <p>
-              Bringing certified medical care to your doorstep — consultations,
-              diagnostics, prescriptions, and more.
+              Bringing certified medical care to your doorstep diagnostics,
+              consultations, prescriptions, and more.
             </p>
             <div className={s.socials}>
               {SOCIALS.map(name => (
