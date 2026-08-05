@@ -53,7 +53,7 @@
 }
 .planFeatured {
   border-color: rgba($primary,0.5);
-  background: $navy-mid;
+  background: $navy-card;
   box-shadow: 0 0 0 1px rgba($primary,0.15);
 }
 .planActive { border-color: $success; }
@@ -87,9 +87,9 @@
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .subscribeBtnFeatured {
-  background: linear-gradient(135deg, $primary, darken($primary, 8%));
+  background: linear-gradient(135deg, $primary, #16a34a);
   border-color: transparent; color: #fff;
-  &:hover { opacity: 0.9; background: linear-gradient(135deg, $primary, darken($primary, 8%)); }
+  &:hover { opacity: 0.9; background: linear-gradient(135deg, $primary, #16a34a); }
 }
 
 .currentTag {

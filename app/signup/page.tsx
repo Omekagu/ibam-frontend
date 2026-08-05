@@ -107,9 +107,7 @@ export default function SignupPage () {
         password,
         role,
         phone,
-        ...(role === 'patient'
-          ? { dateOfBirth: dob }
-          : { specialization: specialty, licenseNumber: mdcn })
+        ...(role !== 'patient' && { specialization: specialty, licenseNumber: mdcn })
       })
       router.push(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch (err: unknown) {

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageShell from '@/components/PageShell'
@@ -31,7 +32,7 @@ interface PlatformService {
 }
 
 type IconSize = { size: number }
-const ICON_MAP: Record<string, (p: IconSize) => JSX.Element> = {
+const ICON_MAP: Record<string, (p: IconSize) => ReactElement> = {
   video: p => <VideoCameraIcon {...p} />,
   ai: p => <BoltIcon {...p} />,
   lab: p => <MicroscopeIcon {...p} />,

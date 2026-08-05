@@ -1,9 +1,9 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { persistFromOAuth } from '@/lib/auth'
 
-export default function GoogleCallbackPage () {
+function GoogleCallbackInner () {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -52,5 +52,17 @@ export default function GoogleCallbackPage () {
         Completing Google sign-in…
       </p>
     </div>
+  )
+}
+
+export default function GoogleCallbackPage () {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading…</p>
+      </div>
+    }>
+      <GoogleCallbackInner />
+    </Suspense>
   )
 }
