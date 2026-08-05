@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -24,11 +26,10 @@ const DEFAULT_SLOTS: Slot[] = [
 ]
 
 export default function DoctorAvailabilityPage () {
+  const modal = useStatusModal()
   const [records,   setRecords]   = useState<AvailabilityRecord[]>([])
   const [loading,   setLoading]   = useState(true)
   const [saving,    setSaving]    = useState(false)
-  const [saved,     setSaved]     = useState('')
-  const [error,     setError]     = useState('')
 
   // Recurring form
   const [recDay,    setRecDay]    = useState(1)
@@ -66,28 +67,28 @@ export default function DoctorAvailabilityPage () {
 
   async function saveRecurring () {
     if (!recSlots.length) return
-    setSaving(true); setError(''); setSaved('')
+    setSaving(true)
     try {
       await api.post('/doctors/availability', { type: 'recurring', dayOfWeek: recDay, slots: recSlots })
-      setSaved(`Recurring schedule for ${DAYS[recDay]} saved.`)
+      modal.show({ variant: 'success', title: 'Schedule Saved', message: `Recurring schedule for ${DAYS[recDay]} saved.` })
       await load()
       setActiveTab('view')
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to save.')
+      modal.show({ variant: 'declined', title: 'Save Failed', message: e?.response?.data?.message ?? 'Failed to save.' })
     }
     setSaving(false)
   }
 
   async function saveOneOff () {
-    if (!oneDate || !oneSlots.length) { setError('Date and at least one slot are required.'); return }
-    setSaving(true); setError(''); setSaved('')
+    if (!oneDate || !oneSlots.length) { modal.show({ variant: 'declined', title: 'Missing Fields', message: 'Date and at least one slot are required.' }); return }
+    setSaving(true)
     try {
       await api.post('/doctors/availability', { type: 'one_off', date: oneDate, slots: oneSlots })
-      setSaved(`One-off availability for ${oneDate} saved.`)
+      modal.show({ variant: 'success', title: 'Date Saved', message: `One-off availability for ${oneDate} saved.` })
       await load()
       setActiveTab('view')
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to save.')
+      modal.show({ variant: 'declined', title: 'Save Failed', message: e?.response?.data?.message ?? 'Failed to save.' })
     }
     setSaving(false)
   }
@@ -112,18 +113,15 @@ export default function DoctorAvailabilityPage () {
 
       <div className={s.tabs}>
         {([['view', 'Current Schedule'], ['recurring', 'Set Weekly Hours'], ['oneoff', 'Add Specific Date']] as const).map(([key, label]) => (
-          <button key={key} className={`${s.tab} ${activeTab === key ? s.active : ''}`} onClick={() => { setActiveTab(key); setError(''); setSaved('') }}>
+          <button key={key} className={`${s.tab} ${activeTab === key ? s.active : ''}`} onClick={() => setActiveTab(key)}>
             {label}
           </button>
         ))}
       </div>
 
-      {saved  && <div className={s.successBanner}>{saved}</div>}
-      {error  && <div className={s.errorBanner}>{error}</div>}
-
       {/* ── View current ── */}
       {activeTab === 'view' && (
-        loading ? <div className={s.empty}>Loading schedule…</div> : records.length === 0 ? (
+        loading ? <div className={s.empty}><Loader label='Loading schedule…' /></div> : records.length === 0 ? (
           <div className={s.empty}>
             <p>No availability set yet.</p>
             <p>Use the tabs above to add your weekly hours or specific dates.</p>

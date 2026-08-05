@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 const ALL_ROLES = ['patient', 'doctor', 'pharmacy_partner', 'lab_partner', 'admin'] as const
@@ -31,13 +32,12 @@ interface Result {
 }
 
 export default function BroadcastPage() {
+  const modal = useStatusModal()
   const [title,    setTitle]    = useState('')
   const [message,  setMessage]  = useState('')
   const [roles,    setRoles]    = useState<Role[]>([])   // empty = all
   const [channels, setChannels] = useState<Channel[]>(['push', 'email', 'in_app'])
   const [sending,  setSending]  = useState(false)
-  const [result,   setResult]   = useState<Result | null>(null)
-  const [error,    setError]    = useState('')
 
   function toggleRole(r: Role) {
     setRoles(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])
@@ -49,15 +49,13 @@ export default function BroadcastPage() {
 
   async function send() {
     if (!title.trim() || !message.trim()) {
-      setError('Title and message are required.')
+      modal.show({ variant: 'declined', title: 'Missing Fields', message: 'Title and message are required.' })
       return
     }
     if (!channels.length) {
-      setError('Select at least one channel.')
+      modal.show({ variant: 'declined', title: 'No Channel', message: 'Select at least one channel.' })
       return
     }
-    setError('')
-    setResult(null)
     setSending(true)
     try {
       const { data } = await api.post('/admin/broadcast', {
@@ -66,9 +64,10 @@ export default function BroadcastPage() {
         roles:    roles.length ? roles : undefined,
         channels,
       })
-      setResult(data.data)
+      const r: Result = data.data
+      modal.show({ variant: 'success', title: 'Broadcast Sent', message: `Sent to ${r.recipients} users — ${r.push} push · ${r.email} email · ${r.inApp} in-app` })
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Broadcast failed. Try again.')
+      modal.show({ variant: 'declined', title: 'Broadcast Failed', message: err?.response?.data?.message ?? 'Broadcast failed. Try again.' })
     } finally {
       setSending(false)
     }
@@ -80,14 +79,6 @@ export default function BroadcastPage() {
         <h1 className={s.title}>Broadcast Message</h1>
         <p className={s.subtitle}>Send a message to users via push, email, and in-app notification simultaneously</p>
       </div>
-
-      {result && (
-        <div className={s.successBanner}>
-          Sent to <strong>{result.recipients}</strong> users —
-          {' '}{result.push} push · {result.email} email · {result.inApp} in-app
-        </div>
-      )}
-      {error && <p className={s.errorBanner}>{error}</p>}
 
       <div className={s.form}>
         {/* Channels */}

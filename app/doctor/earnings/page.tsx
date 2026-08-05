@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Earning {
@@ -16,11 +18,11 @@ interface Earning {
 interface Totals { gross: number; net: number; pending: number }
 
 export default function DoctorEarnings () {
+  const modal = useStatusModal()
   const [earnings, setEarnings] = useState<Earning[]>([])
   const [totals, setTotals]     = useState<Totals>({ gross: 0, net: 0, pending: 0 })
   const [loading, setLoading]   = useState(true)
   const [requesting, setRequesting] = useState(false)
-  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     api.get('/doctors/my/earnings')
@@ -34,21 +36,20 @@ export default function DoctorEarnings () {
 
   async function requestPayout () {
     setRequesting(true)
-    setMsg(null)
     try {
       const res = await api.post('/doctors/my/payouts/request')
       const { totalRequested } = res.data.data
-      setMsg({ ok: true, text: `Payout of ₦${Number(totalRequested).toLocaleString()} requested. You'll receive it on the next Monday.` })
+      modal.show({ variant: 'success', title: 'Payout Requested', message: `Payout of ₦${Number(totalRequested).toLocaleString()} requested. You'll receive it on the next Monday.` })
       setTotals(prev => ({ ...prev, pending: 0 }))
       setEarnings(prev => prev.map(e => e.payoutStatus === 'pending' ? { ...e, payoutStatus: 'requested' } : e))
     } catch (err: unknown) {
       const text = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Request failed. Try again.'
-      setMsg({ ok: false, text })
+      modal.show({ variant: 'declined', title: 'Payout Failed', message: text })
     }
     setRequesting(false)
   }
 
-  if (loading) return <div className={s.loading}>Loading earnings…</div>
+  if (loading) return <div className={s.loading}><Loader label='Loading earnings…' /></div>
 
   return (
     <>
@@ -71,7 +72,6 @@ export default function DoctorEarnings () {
       </div>
 
       <div className={s.payoutBox}>
-        {msg && <p className={`${s.msg} ${msg.ok ? s.ok : s.err}`}>{msg.text}</p>}
         <button
           className={s.payoutBtn}
           onClick={requestPayout}

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Patient  { name: string; email: string; phone?: string }
@@ -84,7 +85,7 @@ export default function AdminOrdersPage () {
       </div>
 
       <div className={s.panel}>
-        {loading ? <p className={s.empty}>Loading…</p> : orders.length === 0 ? (
+        {loading ? <p className={s.empty}><Loader label='Loading…' /></p> : orders.length === 0 ? (
           <p className={s.empty}>No orders found.</p>
         ) : (
           <div className={s.list}>

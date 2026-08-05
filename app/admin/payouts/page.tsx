@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Earning {
@@ -18,11 +20,11 @@ interface Earning {
 const STATUS_OPTS = ['', 'pending', 'requested', 'paid']
 
 export default function AdminPayouts () {
+  const modal = useStatusModal()
   const [earnings, setEarnings] = useState<Earning[]>([])
   const [loading,  setLoading]  = useState(true)
   const [status,   setStatus]   = useState('requested')
   const [acting,   setActing]   = useState<string | null>(null)
-  const [msg,      setMsg]      = useState<string | null>(null)
 
   function load (st = status) {
     setLoading(true)
@@ -43,13 +45,13 @@ export default function AdminPayouts () {
   async function approvePayout (id: string, doctorName: string, amount: number) {
     if (!window.confirm(`Approve ₦${amount.toLocaleString()} payout to ${doctorName}?`)) return
     setActing(id)
-    setMsg(null)
     try {
       await api.put(`/admin/payouts/${id}/approve`)
       setEarnings(prev => prev.map(e => e._id === id ? { ...e, payoutStatus: 'paid', paidAt: new Date().toISOString() } : e))
-      setMsg(`Payout approved for ${doctorName}.`)
+      modal.show({ variant: 'success', title: 'Payout Approved', message: `Payout approved for ${doctorName}.` })
     } catch (err: unknown) {
-      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Approval failed.')
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Approval failed.'
+      modal.show({ variant: 'declined', title: 'Approval Failed', message: msg })
     }
     setActing(null)
   }
@@ -60,8 +62,6 @@ export default function AdminPayouts () {
 
   return (
     <>
-      {msg && <div className={s.toast}>{msg}</div>}
-
       <div className={s.summaryBar}>
         <div className={s.summaryCard}>
           <p className={s.summaryLabel}>Requested Payouts</p>
@@ -86,7 +86,7 @@ export default function AdminPayouts () {
 
       <div className={s.panel}>
         {loading ? (
-          <p className={s.empty}>Loading…</p>
+          <p className={s.empty}><Loader label='Loading…' /></p>
         ) : earnings.length === 0 ? (
           <p className={s.empty}>No payout records.</p>
         ) : (

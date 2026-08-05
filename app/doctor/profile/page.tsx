@@ -3,6 +3,8 @@ import { useEffect, useState, useRef, FormEvent, ChangeEvent } from 'react'
 import Image from 'next/image'
 import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
 
@@ -43,6 +45,7 @@ const DURATIONS = [15, 20, 30, 45, 60, 90]
 
 export default function DoctorProfile () {
   const cached = getStoredUser()
+  const modal = useStatusModal()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -162,8 +165,11 @@ export default function DoctorProfile () {
         },
       })
       setSaved(true)
+      modal.show({ variant: 'success', title: 'Profile Saved', message: 'Your professional profile has been updated.' })
       setTimeout(() => setSaved(false), 3000)
-    } catch {}
+    } catch {
+      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save your profile. Please try again.' })
+    }
     setSaving(false)
   }
 
@@ -196,8 +202,11 @@ export default function DoctorProfile () {
         )
       )
       setAvSaved(true)
+      modal.show({ variant: 'success', title: 'Availability Saved', message: 'Your weekly schedule has been updated.' })
       setTimeout(() => setAvSaved(false), 3000)
-    } catch {}
+    } catch {
+      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save availability. Please try again.' })
+    }
     setAvSaving(false)
   }
 
@@ -208,8 +217,11 @@ export default function DoctorProfile () {
         bankAccount: { bankName: bankName.trim(), accountNumber: acctNumber.trim(), accountName: acctName.trim(), bankCode: bankCode.trim() },
       })
       setBankSaved(true)
+      modal.show({ variant: 'success', title: 'Payout Account Saved', message: 'Your bank account details have been saved.' })
       setTimeout(() => setBankSaved(false), 3000)
-    } catch {}
+    } catch {
+      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save payout account. Please try again.' })
+    }
     setBankSaving(false)
   }
 

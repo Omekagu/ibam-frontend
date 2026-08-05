@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Drug {
@@ -16,11 +18,10 @@ interface Drug {
 const EMPTY: Drug = { name: '', price: '', unit: 'pack', requiresPrescription: false, inStock: true }
 
 export default function PharmacyCatalogPage () {
+  const modal = useStatusModal()
   const [drugs,   setDrugs]   = useState<Drug[]>([])
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
-  const [saved,   setSaved]   = useState(false)
-  const [error,   setError]   = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -36,7 +37,6 @@ export default function PharmacyCatalogPage () {
 
   function update (idx: number, field: keyof Drug, value: unknown) {
     setDrugs(prev => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d))
-    setSaved(false)
   }
 
   function addRow () { setDrugs(prev => [...prev, { ...EMPTY }]) }
@@ -47,9 +47,8 @@ export default function PharmacyCatalogPage () {
   }
 
   async function save () {
-    setError('')
     const valid = drugs.filter(d => d.name.trim() && d.price !== '' && Number(d.price) >= 0)
-    if (!valid.length) { setError('Add at least one drug with a name and price.'); return }
+    if (!valid.length) { modal.show({ variant: 'declined', title: 'Catalog Empty', message: 'Add at least one drug with a name and price.' }); return }
     setSaving(true)
     try {
       await api.put('/pharmacy/catalog', {
@@ -62,9 +61,9 @@ export default function PharmacyCatalogPage () {
           inStock: d.inStock !== false,
         })),
       })
-      setSaved(true)
+      modal.show({ variant: 'success', title: 'Catalog Saved', message: 'New drugs are pending admin approval.' })
       load()
-    } catch { setError('Failed to save. Please try again.') }
+    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save. Please try again.' }) }
     setSaving(false)
   }
 
@@ -80,10 +79,7 @@ export default function PharmacyCatalogPage () {
         </button>
       </div>
 
-      {saved  && <p className={s.successBanner}>Catalog saved. New drugs are pending admin approval.</p>}
-      {error  && <p className={s.errorBanner}>{error}</p>}
-
-      {loading ? <p className={s.empty}>Loading catalog…</p> : (
+      {loading ? <p className={s.empty}><Loader label='Loading catalog…' /></p> : (
         <div className={s.tableWrap}>
           <div className={s.tableHead}>
             <span>Drug Name</span>

@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Appointment {
@@ -36,11 +38,11 @@ function getTimingInfo (scheduledAt: string, now: number): TimingInfo {
 
 export default function PatientAppointments () {
   const router   = useRouter()
+  const modal    = useStatusModal()
   const [appts,   setAppts]   = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState<Tab>('upcoming')
   const [acting,  setActing]  = useState<string | null>(null)
-  const [msg,     setMsg]     = useState<string | null>(null)
   const [now,     setNow]     = useState(Date.now())
 
   useEffect(() => {
@@ -65,17 +67,16 @@ export default function PatientAppointments () {
 
   async function joinConsultation (apptId: string) {
     setActing(apptId)
-    setMsg(null)
     try {
       const r = await api.get(`/consultations/by-appointment/${apptId}`)
       const cid = r.data.data?.consultation?._id
       if (cid) {
         router.push(`/consultation?appt=${apptId}&cid=${cid}`)
       } else {
-        setMsg('Doctor hasn\'t started the session yet. Please wait.')
+        modal.show({ variant: 'pending', title: 'Not Ready Yet', message: "Doctor hasn't started the session yet. Please wait." })
       }
     } catch {
-      setMsg('Doctor hasn\'t started the session yet. Please wait.')
+      modal.show({ variant: 'pending', title: 'Not Ready Yet', message: "Doctor hasn't started the session yet. Please wait." })
     }
     setActing(null)
   }
@@ -98,8 +99,6 @@ export default function PatientAppointments () {
 
   return (
     <>
-      {msg && <div className={s.info}>{msg}</div>}
-
       <div className={s.tabs}>
         {TABS.map(t => (
           <button key={t.key} className={`${s.tab} ${tab === t.key ? s.active : ''}`} onClick={() => setTab(t.key)}>
@@ -109,7 +108,7 @@ export default function PatientAppointments () {
       </div>
 
       {loading ? (
-        <div className={s.empty}>Loading appointments…</div>
+        <div className={s.empty}><Loader label='Loading appointments…' /></div>
       ) : filtered.length === 0 ? (
         <div className={s.empty}>No appointments here.</div>
       ) : (

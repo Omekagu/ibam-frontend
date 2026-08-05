@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface DrugEntry {
@@ -76,7 +77,7 @@ export default function DrugsPage () {
         </div>
       </div>
 
-      {loading ? <p className={s.empty}>Loading drug catalog…</p>
+      {loading ? <p className={s.empty}><Loader label='Loading drug catalog…' /></p>
         : filtered.length === 0 ? <p className={s.empty}>No drugs match your filter.</p>
         : (
           <div className={s.tableWrap}>

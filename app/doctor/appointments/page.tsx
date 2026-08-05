@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Appointment {
@@ -111,7 +112,7 @@ export default function DoctorAppointments () {
       </div>
 
       {loading ? (
-        <div className={s.loading}>Loading appointments…</div>
+        <div className={s.loading}><Loader label='Loading appointments…' /></div>
       ) : filtered.length === 0 ? (
         <div className={s.empty}>No appointments in this category.</div>
       ) : (

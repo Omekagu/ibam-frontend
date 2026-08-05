@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Test { name: string; price: number; turnaroundHours: number }
@@ -30,7 +31,7 @@ export default function ManageTestsPage () {
       </div>
 
       {loading ? (
-        <p className={s.empty}>Loading your test catalog…</p>
+        <p className={s.empty}><Loader label='Loading your test catalog…' /></p>
       ) : tests.length === 0 ? (
         <p className={s.empty}>No tests have been added to your lab yet. Please contact the iBam admin team.</p>
       ) : (

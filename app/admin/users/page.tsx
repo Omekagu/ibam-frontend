@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface User {
@@ -107,7 +108,7 @@ export default function AdminUsersPage () {
 
       <div className={s.panel}>
         {loading ? (
-          <div className={s.loading}>Loading users…</div>
+          <div className={s.loading}><Loader label='Loading users…' /></div>
         ) : users.length === 0 ? (
           <div className={s.empty}>No users found.</div>
         ) : (

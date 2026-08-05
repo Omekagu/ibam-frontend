@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Profile {
@@ -15,11 +17,10 @@ interface Profile {
 }
 
 export default function PharmacyProfilePage () {
+  const modal = useStatusModal()
   const [profile,    setProfile]    = useState<Profile | null>(null)
   const [loading,    setLoading]    = useState(true)
   const [saving,     setSaving]     = useState(false)
-  const [saved,      setSaved]      = useState(false)
-  const [error,      setError]      = useState('')
 
   const [name,       setName]       = useState('')
   const [address,    setAddress]    = useState('')
@@ -32,7 +33,6 @@ export default function PharmacyProfilePage () {
   const [acctName,   setAcctName]   = useState('')
   const [bankCode,   setBankCode]   = useState('')
   const [bankSaving, setBankSaving] = useState(false)
-  const [bankSaved,  setBankSaved]  = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -56,9 +56,9 @@ export default function PharmacyProfilePage () {
 
   async function save () {
     if (!name.trim() || !address.trim() || !phone.trim()) {
-      setError('Name, address and phone are required.'); return
+      modal.show({ variant: 'declined', title: 'Missing Fields', message: 'Name, address and phone are required.' }); return
     }
-    setError(''); setSaving(true)
+    setSaving(true)
     try {
       await api.put('/pharmacy/profile', {
         name: name.trim(),
@@ -66,20 +66,19 @@ export default function PharmacyProfilePage () {
         phone: phone.trim(),
         coverageAreas: areas.split(',').map(a => a.trim()).filter(Boolean),
       })
-      setSaved(true)
-    } catch { setError('Failed to save. Please try again.') }
+      modal.show({ variant: 'success', title: 'Profile Saved', message: 'Your pharmacy profile has been updated.' })
+    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save. Please try again.' }) }
     setSaving(false)
   }
 
   async function saveBankAccount () {
-    setBankSaving(true); setBankSaved(false)
+    setBankSaving(true)
     try {
       await api.put('/pharmacy/profile', {
         bankAccount: { bankName: bankName.trim(), accountNumber: acctNumber.trim(), accountName: acctName.trim(), bankCode: bankCode.trim() },
       })
-      setBankSaved(true)
-      setTimeout(() => setBankSaved(false), 3000)
-    } catch { }
+      modal.show({ variant: 'success', title: 'Payout Account Saved', message: 'Your bank account details have been saved.' })
+    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save payout account. Please try again.' }) }
     setBankSaving(false)
   }
 
@@ -101,12 +100,8 @@ export default function PharmacyProfilePage () {
         )}
       </div>
 
-      {saved     && <p className={s.successBanner}>Profile saved successfully.</p>}
-      {bankSaved && <p className={s.successBanner}>Payout account saved.</p>}
-      {error     && <p className={s.errorBanner}>{error}</p>}
-
       {loading ? (
-        <p className={s.empty}>Loading profile…</p>
+        <p className={s.empty}><Loader label='Loading profile…' /></p>
       ) : (
         <>
           {/* ── Business info ── */}
@@ -123,22 +118,22 @@ export default function PharmacyProfilePage () {
 
             <div className={s.field}>
               <label>Pharmacy Name</label>
-              <input className={s.input} value={name} onChange={e => { setName(e.target.value); setSaved(false) }} placeholder='Your pharmacy name' />
+              <input className={s.input} value={name} onChange={e => setName(e.target.value)} placeholder='Your pharmacy name' />
             </div>
 
             <div className={s.field}>
               <label>Address</label>
-              <input className={s.input} value={address} onChange={e => { setAddress(e.target.value); setSaved(false) }} placeholder='Full address' />
+              <input className={s.input} value={address} onChange={e => setAddress(e.target.value)} placeholder='Full address' />
             </div>
 
             <div className={s.field}>
               <label>Phone</label>
-              <input className={s.input} value={phone} onChange={e => { setPhone(e.target.value); setSaved(false) }} placeholder='+234...' />
+              <input className={s.input} value={phone} onChange={e => setPhone(e.target.value)} placeholder='+234...' />
             </div>
 
             <div className={s.field}>
               <label>Coverage Areas <span className={s.hint}>(comma-separated)</span></label>
-              <input className={s.input} value={areas} onChange={e => { setAreas(e.target.value); setSaved(false) }} placeholder='e.g. Lekki, Victoria Island, Ajah' />
+              <input className={s.input} value={areas} onChange={e => setAreas(e.target.value)} placeholder='e.g. Lekki, Victoria Island, Ajah' />
             </div>
 
             <button className={s.saveBtn} onClick={save} disabled={saving}>
@@ -173,7 +168,7 @@ export default function PharmacyProfilePage () {
             </div>
 
             <button className={s.saveBtn} onClick={saveBankAccount} disabled={bankSaving || !bankName || !acctNumber || !acctName}>
-              {bankSaving ? 'Saving…' : 'Save Payout Account'}
+              {bankSaving ? <Loader inline size='sm' label='Saving…' /> : 'Save Payout Account'}
             </button>
           </div>
         </>

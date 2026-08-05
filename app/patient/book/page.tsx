@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import api from '@/lib/api'
 import s from './page.module.scss'
-import { VideoCameraIcon, PhoneIcon, ChatIcon, CheckCircleIcon } from '@/components/icons'
+import { VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 
 interface Doctor {
   _id: string
@@ -37,6 +39,7 @@ const DURATION_OPTS = [30, 45, 60, 90, 120] // minutes
 
 export default function BookDoctor () {
   const router = useRouter()
+  const modal  = useStatusModal()
 
   const [doctors,      setDoctors]      = useState<Doctor[]>([])
   const [loadingDocs,  setLoadingDocs]  = useState(true)
@@ -51,9 +54,6 @@ export default function BookDoctor () {
   const [isUrgent,     setIsUrgent]     = useState(false)
   const [duration,     setDuration]     = useState(30)
   const [booking,      setBooking]      = useState(false)
-  const [booked,       setBooked]       = useState(false)
-  const [paymentUrl,   setPaymentUrl]   = useState('')
-  const [error,        setError]        = useState('')
 
   function typeFeeFor (doctor: Doctor, t: typeof TYPES[number]): number {
     return doctor.fees?.[t] ?? doctor.consultationFee ?? 0
@@ -97,7 +97,6 @@ export default function BookDoctor () {
     e.preventDefault()
     if (!selected || !date || !slot) return
     setBooking(true)
-    setError('')
     try {
       const scheduledAt = new Date(`${date}T${slot.startTime}`).toISOString()
       const apptRes = await api.post('/appointments/book', {
@@ -110,42 +109,38 @@ export default function BookDoctor () {
         sessionDurationMinutes: duration,
       })
       const appt = apptRes.data.data?.appointment
+      let paymentUrl: string | undefined
       if (appt?.consultationFee > 0) {
-        // Initiate Paystack payment immediately after booking
         const payRes = await api.post('/payments/initiate', {
           type: 'consultation',
           serviceId: appt._id,
           amount: appt.consultationFee,
         })
-        const url: string | undefined = payRes.data.data?.authorizationUrl
-        if (url) { setPaymentUrl(url); setBooked(true); return }
+        paymentUrl = payRes.data.data?.authorizationUrl
       }
-      setBooked(true)
+      modal.show({
+        variant: 'success',
+        title: 'Appointment Booked!',
+        message: paymentUrl
+          ? `Your ${type} consultation with Dr. ${selected.user?.name} is confirmed for ${date} at ${slot.startTime}. Complete payment to confirm your session.`
+          : `Your ${type} consultation with Dr. ${selected.user?.name} is scheduled for ${date} at ${slot.startTime}.`,
+        actionLabel: paymentUrl ? 'Pay Now →' : 'View My Appointments',
+        onAction: paymentUrl
+          ? () => { window.location.href = paymentUrl! }
+          : () => router.push('/patient/appointments'),
+        dismissLabel: paymentUrl ? 'Pay Later' : 'Close',
+      })
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Booking failed. Please try again.')
+      modal.show({
+        variant: 'declined',
+        title: 'Booking Failed',
+        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Booking failed. Please try again.',
+        actionLabel: 'Try Again',
+      })
+    } finally {
+      setBooking(false)
     }
-    setBooking(false)
   }
-
-  if (booked) return (
-    <div className={s.successBox}>
-      <div className={s.successIcon}><CheckCircleIcon size={48} /></div>
-      <h2>Appointment Booked!</h2>
-      {paymentUrl ? (
-        <>
-          <p>Your <strong>{type}</strong> consultation with <strong>{selected?.user.name}</strong> is confirmed for {date} at {slot?.startTime}.</p>
-          <p style={{ fontSize: '0.875rem', opacity: 0.75 }}>Complete payment to confirm your session.</p>
-          <button className={s.doneBtn} onClick={() => { window.location.href = paymentUrl }}>Pay Now →</button>
-          <button className={s.skipBtn} onClick={() => router.push('/patient/appointments')}>Pay Later</button>
-        </>
-      ) : (
-        <>
-          <p>Your <strong>{type}</strong> consultation with <strong>{selected?.user.name}</strong> is scheduled for {date} at {slot?.startTime}.</p>
-          <button className={s.doneBtn} onClick={() => router.push('/patient/appointments')}>View My Appointments</button>
-        </>
-      )}
-    </div>
-  )
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -161,7 +156,7 @@ export default function BookDoctor () {
 
         <div className={s.docList}>
           {loadingDocs ? (
-            <p className={s.empty}>Loading doctors…</p>
+            <Loader variant='dots' label='Loading doctors…' />
           ) : doctors.length === 0 ? (
             <p className={s.empty}>No doctors found.</p>
           ) : doctors.map(d => (
@@ -261,9 +256,9 @@ export default function BookDoctor () {
             <div className={s.field}>
               <label>Available Time Slots</label>
               {loadingSlots ? (
-                <p className={s.slotNote}>Loading slots…</p>
+                <Loader inline variant='dots' size='sm' label='Loading slots…' />
               ) : slots.length === 0 ? (
-                <p className={s.slotNote}>No available slots for this date. Try another day.</p>
+                <p className={s.slotNote}>No slots available for this date. Try another day.</p>
               ) : (
                 <div className={s.slotGrid}>
                   {slots.map((sl, i) => (
@@ -336,8 +331,6 @@ export default function BookDoctor () {
             <span>Total Fee</span>
             <strong>₦{computeFee(selected, type, duration, isUrgent).toLocaleString()}</strong>
           </div>
-
-          {error && <p className={s.error}>{error}</p>}
 
           <button
             type='submit'

@@ -4,6 +4,7 @@ import './globals.scss'
 import ScrollReveal from '@/components/ScrollReveal'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import SessionSync from '@/components/SessionSync'
+import { StatusModalProvider } from '@/components/StatusModal'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -88,9 +89,11 @@ export default function RootLayout ({
       </head>
       <body>
         <ThemeProvider>
-          <SessionSync />
-          {children}
-          <ScrollReveal />
+          <StatusModalProvider>
+            <SessionSync />
+            {children}
+            <ScrollReveal />
+          </StatusModalProvider>
         </ThemeProvider>
       </body>
     </html>

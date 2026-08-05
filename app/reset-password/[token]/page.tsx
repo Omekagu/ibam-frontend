@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
+import { useStatusModal } from '@/components/StatusModal'
 import api from '@/lib/api'
 import s from './page.module.scss'
 
@@ -14,6 +15,7 @@ export default function ResetPasswordPage ({
   params: Promise<{ token: string }>
 }) {
   useAuthRedirect()
+  const modal = useStatusModal()
   const { token } = use(params)
   const router = useRouter()
   const [password, setPassword]     = useState('')
@@ -22,19 +24,17 @@ export default function ResetPasswordPage ({
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading]       = useState(false)
   const [done, setDone]             = useState(false)
-  const [error, setError]           = useState('')
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
     if (password !== confirm) {
-      setError('Passwords do not match.')
+      modal.show({ variant: 'declined', title: 'Passwords Do Not Match', message: 'Please make sure both passwords match.' })
       return
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      modal.show({ variant: 'declined', title: 'Password Too Short', message: 'Password must be at least 8 characters.' })
       return
     }
-    setError('')
     setLoading(true)
     try {
       await api.patch(`/auth/reset-password/${token}`, { password })
@@ -44,7 +44,7 @@ export default function ResetPasswordPage ({
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? 'Link is invalid or has expired.'
-      setError(msg)
+      modal.show({ variant: 'declined', title: 'Reset Failed', message: msg })
     } finally {
       setLoading(false)
     }
@@ -76,8 +76,6 @@ export default function ResetPasswordPage ({
             <>
               <h1 className={s.formTitle}>Set new password</h1>
               <p className={s.formSub}>Choose a strong password for your account.</p>
-
-              {error && <p className={s.errorBanner}>{error}</p>}
 
               <form onSubmit={handleSubmit}>
                 <div className={s.field}>

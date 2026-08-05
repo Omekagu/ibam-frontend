@@ -12,6 +12,8 @@ import {
   PillIcon,
   MicroscopeIcon
 } from '@/components/icons'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 function GoogleIcon () {
@@ -95,13 +97,14 @@ const FALLBACK_SPECIALTIES = [
 export default function SignupPage () {
   useAuthRedirect()
   const router = useRouter()
+  const modal = useStatusModal()
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
   const [specialties, setSpecialties] = useState<string[]>(FALLBACK_SPECIALTIES)
 
   useEffect(() => {
     fetch(
       `${
-        process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+        process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
       }/admin/public/content`
     )
       .then(r => r.json())
@@ -121,12 +124,10 @@ export default function SignupPage () {
   const [showPw, setShowPw] = useState(false)
   const [specialty, setSpecialty] = useState('')
   const [mdcn, setMdcn] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
-    setError('')
     setLoading(true)
     try {
       await register({
@@ -145,7 +146,7 @@ export default function SignupPage () {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? 'Registration failed. Please try again.'
-      setError(msg)
+      modal.show({ variant: 'declined', title: 'Registration Failed', message: msg })
     } finally {
       setLoading(false)
     }
@@ -196,8 +197,6 @@ export default function SignupPage () {
               <span className={s.roleLabel}>I&apos;m a Doctor</span>
             </button>
           </div>
-
-          {error && <p className={s.errorBanner}>{error}</p>}
 
           <form onSubmit={handleSubmit}>
             <div className={s.row}>
@@ -310,7 +309,7 @@ export default function SignupPage () {
             </p>
 
             <button type='submit' className={s.submit} disabled={loading}>
-              {loading ? 'Creating account…' : 'Create Account →'}
+              {loading ? <Loader inline size='sm' label='Creating account…' /> : 'Create Account →'}
             </button>
           </form>
 
@@ -325,8 +324,7 @@ export default function SignupPage () {
             className={s.googleBtn}
             onClick={() => {
               const api =
-                process.env.NEXT_PUBLIC_API_URL ??
-                'https://api.ibamhealth.com/api'
+                process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
               const cb = window.location.origin + '/auth/google/callback'
               window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                 cb

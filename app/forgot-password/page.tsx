@@ -4,19 +4,19 @@ import Link from 'next/link'
 import Image from 'next/image'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
+import { useStatusModal } from '@/components/StatusModal'
 import api from '@/lib/api'
 import s from './page.module.scss'
 
 export default function ForgotPasswordPage () {
   useAuthRedirect()
+  const modal = useStatusModal()
   const [email, setEmail]     = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent]       = useState(false)
-  const [error, setError]     = useState('')
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
-    setError('')
     setLoading(true)
     try {
       await api.post('/auth/forgot-password', { email })
@@ -25,7 +25,7 @@ export default function ForgotPasswordPage () {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? 'Something went wrong. Please try again.'
-      setError(msg)
+      modal.show({ variant: 'declined', title: 'Request Failed', message: msg })
     } finally {
       setLoading(false)
     }
@@ -62,8 +62,6 @@ export default function ForgotPasswordPage () {
               <p className={s.formSub}>
                 Enter your email and we&apos;ll send you a reset link.
               </p>
-
-              {error && <p className={s.errorBanner}>{error}</p>}
 
               <form onSubmit={handleSubmit}>
                 <div className={s.field}>

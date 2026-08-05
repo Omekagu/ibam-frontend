@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import {
   CheckCircleIcon, HourglassIcon, SearchIcon, MailIcon,
@@ -13,6 +15,7 @@ const STEPS = ['NIN Verify', 'Face Match', 'Upload Document']
 
 export default function DoctorKYCPage () {
   const router = useRouter()
+  const modal = useStatusModal()
   const [loading, setLoading] = useState(true)
   const [statusError, setStatusError] = useState('')
   const [kycStatus, setKycStatus] = useState('pending')
@@ -128,7 +131,9 @@ export default function DoctorKYCPage () {
       if (err?.response?.status === 409) {
         setStep(1) // already done, silently advance
       } else {
-        setNinError(err?.response?.data?.message ?? 'NIN verification failed. Check the number and try again.')
+        const msg = err?.response?.data?.message ?? 'NIN verification failed. Check the number and try again.'
+        setNinError(msg)
+        modal.show({ variant: 'declined', title: 'NIN Verification Failed', message: msg })
       }
     } finally {
       setNinLoading(false)
@@ -148,7 +153,9 @@ export default function DoctorKYCPage () {
         setFaceDone(true)
         setStep(2)
       } else {
-        setFaceError(err?.response?.data?.message ?? 'Face match failed. Please retake your selfie and try again.')
+        const msg = err?.response?.data?.message ?? 'Face match failed. Please retake your selfie and try again.'
+        setFaceError(msg)
+        modal.show({ variant: 'declined', title: 'Face Verification Failed', message: msg })
       }
     } finally {
       setFaceLoading(false)
@@ -191,8 +198,7 @@ export default function DoctorKYCPage () {
       <div className={s.page}>
         <div className={s.card}>
           <div className={s.loadingWrap}>
-            <div className={s.spinner} />
-            <p>Checking verification status…</p>
+            <Loader label='Checking verification status…' />
           </div>
         </div>
       </div>

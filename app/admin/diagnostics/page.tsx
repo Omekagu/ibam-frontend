@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Patient { name: string; email: string; phone?: string }
@@ -96,7 +97,7 @@ export default function AdminDiagnosticsPage () {
       </div>
 
       {loading ? (
-        <div className={s.empty}>Loading…</div>
+        <div className={s.empty}><Loader label='Loading…' /></div>
       ) : requests.length === 0 ? (
         <div className={s.empty}>No diagnostic requests found.</div>
       ) : (

@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface TestRow { name: string; price: number | ''; turnaroundHours: number | '' }
@@ -28,6 +30,7 @@ const BLANK = {
 }
 
 export default function AdminLabsPage () {
+  const modal = useStatusModal()
   const [labs,       setLabs]       = useState<Lab[]>([])
   const [loading,    setLoading]    = useState(true)
   const [filter,     setFilter]     = useState('')
@@ -48,7 +51,6 @@ export default function AdminLabsPage () {
   const [kycStatus, setKycStatus] = useState<'pending'|'approved'|'rejected'>('approved')
   const [kycReason, setKycReason] = useState('')
   const [kycSaving, setKycSaving] = useState(false)
-  const [kycMsg,    setKycMsg]    = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -109,6 +111,7 @@ export default function AdminLabsPage () {
       const updated = r.data.data?.lab
       setLabs(prev => prev.map(l => l._id === labId ? { ...l, testsOffered: updated.testsOffered } : l))
       setEditingId(null)
+      modal.show({ variant: 'success', title: 'Catalog Saved', message: 'Lab test catalog has been updated.' })
     } catch { setSaveErr('Failed to save. Please try again.') }
     setSaving(false)
   }
@@ -130,6 +133,7 @@ export default function AdminLabsPage () {
       setLabs(prev => [newLab, ...prev])
       setForm(BLANK)
       setShowRegister(false)
+      modal.show({ variant: 'success', title: 'Lab Created', message: 'The lab account has been created successfully.' })
     } catch (err: any) {
       setFormErr(err?.response?.data?.message ?? 'Failed to create lab.')
     }
@@ -138,8 +142,8 @@ export default function AdminLabsPage () {
 
   async function submitKyc (lab: Lab) {
     const userId = lab.user?._id
-    if (!userId) { setKycMsg('User ID not available.'); return }
-    setKycSaving(true); setKycMsg('')
+    if (!userId) { modal.show({ variant: 'declined', title: 'KYC Error', message: 'User ID not available.' }); return }
+    setKycSaving(true)
     try {
       await api.put(`/admin/kyc/${userId}/verify`, { kycStatus, reason: kycReason })
       setLabs(prev => prev.map(l =>
@@ -147,9 +151,9 @@ export default function AdminLabsPage () {
           ? { ...l, status: kycStatus === 'approved' ? 'active' : kycStatus === 'rejected' ? 'suspended' : l.status }
           : l
       ))
-      setKycMsg('KYC status updated.')
+      modal.show({ variant: 'success', title: 'KYC Updated', message: 'KYC status updated.' })
     } catch (err: any) {
-      setKycMsg(err?.response?.data?.message ?? 'Failed to update KYC.')
+      modal.show({ variant: 'declined', title: 'KYC Update Failed', message: err?.response?.data?.message ?? 'Failed to update KYC.' })
     }
     setKycSaving(false)
   }
@@ -173,7 +177,7 @@ export default function AdminLabsPage () {
       </div>
 
       {loading ? (
-        <div className={s.empty}>Loading labs…</div>
+        <div className={s.empty}><Loader label='Loading labs…' /></div>
       ) : labs.length === 0 ? (
         <div className={s.empty}>No labs found.</div>
       ) : (
@@ -241,7 +245,6 @@ export default function AdminLabsPage () {
                     <span className={s.editorTitle}>Manual KYC Verification — {lab.name}</span>
                     <p className={s.editorSub}>Override the KYC / verification status for this lab partner.</p>
                   </div>
-                  {kycMsg && <p className={`${s.editorErr} ${kycMsg.includes('updated') ? s.editorSuccess : ''}`}>{kycMsg}</p>}
                   <div className={s.kycRow}>
                     <select className={s.input} value={kycStatus} onChange={e => setKycStatus(e.target.value as any)}>
                       <option value='approved'>Approved — activate lab</option>

@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import {
   HospitalIcon, StethoscopeIcon, PillIcon, MicroscopeIcon, SirenIcon,
@@ -49,30 +51,30 @@ const RADII = [
 ]
 
 export default function FacilitiesPage () {
+  const modal = useStatusModal()
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading,    setLoading]    = useState(false)
   const [located,    setLocated]    = useState(false)
-  const [error,      setError]      = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [radius,     setRadius]     = useState(5000)
   const [coords,     setCoords]     = useState<{ lat: number; lng: number } | null>(null)
 
   async function fetchFacilities (lat: number, lng: number, type: string, r: number) {
-    setLoading(true); setError('')
+    setLoading(true)
     try {
       const params = new URLSearchParams({ lat: String(lat), lng: String(lng), radius: String(r) })
       if (type) params.set('type', type)
       const res = await api.get(`/facilities/nearby?${params}`)
       setFacilities(res.data.data?.facilities ?? [])
     } catch {
-      setError('Could not load facilities. Please try again.')
+      modal.show({ variant: 'declined', title: 'Load Failed', message: 'Could not load facilities. Please try again.' })
     }
     setLoading(false)
   }
 
   function locate () {
-    if (!navigator.geolocation) { setError('Geolocation is not supported by your browser.'); return }
-    setLoading(true); setError('')
+    if (!navigator.geolocation) { modal.show({ variant: 'declined', title: 'Not Supported', message: 'Geolocation is not supported by your browser.' }); return }
+    setLoading(true)
     navigator.geolocation.getCurrentPosition(
       pos => {
         const lat = pos.coords.latitude
@@ -82,7 +84,7 @@ export default function FacilitiesPage () {
         fetchFacilities(lat, lng, typeFilter, radius)
       },
       () => {
-        setError('Could not get your location. Please allow location access and try again.')
+        modal.show({ variant: 'declined', title: 'Location Error', message: 'Could not get your location. Please allow location access and try again.' })
         setLoading(false)
       },
       { timeout: 10_000 }
@@ -120,8 +122,6 @@ export default function FacilitiesPage () {
         </div>
       )}
 
-      {error && <p className={s.errorBanner}>{error}</p>}
-
       {/* Filters (show once located) */}
       {located && (
         <div className={s.filters}>
@@ -153,7 +153,7 @@ export default function FacilitiesPage () {
 
       {/* Results */}
       {loading ? (
-        <p className={s.empty}>Searching nearby facilities…</p>
+        <p className={s.empty}><Loader label='Searching nearby facilities…' /></p>
       ) : located && facilities.length === 0 ? (
         <p className={s.empty}>No facilities found in this area. Try increasing the radius.</p>
       ) : (

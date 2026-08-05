@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { sendEmailOTP, verifyEmailOTP, getStoredUser, updateStoredUser } from '@/lib/auth'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 const BOXES = 6
@@ -19,6 +20,7 @@ function MailIcon () {
 }
 
 function VerifyEmailForm () {
+  const modal = useStatusModal()
   const params = useSearchParams()
   const router = useRouter()
 
@@ -26,7 +28,6 @@ function VerifyEmailForm () {
   const [digits,  setDigits]  = useState<string[]>(Array(BOXES).fill(''))
   const [sent,    setSent]    = useState(false)
   const [done,    setDone]    = useState(false)
-  const [error,   setError]   = useState('')
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -39,18 +40,18 @@ function VerifyEmailForm () {
 
   async function handleSend (emailArg?: string) {
     const target = (emailArg ?? email).trim()
-    if (!target) { setError('Enter your email address.'); return }
-    setSending(true); setError('')
+    if (!target) { modal.show({ variant: 'declined', title: 'Email Required', message: 'Enter your email address.' }); return }
+    setSending(true)
     try {
       await sendEmailOTP(target)
       setEmail(target)
       setSent(true)
       setTimeout(() => boxRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
-      setError(
+      modal.show({ variant: 'declined', title: 'Send Failed', message:
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Failed to send code. Try again.'
-      )
+      })
     } finally { setSending(false) }
   }
 
@@ -71,7 +72,7 @@ function VerifyEmailForm () {
   async function handleVerify () {
     const otp = digits.join('')
     if (otp.length < BOXES) return
-    setLoading(true); setError('')
+    setLoading(true)
     try {
       await verifyEmailOTP(email, otp)
       updateStoredUser({ isVerified: true })
@@ -85,10 +86,10 @@ function VerifyEmailForm () {
         '/patient'
       setTimeout(() => router.replace(dest), 1500)
     } catch (err: unknown) {
-      setError(
+      modal.show({ variant: 'declined', title: 'Verification Failed', message:
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Invalid or expired code.'
-      )
+      })
     } finally { setLoading(false) }
   }
 
@@ -115,8 +116,6 @@ function VerifyEmailForm () {
             Enter your email and we&apos;ll send you a 6-digit verification code.
           </p>
 
-          {error && <p className={s.errorBanner}>{error}</p>}
-
           <div className={s.field}>
             <label htmlFor='ve-email'>Email Address</label>
             <input
@@ -140,8 +139,6 @@ function VerifyEmailForm () {
             We sent a 6-digit code to <strong>{email}</strong>.
             Enter it below to verify your account.
           </p>
-
-          {error && <p className={s.errorBanner}>{error}</p>}
 
           <div className={s.otpRow}>
             {digits.map((d, i) => (

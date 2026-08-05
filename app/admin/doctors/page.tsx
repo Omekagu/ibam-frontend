@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 import { StethoscopeIcon, DocumentIcon, CheckIcon, XIcon } from '@/components/icons'
 
@@ -26,6 +27,7 @@ const BLANK_FORM = {
 }
 
 export default function AdminDoctorsPage () {
+  const modal = useStatusModal()
   const [tab, setTab]           = useState<Tab>('pending')
   const [doctors, setDoctors]   = useState<Doctor[]>([])
   const [selected, setSelected] = useState<Doctor | null>(null)
@@ -42,7 +44,6 @@ export default function AdminDoctorsPage () {
   const [kycStatus,  setKycStatus]  = useState<typeof KYC_STATUSES[number]>('approved')
   const [kycReason,  setKycReason]  = useState('')
   const [kycSaving,  setKycSaving]  = useState(false)
-  const [kycMsg,     setKycMsg]     = useState('')
 
   useEffect(() => {
     api.get('/admin/doctors').then(r => setDoctors(r.data.data?.doctors ?? [])).catch(() => {})
@@ -89,6 +90,7 @@ export default function AdminDoctorsPage () {
       setDoctors(prev => [newDoc, ...prev])
       setForm(BLANK_FORM)
       setShowRegister(false)
+      modal.show({ variant: 'success', title: 'Doctor Created', message: 'The doctor account has been created successfully.' })
     } catch (err: any) {
       setFormErr(err?.response?.data?.message ?? 'Failed to create doctor. Please try again.')
     }
@@ -98,7 +100,6 @@ export default function AdminDoctorsPage () {
   async function submitKyc () {
     if (!kycTarget) return
     setKycSaving(true)
-    setKycMsg('')
     try {
       await api.put(`/admin/kyc/${kycTarget}/verify`, { kycStatus, reason: kycReason })
       setDoctors(prev => prev.map(d =>
@@ -109,9 +110,9 @@ export default function AdminDoctorsPage () {
       if (selected && selected.user?._id === kycTarget) {
         setSelected({ ...selected, kycStatus, isApproved: kycStatus === 'approved' })
       }
-      setKycMsg('KYC status updated successfully.')
+      modal.show({ variant: 'success', title: 'KYC Updated', message: 'KYC status updated successfully.' })
     } catch (err: any) {
-      setKycMsg(err?.response?.data?.message ?? 'Failed to update KYC.')
+      modal.show({ variant: 'declined', title: 'KYC Update Failed', message: err?.response?.data?.message ?? 'Failed to update KYC.' })
     }
     setKycSaving(false)
   }
@@ -121,7 +122,6 @@ export default function AdminDoctorsPage () {
     setKycTarget(d.user?._id ?? '')
     setKycStatus('approved')
     setKycReason('')
-    setKycMsg('')
   }
 
   return (
@@ -263,11 +263,6 @@ export default function AdminDoctorsPage () {
                   value={kycReason}
                   onChange={e => setKycReason(e.target.value)}
                 />
-                {kycMsg && (
-                  <p style={{ fontSize: '0.78rem', marginTop: '0.5rem', color: kycMsg.includes('success') ? 'var(--success)' : 'var(--danger)' }}>
-                    {kycMsg}
-                  </p>
-                )}
               </div>
             </div>
 

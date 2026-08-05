@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 
 interface SubscriptionPlan {
   _id: string
@@ -33,13 +35,12 @@ function formatDate (iso?: string) {
 }
 
 export default function SubscriptionsPage () {
+  const modal = useStatusModal()
   const [plans,       setPlans]       = useState<SubscriptionPlan[]>([])
   const [current,     setCurrent]     = useState<ActiveSubscription | null>(null)
   const [loading,     setLoading]     = useState(true)
   const [subscribing, setSubscribing] = useState<string | null>(null)
   const [cancelling,  setCancelling]  = useState(false)
-  const [error,       setError]       = useState('')
-  const [success,     setSuccess]     = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -58,37 +59,56 @@ export default function SubscriptionsPage () {
 
   async function handleSubscribe (plan: SubscriptionPlan) {
     if (!plan.paystackPlanCode) {
-      setError(`"${plan.name}" is not yet available for subscription. Please check back soon.`)
+      modal.show({ variant: 'pending', title: 'Coming Soon', message: `"${plan.name}" is not yet available for online subscription. Please check back soon.` })
       return
     }
     if (!confirm(`Subscribe to ${plan.name} for ${formatPrice(plan.price, plan.interval)}?\n\nYou will be charged via Paystack. Cancel anytime.`)) return
-    setError(''); setSuccess('')
     setSubscribing(plan._id)
     try {
       const r = await api.post('/subscriptions/subscribe', { planId: plan._id })
       setCurrent(r.data.data?.subscription)
-      setSuccess(`You're now subscribed to the ${plan.name} plan!`)
+      modal.show({
+        variant: 'success',
+        title: 'Subscribed!',
+        message: `You're now on the ${plan.name} plan. Enjoy your premium benefits.`,
+        actionLabel: 'Great, thanks!',
+      })
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Subscription failed. Please try again.')
+      modal.show({
+        variant: 'declined',
+        title: 'Subscription Failed',
+        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not process your subscription. Please try again.',
+        actionLabel: 'Try Again',
+      })
+    } finally {
+      setSubscribing(null)
     }
-    setSubscribing(null)
   }
 
   async function handleCancel () {
     if (!confirm('Cancel your subscription? You will lose access at the end of the billing period.')) return
-    setError(''); setSuccess('')
     setCancelling(true)
     try {
       await api.put('/subscriptions/cancel')
       setCurrent(null)
-      setSuccess('Your subscription has been cancelled.')
+      modal.show({
+        variant: 'success',
+        title: 'Subscription Cancelled',
+        message: 'Your subscription has been cancelled. You will retain access until the end of your current billing period.',
+      })
     } catch {
-      setError('Could not cancel subscription. Please try again.')
+      modal.show({
+        variant: 'declined',
+        title: 'Cancellation Failed',
+        message: 'Could not cancel your subscription. Please try again or contact support.',
+        actionLabel: 'Try Again',
+      })
+    } finally {
+      setCancelling(false)
     }
-    setCancelling(false)
   }
 
-  if (loading) return <div className={s.wrap}><p className={s.empty}>Loading plans…</p></div>
+  if (loading) return <div className={s.wrap}><Loader label='Loading plans…' /></div>
 
   return (
     <div className={s.wrap}>
@@ -98,9 +118,6 @@ export default function SubscriptionsPage () {
           <p className={s.subtitle}>Subscribe to a plan to unlock premium features.</p>
         </div>
       </div>
-
-      {error   && <p className={s.errorBanner}>{error}</p>}
-      {success && <p className={s.successBanner}>{success}</p>}
 
       {/* Active plan banner */}
       {current && (

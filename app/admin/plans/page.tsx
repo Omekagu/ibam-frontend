@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Feature { text: string }
@@ -27,14 +29,13 @@ const BLANK: Omit<Plan, '_id'> = {
 }
 
 export default function AdminPlansPage () {
+  const modal = useStatusModal()
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Plan | null>(null)
   const [isNew, setIsNew] = useState(false)
   const [saving, setSaving] = useState(false)
   const [newFeature, setNewFeature] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -43,22 +44,18 @@ export default function AdminPlansPage () {
     try {
       const r = await api.get('/admin/plans')
       setPlans(r.data.data?.plans ?? [])
-    } catch { setError('Failed to load plans.') }
+    } catch { modal.show({ variant: 'declined', title: 'Load Failed', message: 'Failed to load plans.' }) }
     setLoading(false)
   }
 
   function openNew () {
     setEditing({ _id: '', ...BLANK })
     setIsNew(true)
-    setError('')
-    setSuccess('')
   }
 
   function openEdit (plan: Plan) {
     setEditing({ ...plan })
     setIsNew(false)
-    setError('')
-    setSuccess('')
   }
 
   function closeEdit () {
@@ -84,8 +81,8 @@ export default function AdminPlansPage () {
 
   async function save () {
     if (!editing) return
-    if (!editing.name || !editing.price) { setError('Name and price are required.'); return }
-    setSaving(true); setError(''); setSuccess('')
+    if (!editing.name || !editing.price) { modal.show({ variant: 'declined', title: 'Missing Fields', message: 'Name and price are required.' }); return }
+    setSaving(true)
     try {
       if (isNew) {
         const r = await api.post('/admin/plans', editing)
@@ -94,9 +91,9 @@ export default function AdminPlansPage () {
         const r = await api.put(`/admin/plans/${editing._id}`, editing)
         setPlans(prev => prev.map(p => p._id === editing._id ? r.data.data.plan : p))
       }
-      setSuccess(isNew ? 'Plan created.' : 'Plan updated.')
+      modal.show({ variant: 'success', title: isNew ? 'Plan Created' : 'Plan Updated', message: isNew ? 'Subscription plan created.' : 'Subscription plan updated.' })
       closeEdit()
-    } catch { setError('Failed to save plan.') }
+    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save plan.' }) }
     setSaving(false)
   }
 
@@ -104,7 +101,7 @@ export default function AdminPlansPage () {
     try {
       const r = await api.put(`/admin/plans/${plan._id}`, { ...plan, isActive: !plan.isActive })
       setPlans(prev => prev.map(p => p._id === plan._id ? r.data.data.plan : p))
-    } catch { setError('Failed to update plan.') }
+    } catch { modal.show({ variant: 'declined', title: 'Update Failed', message: 'Failed to update plan.' }) }
   }
 
   return (
@@ -117,11 +114,8 @@ export default function AdminPlansPage () {
         <button className={s.newBtn} onClick={openNew}>+ New Plan</button>
       </div>
 
-      {success && <p className={s.successBanner}>{success}</p>}
-      {error && <p className={s.errorBanner}>{error}</p>}
-
       {loading ? (
-        <p className={s.empty}>Loading plans…</p>
+        <p className={s.empty}><Loader label='Loading plans…' /></p>
       ) : (
         <div className={s.planGrid}>
           {plans.map(plan => (
@@ -234,8 +228,6 @@ export default function AdminPlansPage () {
                 </button>
               </div>
             </div>
-
-            {error && <p className={s.errorBanner} style={{ margin: '0 1.5rem' }}>{error}</p>}
 
             <div className={s.modalFoot}>
               <button className={s.cancelBtn} onClick={closeEdit}>Cancel</button>

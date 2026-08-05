@@ -2,6 +2,8 @@
 import { Suspense, useEffect, useState, useRef, FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { MapPinIcon, PillIcon, CheckCircleIcon, TruckIcon } from '@/components/icons'
 
@@ -48,12 +50,12 @@ type Tab = 'shop' | 'prescription' | 'orders'
 
 function PharmacyContent () {
   const params = useSearchParams()
+  const modal = useStatusModal()
   const [tab,           setTab]          = useState<Tab>('shop')
   const [prescriptions, setPrescriptions]= useState<Prescription[]>([])
   const [partners,      setPartners]     = useState<PharmacyPartner[]>([])
   const [orders,        setOrders]       = useState<PharmacyOrder[]>([])
   const [loading,       setLoading]      = useState(true)
-  const [successMsg,    setSuccessMsg]   = useState('')
 
   // shop tab
   const [shopPharmacy,  setShopPharmacy] = useState('')
@@ -68,7 +70,6 @@ function PharmacyContent () {
   const [shopNotes,         setShopNotes]         = useState('')
   const [rxFile,        setRxFile]       = useState<File | null>(null)
   const rxInputRef = useRef<HTMLInputElement>(null)
-  const [shopError,     setShopError]    = useState('')
   const [shopSub,       setShopSub]      = useState(false)
 
   // prescription tab
@@ -80,7 +81,6 @@ function PharmacyContent () {
   const [rxPickupCoords, setRxPickupCoords]= useState<{ lat: number; lng: number } | null>(null)
   const [rxNotes,       setRxNotes]      = useState('')
   const [rxSub,         setRxSub]        = useState(false)
-  const [rxError,       setRxError]      = useState('')
 
   const [paying,        setPaying]       = useState<string | null>(null)
 
@@ -102,7 +102,7 @@ function PharmacyContent () {
     if (!ref) return
     api.get(`/payments/verify/${ref}`)
       .then(() => {
-        setSuccessMsg('Payment confirmed! Your order is being processed.')
+        modal.show({ variant: 'success', title: 'Payment Confirmed', message: 'Your order is being processed.' })
         setTab('orders')
         api.get('/pharmacy/orders/mine').then(r => setOrders(r.data.data?.orders ?? []))
       }).catch(() => {})
@@ -155,10 +155,9 @@ function PharmacyContent () {
 
   async function submitDirectOrder (e: FormEvent) {
     e.preventDefault()
-    setShopError('')
-    if (!cart.length) { setShopError('Add at least one item to your cart.'); return }
-    if (shopFulfill === 'delivery' && !shopAddress.trim()) { setShopError('Enter delivery address.'); return }
-    if (needsRx && !rxFile) { setShopError('Upload a prescription for Rx-required drugs.'); return }
+    if (!cart.length) { modal.show({ variant: 'declined', title: 'Cart Empty', message: 'Add at least one item to your cart.' }); return }
+    if (shopFulfill === 'delivery' && !shopAddress.trim()) { modal.show({ variant: 'declined', title: 'Missing Address', message: 'Enter delivery address.' }); return }
+    if (needsRx && !rxFile) { modal.show({ variant: 'declined', title: 'Prescription Required', message: 'Upload a prescription for Rx-required drugs.' }); return }
     setShopSub(true)
     try {
       const form = new FormData()
@@ -173,23 +172,28 @@ function PharmacyContent () {
       if (rxFile) form.append('prescription', rxFile)
       const r = await api.post('/pharmacy/order/direct', form)
       setOrders(prev => [r.data.data?.order, ...prev])
-      setSuccessMsg(r.data.data?.requiresApproval
-        ? 'Order submitted! Admin will review your prescription shortly.'
-        : 'Order placed! The pharmacy will prepare your drugs.')
+      modal.show({
+        variant: 'success',
+        title: 'Order Placed',
+        message: r.data.data?.requiresApproval
+          ? 'Order submitted! Admin will review your prescription shortly.'
+          : 'Order placed! The pharmacy will prepare your drugs.',
+      })
       setCart([]); setShopPharmacy(''); setShopAddress(''); setShopNotes(''); setRxFile(null)
-      setTimeout(() => { setSuccessMsg(''); setTab('orders') }, 3000)
+      setTimeout(() => setTab('orders'), 3000)
     } catch (err: unknown) {
-      setShopError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.')
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.'
+      modal.show({ variant: 'declined', title: 'Order Failed', message: msg })
     }
     setShopSub(false)
   }
 
   async function submitRxOrder (e: FormEvent) {
     e.preventDefault()
-    if (!selected) { setRxError('Select a prescription.'); return }
-    if (!pharmacyId) { setRxError('Select a pharmacy.'); return }
-    if (fulfillment === 'delivery' && !rxAddress.trim()) { setRxError('Enter delivery address.'); return }
-    setRxSub(true); setRxError('')
+    if (!selected) { modal.show({ variant: 'declined', title: 'No Prescription', message: 'Select a prescription.' }); return }
+    if (!pharmacyId) { modal.show({ variant: 'declined', title: 'No Pharmacy', message: 'Select a pharmacy.' }); return }
+    if (fulfillment === 'delivery' && !rxAddress.trim()) { modal.show({ variant: 'declined', title: 'Missing Address', message: 'Enter delivery address.' }); return }
+    setRxSub(true)
     try {
       const pickupLoc = fulfillment === 'pickup' && (rxPickupAddr || rxPickupCoords)
         ? { address: rxPickupAddr, ...rxPickupCoords } : undefined
@@ -197,11 +201,12 @@ function PharmacyContent () {
         fulfillmentType: fulfillment, deliveryAddress: fulfillment === 'delivery' ? rxAddress : undefined,
         pickupLocation: pickupLoc, notes: rxNotes || undefined })
       setOrders(prev => [r.data.data?.order, ...prev])
-      setSuccessMsg('Order placed! The pharmacy will confirm the total and prepare your drugs.')
+      modal.show({ variant: 'success', title: 'Order Placed', message: 'The pharmacy will confirm the total and prepare your drugs.' })
       setSelected(null); setPharmacyId(''); setRxAddress(''); setRxNotes('')
-      setTimeout(() => { setSuccessMsg(''); setTab('orders') }, 2500)
+      setTimeout(() => setTab('orders'), 2500)
     } catch (err: unknown) {
-      setRxError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.')
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.'
+      modal.show({ variant: 'declined', title: 'Order Failed', message: msg })
     }
     setRxSub(false)
   }
@@ -229,9 +234,7 @@ function PharmacyContent () {
         ))}
       </div>
 
-      {successMsg && <div className={s.successBanner}>{successMsg}</div>}
-
-      {loading ? <div className={s.empty}>Loading pharmacy…</div> : tab === 'shop' ? (
+      {loading ? <div className={s.empty}><Loader label='Loading pharmacy…' /></div> : tab === 'shop' ? (
         <form className={s.orderForm} onSubmit={submitDirectOrder}>
           <div className={s.section}>
             <h3>Select Pharmacy</h3>
@@ -246,7 +249,7 @@ function PharmacyContent () {
           {shopPharmacy && (
             <>
               <div className={s.section}>
-                <h3>Available Drugs {catalogLoad && <span className={s.loading}>Loading…</span>}</h3>
+                <h3>Available Drugs {catalogLoad && <Loader inline size='sm' />}</h3>
                 {!catalogLoad && catalog.length === 0
                   ? <p className={s.noPartners}>This pharmacy has no approved drugs listed yet.</p>
                   : <div className={s.drugGrid}>
@@ -336,7 +339,6 @@ function PharmacyContent () {
             </>
           )}
 
-          {shopError && <p className={s.error}>{shopError}</p>}
           <button type='submit' className={s.submitBtn} disabled={shopSub || !cart.length}>
             {shopSub ? 'Placing Order…' : `Place Order${cart.length > 0 ? ` — ₦${cartTotal.toLocaleString()}` : ''}`}
           </button>
@@ -408,7 +410,6 @@ function PharmacyContent () {
                   {rxPickupCoords && <p className={s.coordsNote}>GPS: {rxPickupCoords.lat.toFixed(5)}, {rxPickupCoords.lng.toFixed(5)}</p>}
                 </div>
               )}
-              {rxError && <p className={s.error}>{rxError}</p>}
               <button type='submit' className={s.submitBtn} disabled={rxSub || !selected || !partners.length}>
                 {rxSub ? 'Placing Order…' : 'Place Order'}
               </button>
@@ -469,7 +470,7 @@ function PharmacyContent () {
 
 export default function PharmacyPage () {
   return (
-    <Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '0.875rem' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center' }}><Loader label='Loading…' /></div>}>
       <PharmacyContent />
     </Suspense>
   )

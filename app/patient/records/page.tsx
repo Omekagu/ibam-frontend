@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { PillIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
 
@@ -78,7 +79,7 @@ export default function HealthRecords () {
       </div>
 
       {loading ? (
-        <div className={s.empty}>Loading records…</div>
+        <div className={s.empty}><Loader label='Loading records…' /></div>
       ) : tab === 'prescriptions' ? (
         prescriptions.length === 0 ? (
           <div className={s.empty}>No prescriptions yet.</div>

@@ -2,6 +2,7 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 interface Profile {
@@ -16,6 +17,7 @@ interface Profile {
 
 export default function PatientProfile () {
   const cached = getStoredUser()
+  const modal = useStatusModal()
   const [profile, setProfile] = useState<Profile | null>(
     cached ? { name: cached.name, email: cached.email, role: cached.role, isVerified: false } : null
   )
@@ -24,7 +26,6 @@ export default function PatientProfile () {
   const [phone,   setPhone]   = useState('')
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
-  const [error,   setError]   = useState('')
 
   useEffect(() => {
     api.get('/users/profile')
@@ -43,16 +44,17 @@ export default function PatientProfile () {
     e.preventDefault()
     setSaving(true)
     setSaved(false)
-    setError('')
     try {
       await api.put('/users/profile', { name, phone })
       setProfile(prev => prev ? { ...prev, name, phone } : prev)
       const stored = getStoredUser()
       if (stored) localStorage.setItem('user', JSON.stringify({ ...stored, name, phone }))
       setSaved(true)
+      modal.show({ variant: 'success', title: 'Profile Updated', message: 'Your profile has been saved successfully.' })
       setTimeout(() => setSaved(false), 3000)
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Update failed.')
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Update failed.'
+      modal.show({ variant: 'declined', title: 'Update Failed', message: msg })
     }
     setSaving(false)
   }
@@ -92,7 +94,6 @@ export default function PatientProfile () {
             <label>Phone Number</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder='+234 800 000 0000' />
           </div>
-          {error && <p className={s.error}>{error}</p>}
           <button type='submit' className={s.saveBtn} disabled={saving}>
             {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
           </button>

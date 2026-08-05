@@ -5,16 +5,17 @@ import Image from 'next/image'
 import api from '@/lib/api'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { CheckCircleIcon } from '@/components/icons'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 export default function PharmacyOnboardPage () {
+  const modal = useStatusModal()
   const [form, setForm] = useState({
     name: '', address: '', phone: '', email: '', password: '', confirmPassword: '',
     licenseNumber: '', coverageAreas: '', openTime: '08:00', closeTime: '20:00',
   })
   const [submitting, setSubmitting] = useState(false)
   const [done,       setDone]       = useState(false)
-  const [error,      setError]      = useState('')
 
   function set (field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -23,9 +24,8 @@ export default function PharmacyOnboardPage () {
 
   async function submit (e: FormEvent) {
     e.preventDefault()
-    setError('')
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (form.password !== form.confirmPassword) { modal.show({ variant: 'declined', title: 'Passwords Do Not Match', message: 'Please make sure both passwords match.' }); return }
+    if (form.password.length < 8) { modal.show({ variant: 'declined', title: 'Password Too Short', message: 'Password must be at least 8 characters.' }); return }
     setSubmitting(true)
     try {
       await api.post('/pharmacy/onboard', {
@@ -40,7 +40,7 @@ export default function PharmacyOnboardPage () {
       })
       setDone(true)
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Submission failed. Please try again.')
+      modal.show({ variant: 'declined', title: 'Submission Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Submission failed. Please try again.' })
     }
     setSubmitting(false)
   }
@@ -132,8 +132,6 @@ export default function PharmacyOnboardPage () {
                 </div>
               </div>
             </div>
-
-            {error && <p className={s.error}>{error}</p>}
 
             <button type='submit' className={s.submit} disabled={submitting}>
               {submitting ? 'Submitting…' : 'Submit Application'}

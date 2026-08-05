@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 // ─── Payment settings ─────────────────────────────────────────────────────────
@@ -25,11 +27,10 @@ const DEFAULT_PAYMENT: PaymentSettings = {
 }
 
 function PaymentTab() {
+  const modal = useStatusModal()
   const [settings, setSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT)
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
-  const [saved,   setSaved]   = useState(false)
-  const [error,   setError]   = useState('')
 
   useEffect(() => {
     api.get('/admin/settings')
@@ -39,26 +40,22 @@ function PaymentTab() {
   }, [])
 
   async function save() {
-    setError(''); setSaving(true); setSaved(false)
+    setSaving(true)
     try {
       await api.put('/admin/settings', settings)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch { setError('Failed to save settings.') }
+      modal.show({ variant: 'success', title: 'Settings Saved', message: 'Payment settings have been updated.' })
+    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save settings.' }) }
     setSaving(false)
   }
 
   function field(key: keyof PaymentSettings, value: string) {
     setSettings(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
   }
 
-  if (loading) return <p className={s.empty}>Loading…</p>
+  if (loading) return <p className={s.empty}><Loader label='Loading…' /></p>
 
   return (
     <div className={s.card}>
-      {saved  && <p className={s.successBanner}>Settings saved successfully.</p>}
-      {error  && <p className={s.errorBanner}>{error}</p>}
 
       <h2 className={s.sectionTitle}>Paystack</h2>
       <p className={s.subtext}>
@@ -73,7 +70,7 @@ function PaymentTab() {
         </div>
         <button
           className={`${s.toggle} ${settings.paystackEnabled ? s.toggleOn : ''}`}
-          onClick={() => { setSettings(p => ({ ...p, paystackEnabled: !p.paystackEnabled })); setSaved(false) }}
+          onClick={() => setSettings(p => ({ ...p, paystackEnabled: !p.paystackEnabled }))}
           aria-pressed={settings.paystackEnabled}
         >
           <span className={s.toggleThumb} />
@@ -94,7 +91,7 @@ function PaymentTab() {
         </div>
         <button
           className={`${s.toggle} ${settings.directPaymentEnabled ? s.toggleOn : ''}`}
-          onClick={() => { setSettings(p => ({ ...p, directPaymentEnabled: !p.directPaymentEnabled })); setSaved(false) }}
+          onClick={() => setSettings(p => ({ ...p, directPaymentEnabled: !p.directPaymentEnabled }))}
           aria-pressed={settings.directPaymentEnabled}
         >
           <span className={s.toggleThumb} />
@@ -148,10 +145,10 @@ interface Spec {
 }
 
 function SpecializationsTab() {
+  const statusModal = useStatusModal()
   const [items,   setItems]   = useState<Spec[]>([])
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
-  const [error,   setError]   = useState('')
   const [modal,   setModal]   = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<Spec | null>(null)
   const [form,    setForm]    = useState({ name: '', description: '' })
@@ -160,7 +157,7 @@ function SpecializationsTab() {
     setLoading(true)
     api.get('/admin/specializations')
       .then(r => setItems(r.data.data?.specializations ?? []))
-      .catch(() => setError('Failed to load specializations.'))
+      .catch(() => statusModal.show({ variant: 'declined', title: 'Load Failed', message: 'Failed to load specializations.' }))
       .finally(() => setLoading(false))
   }, [])
 
@@ -180,7 +177,7 @@ function SpecializationsTab() {
 
   async function submit() {
     if (!form.name.trim()) return
-    setSaving(true); setError('')
+    setSaving(true)
     try {
       if (modal === 'add') {
         await api.post('/admin/specializations', form)
@@ -189,7 +186,7 @@ function SpecializationsTab() {
       }
       setModal(null)
       load()
-    } catch { setError('Failed to save specialization.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save specialization.' }) }
     setSaving(false)
   }
 
@@ -197,7 +194,7 @@ function SpecializationsTab() {
     try {
       await api.put(`/admin/specializations/${item._id}`, { isActive: !item.isActive })
       load()
-    } catch { setError('Failed to update.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Update Failed', message: 'Failed to update specialization.' }) }
   }
 
   async function remove(item: Spec) {
@@ -205,20 +202,18 @@ function SpecializationsTab() {
     try {
       await api.delete(`/admin/specializations/${item._id}`)
       load()
-    } catch { setError('Failed to delete.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Delete Failed', message: 'Failed to delete specialization.' }) }
   }
 
   return (
     <div className={s.card}>
-      {error && <p className={s.errorBanner}>{error}</p>}
-
       <div className={s.listHeader}>
         <p className={s.listTitle}>Doctor Specializations</p>
         <button className={s.addBtn} onClick={openAdd}>+ Add</button>
       </div>
 
       {loading ? (
-        <p className={s.empty}>Loading…</p>
+        <p className={s.empty}><Loader label='Loading…' /></p>
       ) : items.length === 0 ? (
         <p className={s.empty}>No specializations yet.</p>
       ) : (
@@ -296,10 +291,10 @@ const EMPTY_SERVICE = {
 }
 
 function ServicesTab() {
+  const statusModal = useStatusModal()
   const [items,   setItems]   = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
-  const [error,   setError]   = useState('')
   const [modal,   setModal]   = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<Service | null>(null)
   const [form,    setForm]    = useState(EMPTY_SERVICE)
@@ -309,7 +304,7 @@ function ServicesTab() {
     setLoading(true)
     api.get('/admin/services')
       .then(r => setItems(r.data.data?.services ?? []))
-      .catch(() => setError('Failed to load services.'))
+      .catch(() => statusModal.show({ variant: 'declined', title: 'Load Failed', message: 'Failed to load services.' }))
       .finally(() => setLoading(false))
   }, [])
 
@@ -347,7 +342,7 @@ function ServicesTab() {
 
   async function submit() {
     if (!form.title.trim() || !form.tagLabel.trim()) return
-    setSaving(true); setError('')
+    setSaving(true)
     try {
       if (modal === 'add') {
         await api.post('/admin/services', form)
@@ -356,7 +351,7 @@ function ServicesTab() {
       }
       setModal(null)
       load()
-    } catch { setError('Failed to save service.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save service.' }) }
     setSaving(false)
   }
 
@@ -364,7 +359,7 @@ function ServicesTab() {
     try {
       await api.put(`/admin/services/${item._id}`, { isActive: !item.isActive })
       load()
-    } catch { setError('Failed to update.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Update Failed', message: 'Failed to update service.' }) }
   }
 
   async function remove(item: Service) {
@@ -372,7 +367,7 @@ function ServicesTab() {
     try {
       await api.delete(`/admin/services/${item._id}`)
       load()
-    } catch { setError('Failed to delete.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Delete Failed', message: 'Failed to delete service.' }) }
   }
 
   const f = (key: keyof typeof EMPTY_SERVICE, val: string) =>
@@ -380,15 +375,13 @@ function ServicesTab() {
 
   return (
     <div className={s.card}>
-      {error && <p className={s.errorBanner}>{error}</p>}
-
       <div className={s.listHeader}>
         <p className={s.listTitle}>Platform Services</p>
         <button className={s.addBtn} onClick={openAdd}>+ Add</button>
       </div>
 
       {loading ? (
-        <p className={s.empty}>Loading…</p>
+        <p className={s.empty}><Loader label='Loading…' /></p>
       ) : items.length === 0 ? (
         <p className={s.empty}>No services yet.</p>
       ) : (
@@ -530,10 +523,10 @@ const DEFAULT_CATEGORIES = [
 const EMPTY_LAB_TEST = { name: '', category: '', walkInPrice: '', homeVisitPrice: '', turnaroundHours: '24' }
 
 function LabTestsTab() {
+  const statusModal = useStatusModal()
   const [items,   setItems]   = useState<LabTestItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
-  const [error,   setError]   = useState('')
   const [modal,   setModal]   = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<LabTestItem | null>(null)
   const [form,    setForm]    = useState(EMPTY_LAB_TEST)
@@ -542,7 +535,7 @@ function LabTestsTab() {
     setLoading(true)
     api.get('/admin/lab-tests')
       .then(r => setItems(r.data.data?.labTests ?? []))
-      .catch(() => setError('Failed to load lab tests.'))
+      .catch(() => statusModal.show({ variant: 'declined', title: 'Load Failed', message: 'Failed to load lab tests.' }))
       .finally(() => setLoading(false))
   }, [])
 
@@ -568,7 +561,7 @@ function LabTestsTab() {
 
   async function submit() {
     if (!form.name.trim()) return
-    setSaving(true); setError('')
+    setSaving(true)
     const payload = {
       name: form.name.trim(),
       category: form.category || undefined,
@@ -585,7 +578,7 @@ function LabTestsTab() {
       }
       setModal(null)
       load()
-    } catch { setError('Failed to save lab test.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save lab test.' }) }
     setSaving(false)
   }
 
@@ -593,7 +586,7 @@ function LabTestsTab() {
     try {
       await api.put(`/admin/lab-tests/${item._id}`, { isActive: !item.isActive })
       load()
-    } catch { setError('Failed to update.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Update Failed', message: 'Failed to update lab test.' }) }
   }
 
   async function remove(item: LabTestItem) {
@@ -601,7 +594,7 @@ function LabTestsTab() {
     try {
       await api.delete(`/admin/lab-tests/${item._id}`)
       load()
-    } catch { setError('Failed to delete.') }
+    } catch { statusModal.show({ variant: 'declined', title: 'Delete Failed', message: 'Failed to delete lab test.' }) }
   }
 
   const byCategory = items.reduce<Record<string, LabTestItem[]>>((acc, t) => {
@@ -613,15 +606,13 @@ function LabTestsTab() {
 
   return (
     <div className={s.card}>
-      {error && <p className={s.errorBanner}>{error}</p>}
-
       <div className={s.listHeader}>
         <p className={s.listTitle}>Lab Test Catalog <span style={{ fontSize: '0.8rem', color: 'var(--text-faint)', fontWeight: 400 }}>({items.length} tests)</span></p>
         <button className={s.addBtn} onClick={openAdd}>+ Add Test</button>
       </div>
 
       {loading ? (
-        <p className={s.empty}>Loading…</p>
+        <p className={s.empty}><Loader label='Loading…' /></p>
       ) : items.length === 0 ? (
         <p className={s.empty}>No lab tests configured yet.</p>
       ) : (

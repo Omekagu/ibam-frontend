@@ -3,6 +3,8 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
 import { MapPinIcon } from '@/components/icons'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 
 interface LabRequest {
   _id: string
@@ -33,6 +35,7 @@ interface LabTestCatalog {
 type Tab = 'order' | 'results'
 
 export default function PatientLabs () {
+  const modal = useStatusModal()
   const [tab, setTab] = useState<Tab>('order')
   const [requests, setRequests] = useState<LabRequest[]>([])
   const [results, setResults] = useState<LabResult[]>([])
@@ -53,12 +56,9 @@ export default function PatientLabs () {
   } | null>(null)
   const [gpsLoading, setGpsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
-    const base =
-      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {
@@ -109,15 +109,22 @@ export default function PatientLabs () {
   async function submitRequest (e: FormEvent) {
     e.preventDefault()
     if (!selectedTests.length) {
-      setError('Select at least one test.')
+      modal.show({
+        variant: 'declined',
+        title: 'No Tests Selected',
+        message: 'Please select at least one test before submitting.'
+      })
       return
     }
     if (collection === 'home_visit' && !homeAddr) {
-      setError('Please provide your home address for the visit.')
+      modal.show({
+        variant: 'declined',
+        title: 'Address Required',
+        message: 'Please provide your home address for the home visit.'
+      })
       return
     }
     setSubmitting(true)
-    setError('')
     try {
       const form = new FormData()
       selectedTests.forEach(t => form.append('tests[]', t))
@@ -133,23 +140,32 @@ export default function PatientLabs () {
 
       const r = await api.post('/diagnostics/request', form)
       setRequests(prev => [r.data.data?.request, ...prev])
-      setSubmitted(true)
       setSelectedTests([])
       setNotes('')
       setReferralFile(null)
       setHomeAddr('')
       setHomeCoords(null)
-      setTimeout(() => {
-        setSubmitted(false)
-        setTab('results')
-      }, 2500)
+      modal.show({
+        variant: 'success',
+        title: 'Request Submitted!',
+        message:
+          'Your lab test request has been received. Our team will assign a certified lab and notify you with next steps.',
+        actionLabel: 'View My Results',
+        onAction: () => setTab('results')
+      })
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Submission failed. Try again.'
-      )
+      modal.show({
+        variant: 'declined',
+        title: 'Submission Failed',
+        message:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ??
+          'Could not submit your request. Please try again.',
+        actionLabel: 'Try Again'
+      })
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
   }
 
   const resultMap = new Map(results.map(r => [r.request, r]))
@@ -176,12 +192,6 @@ export default function PatientLabs () {
 
       {tab === 'order' ? (
         <form className={s.orderForm} onSubmit={submitRequest}>
-          {submitted && (
-            <div className={s.success}>
-              Request submitted! Our team will process your tests shortly.
-            </div>
-          )}
-
           <div className={s.infoNote}>
             <strong>How it works:</strong> Select the tests you need, choose how
             your sample will be collected, and submit. Our team will assign a
@@ -196,9 +206,7 @@ export default function PatientLabs () {
               </span>
             </h3>
             {catalogTests.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                Loading available tests…
-              </p>
+              <Loader inline variant='dots' size='sm' label='Loading tests…' />
             ) : (
               <div className={s.testGrid}>
                 {catalogTests.map(t => (
@@ -334,22 +342,22 @@ export default function PatientLabs () {
             />
           </div>
 
-          {error && <p className={s.error}>{error}</p>}
-
           <button
             type='submit'
             className={s.submitBtn}
             disabled={submitting || !selectedTests.length}
           >
-            {submitting
-              ? 'Submitting…'
-              : `Submit Request (${selectedTests.length} test${
-                  selectedTests.length !== 1 ? 's' : ''
-                })`}
+            {submitting ? (
+              <Loader inline size='sm' />
+            ) : (
+              `Submit Request (${selectedTests.length} test${
+                selectedTests.length !== 1 ? 's' : ''
+              })`
+            )}
           </button>
         </form>
       ) : loading ? (
-        <div className={s.empty}>Loading results…</div>
+        <Loader label='Loading results…' />
       ) : requests.length === 0 ? (
         <div className={s.empty}>
           No lab requests yet. Order your first test above.

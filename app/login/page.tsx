@@ -1,11 +1,13 @@
 'use client'
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { login } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 type LoginMode = 'email' | 'phone'
@@ -74,8 +76,9 @@ function EyeOffIcon () {
   )
 }
 
-export default function LoginPage () {
+function LoginInner () {
   useAuthRedirect()
+  const modal = useStatusModal()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<LoginMode>('email')
@@ -83,15 +86,15 @@ export default function LoginPage () {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [error, setError] = useState(() => {
-    const msg = searchParams.get('error')
-    return msg ? decodeURIComponent(msg) : ''
-  })
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const msg = searchParams.get('error')
+    if (msg) modal.show({ variant: 'declined', title: 'Login Error', message: decodeURIComponent(msg) })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
-    setError('')
     setLoading(true)
     try {
       const payload =
@@ -118,7 +121,7 @@ export default function LoginPage () {
         )
         return
       }
-      setError(msg)
+      modal.show({ variant: 'declined', title: 'Login Failed', message: msg })
     } finally {
       setLoading(false)
     }
@@ -147,18 +150,13 @@ export default function LoginPage () {
             New to iBam? <Link href='/signup'>Create an account</Link>
           </p>
 
-          {error && <p className={s.errorBanner}>{error}</p>}
-
           <div className={s.modeToggle}>
             <button
               type='button'
               className={`${s.modeBtn} ${
                 mode === 'email' ? s.modeBtnActive : ''
               }`}
-              onClick={() => {
-                setMode('email')
-                setError('')
-              }}
+              onClick={() => setMode('email')}
             >
               Email
             </button>
@@ -167,10 +165,7 @@ export default function LoginPage () {
               className={`${s.modeBtn} ${
                 mode === 'phone' ? s.modeBtnActive : ''
               }`}
-              onClick={() => {
-                setMode('phone')
-                setError('')
-              }}
+              onClick={() => setMode('phone')}
             >
               Phone Number
             </button>
@@ -237,7 +232,7 @@ export default function LoginPage () {
             </div>
 
             <button type='submit' className={s.submit} disabled={loading}>
-              {loading ? 'Logging in…' : 'Log In →'}
+              {loading ? <Loader inline size='sm' label='Logging in…' /> : 'Log In →'}
             </button>
           </form>
 
@@ -252,8 +247,7 @@ export default function LoginPage () {
             className={s.googleBtn}
             onClick={() => {
               const api =
-                process.env.NEXT_PUBLIC_API_URL ??
-                'https://api.ibamhealth.com/api'
+                process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
               const cb = window.location.origin + '/auth/google/callback'
               window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                 cb
@@ -276,5 +270,13 @@ export default function LoginPage () {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage () {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   )
 }

@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
+import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 
 interface Pharmacy {
@@ -25,6 +27,7 @@ const BLANK = {
 }
 
 export default function AdminPharmacyPage () {
+  const modal = useStatusModal()
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([])
   const [loading,    setLoading]    = useState(true)
   const [filter,     setFilter]     = useState('')
@@ -41,7 +44,6 @@ export default function AdminPharmacyPage () {
   const [kycStatus,  setKycStatus]  = useState<'pending'|'approved'|'rejected'>('approved')
   const [kycReason,  setKycReason]  = useState('')
   const [kycSaving,  setKycSaving]  = useState(false)
-  const [kycMsg,     setKycMsg]     = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,6 +80,7 @@ export default function AdminPharmacyPage () {
       setPharmacies(prev => [newPharm, ...prev])
       setForm(BLANK)
       setShowRegister(false)
+      modal.show({ variant: 'success', title: 'Pharmacy Created', message: 'The pharmacy account has been created successfully.' })
     } catch (err: any) {
       setFormErr(err?.response?.data?.message ?? 'Failed to create pharmacy.')
     }
@@ -86,8 +89,8 @@ export default function AdminPharmacyPage () {
 
   async function submitKyc (pharm: Pharmacy) {
     const userId = pharm.user?._id
-    if (!userId) { setKycMsg('User ID not available.'); return }
-    setKycSaving(true); setKycMsg('')
+    if (!userId) { modal.show({ variant: 'declined', title: 'KYC Error', message: 'User ID not available.' }); return }
+    setKycSaving(true)
     try {
       await api.put(`/admin/kyc/${userId}/verify`, { kycStatus, reason: kycReason })
       setPharmacies(prev => prev.map(p =>
@@ -95,9 +98,9 @@ export default function AdminPharmacyPage () {
           ? { ...p, status: kycStatus === 'approved' ? 'active' : kycStatus === 'rejected' ? 'suspended' : p.status }
           : p
       ))
-      setKycMsg('KYC status updated.')
+      modal.show({ variant: 'success', title: 'KYC Updated', message: 'KYC status updated.' })
     } catch (err: any) {
-      setKycMsg(err?.response?.data?.message ?? 'Failed to update KYC.')
+      modal.show({ variant: 'declined', title: 'KYC Update Failed', message: err?.response?.data?.message ?? 'Failed to update KYC.' })
     }
     setKycSaving(false)
   }
@@ -121,7 +124,7 @@ export default function AdminPharmacyPage () {
       </div>
 
       {loading ? (
-        <div className={s.empty}>Loading pharmacies…</div>
+        <div className={s.empty}><Loader label='Loading pharmacies…' /></div>
       ) : pharmacies.length === 0 ? (
         <div className={s.empty}>No pharmacies found.</div>
       ) : (
@@ -177,7 +180,6 @@ export default function AdminPharmacyPage () {
                 <div className={s.kycPanel}>
                   <p className={s.kycTitle}>Manual KYC Verification — {p.name}</p>
                   <p className={s.kycSub}>Override the CAC / KYC status for this pharmacy partner.</p>
-                  {kycMsg && <p className={`${s.kycMsg} ${kycMsg.includes('updated') ? s.kycMsgOk : s.kycMsgErr}`}>{kycMsg}</p>}
                   <div className={s.kycRow}>
                     <select className={s.kycSelect} value={kycStatus} onChange={e => setKycStatus(e.target.value as any)}>
                       <option value='approved'>Approved — activate pharmacy</option>
