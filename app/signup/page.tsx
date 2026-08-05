@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { register } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
@@ -94,9 +94,10 @@ const FALLBACK_SPECIALTIES = [
   'Other'
 ]
 
-export default function SignupPage () {
+function SignupInner () {
   useAuthRedirect()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const modal = useStatusModal()
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
   const [specialties, setSpecialties] = useState<string[]>(FALLBACK_SPECIALTIES)
@@ -116,15 +117,33 @@ export default function SignupPage () {
       })
       .catch(() => {})
   }, [])
+
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => {
+    const pre = searchParams.get('googleEmail')
+    return pre ? decodeURIComponent(pre) : ''
+  })
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [specialty, setSpecialty] = useState('')
   const [mdcn, setMdcn] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Show a prompt if redirected here from Google OAuth with no existing account
+  useEffect(() => {
+    const msg = searchParams.get('message')
+    if (msg) {
+      modal.show({
+        variant: 'pending',
+        title: 'Create an Account',
+        message: decodeURIComponent(msg),
+        actionLabel: 'Continue Below',
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
@@ -366,5 +385,13 @@ export default function SignupPage () {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage () {
+  return (
+    <Suspense>
+      <SignupInner />
+    </Suspense>
   )
 }
