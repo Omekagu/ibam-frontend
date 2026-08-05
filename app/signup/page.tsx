@@ -3,14 +3,13 @@ import { useState, useEffect, FormEvent, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { register } from '@/lib/auth'
+import { register, completeGoogleSignup } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import {
   UserIcon,
   StethoscopeIcon,
-  PillIcon,
-  MicroscopeIcon
+  PillIcon
 } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
@@ -102,6 +101,11 @@ function SignupInner () {
   const [role, setRole] = useState<'patient' | 'doctor'>('patient')
   const [specialties, setSpecialties] = useState<string[]>(FALLBACK_SPECIALTIES)
 
+  // Google pending token flow
+  const googleToken = searchParams.get('googleToken') ?? ''
+  const [googleProfileLoading, setGoogleProfileLoading] = useState(!!googleToken)
+  const [googlePicture, setGooglePicture] = useState('')
+
   useEffect(() => {
     fetch(
       `${
@@ -120,10 +124,7 @@ function SignupInner () {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState(() => {
-    const pre = searchParams.get('googleEmail')
-    return pre ? decodeURIComponent(pre) : ''
-  })
+  const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -131,36 +132,74 @@ function SignupInner () {
   const [mdcn, setMdcn] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Show a prompt if redirected here from Google OAuth with no existing account
+  // Fetch Google pending profile and pre-fill fields
   useEffect(() => {
-    const msg = searchParams.get('message')
-    if (msg) {
-      modal.show({
-        variant: 'pending',
-        title: 'Create an Account',
-        message: decodeURIComponent(msg),
-        actionLabel: 'Continue Below',
+    if (!googleToken) return
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+    fetch(`${apiBase}/auth/google/pending?token=${encodeURIComponent(googleToken)}`)
+      .then(r => r.json())
+      .then(body => {
+        if (body?.data) {
+          const { name, email: gEmail, picture } = body.data
+          if (name) {
+            const parts = (name as string).trim().split(/\s+/)
+            setFirstName(parts[0] ?? '')
+            setLastName(parts.slice(1).join(' ') ?? '')
+          }
+          if (gEmail) setEmail(gEmail as string)
+          if (picture) setGooglePicture(picture as string)
+        } else {
+          modal.show({
+            variant: 'declined',
+            title: 'Link Expired',
+            message: 'Your Google sign-in link has expired. Please try again.'
+          })
+          router.replace('/signup')
+        }
       })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      .catch(() => {
+        modal.show({
+          variant: 'declined',
+          title: 'Something went wrong',
+          message: 'Could not fetch your Google profile. Please try again.'
+        })
+        router.replace('/signup')
+      })
+      .finally(() => setGoogleProfileLoading(false))
+  }, [googleToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit (e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     try {
-      await register({
-        name: `${firstName} ${lastName}`.trim(),
-        email,
-        password,
-        role,
-        phone,
-        ...(role !== 'patient' && {
-          specialization: specialty,
-          licenseNumber: mdcn
+      if (googleToken) {
+        // Complete Google signup — user picks their role
+        const data = await completeGoogleSignup({
+          token: googleToken,
+          role,
+          ...(phone && { phone }),
+          ...(role === 'doctor' && {
+            specialization: specialty,
+            licenseNumber: mdcn
+          })
         })
-      })
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+        if (data.user.role === 'doctor') router.push('/doctor')
+        else router.push('/patient')
+      } else {
+        // Normal email/password signup
+        await register({
+          name: `${firstName} ${lastName}`.trim(),
+          email,
+          password,
+          role,
+          phone,
+          ...(role !== 'patient' && {
+            specialization: specialty,
+            licenseNumber: mdcn
+          })
+        })
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -173,6 +212,14 @@ function SignupInner () {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (googleProfileLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Loader label='Loading your Google profile…' />
+      </div>
+    )
   }
 
   return (
@@ -193,10 +240,32 @@ function SignupInner () {
             </span>
           </Link>
 
-          <h1 className={s.formTitle}>Create your account</h1>
-          <p className={s.formSub}>
-            Already have one? <Link href='/login'>Log in</Link>
-          </p>
+          {googleToken ? (
+            <>
+              <h1 className={s.formTitle}>Almost there!</h1>
+              <p className={s.formSub}>
+                Choose how you&apos;d like to use iBam Health.{' '}
+                Already have an account? <Link href='/login'>Log in</Link>
+              </p>
+              {googlePicture && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '0.75rem 1rem', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={googlePicture} alt='' width={36} height={36} style={{ borderRadius: '50%' }} referrerPolicy='no-referrer' />
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: '#166534' }}>Signing up with Google</p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#166534', opacity: 0.8 }}>{email}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className={s.formTitle}>Create your account</h1>
+              <p className={s.formSub}>
+                Already have one? <Link href='/login'>Log in</Link>
+              </p>
+            </>
+          )}
 
           <div className={s.rolePicker}>
             <button
@@ -256,6 +325,8 @@ function SignupInner () {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                disabled={!!googleToken}
+                style={googleToken ? { background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' } : undefined}
               />
             </div>
 
@@ -300,29 +371,31 @@ function SignupInner () {
               </>
             )}
 
-            <div className={s.field}>
-              <label htmlFor='password'>Password</label>
-              <div className={s.fieldInner}>
-                <input
-                  id='password'
-                  type={showPw ? 'text' : 'password'}
-                  placeholder='Min. 8 characters'
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-                <button
-                  type='button'
-                  className={s.eyeBtn}
-                  onClick={() => setShowPw(v => !v)}
-                  tabIndex={-1}
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
-                >
-                  {showPw ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
+            {!googleToken && (
+              <div className={s.field}>
+                <label htmlFor='password'>Password</label>
+                <div className={s.fieldInner}>
+                  <input
+                    id='password'
+                    type={showPw ? 'text' : 'password'}
+                    placeholder='Min. 8 characters'
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type='button'
+                    className={s.eyeBtn}
+                    onClick={() => setShowPw(v => !v)}
+                    tabIndex={-1}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <p className={s.terms}>
               By creating an account you agree to our{' '}
@@ -334,54 +407,60 @@ function SignupInner () {
             <button type='submit' className={s.submit} disabled={loading}>
               {loading ? (
                 <Loader inline size='sm' label='Creating account…' />
+              ) : googleToken ? (
+                'Create Account with Google →'
               ) : (
                 'Create Account →'
               )}
             </button>
           </form>
 
-          <div className={s.dividerRow}>
-            <span className={s.dividerLine} />
-            <span className={s.dividerLabel}>or sign up with</span>
-            <span className={s.dividerLine} />
-          </div>
+          {!googleToken && (
+            <>
+              <div className={s.dividerRow}>
+                <span className={s.dividerLine} />
+                <span className={s.dividerLabel}>or sign up with</span>
+                <span className={s.dividerLine} />
+              </div>
 
-          <button
-            type='button'
-            className={s.googleBtn}
-            onClick={() => {
-              const api =
-                process.env.NEXT_PUBLIC_API_URL ??
-                'https://api.ibamhealth.com/api'
-              const cb = window.location.origin + '/auth/google/callback'
-              window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
-                cb
-              )}`
-            }}
-          >
-            <span className={s.googleIconWrap}>
-              <GoogleIcon />
-            </span>
-            Continue with Google
-          </button>
+              <button
+                type='button'
+                className={s.googleBtn}
+                onClick={() => {
+                  const api =
+                    process.env.NEXT_PUBLIC_API_URL ??
+                    'https://api.ibamhealth.com/api'
+                  const cb = window.location.origin + '/auth/google/callback'
+                  window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
+                    cb
+                  )}`
+                }}
+              >
+                <span className={s.googleIconWrap}>
+                  <GoogleIcon />
+                </span>
+                Continue with Google
+              </button>
 
-          <div className={s.partnerSection}>
-            <p className={s.partnerHeading}>Are you a healthcare partner?</p>
-            <div className={s.partnerLinks}>
-              <Link href='/onboard/pharmacy' className={s.partnerLink}>
-                <span className={s.partnerIcon}>
-                  <PillIcon size={15} />
-                </span>
-                Register Pharmacy
-              </Link>
-              {/* <Link href='/onboard/lab' className={s.partnerLink}>
-                <span className={s.partnerIcon}>
-                  <MicroscopeIcon size={15} />
-                </span>
-                Register Lab
-              </Link> */}
-            </div>
-          </div>
+              <div className={s.partnerSection}>
+                <p className={s.partnerHeading}>Are you a healthcare partner?</p>
+                <div className={s.partnerLinks}>
+                  <Link href='/onboard/pharmacy' className={s.partnerLink}>
+                    <span className={s.partnerIcon}>
+                      <PillIcon size={15} />
+                    </span>
+                    Register Pharmacy
+                  </Link>
+                  {/* <Link href='/onboard/lab' className={s.partnerLink}>
+                    <span className={s.partnerIcon}>
+                      <MicroscopeIcon size={15} />
+                    </span>
+                    Register Lab
+                  </Link> */}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

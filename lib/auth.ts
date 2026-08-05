@@ -103,6 +103,21 @@ export function persistFromOAuth (
   if (user) localStorage.setItem('user', JSON.stringify(user))
 }
 
+export interface CompleteGooglePayload {
+  token: string
+  role: 'patient' | 'doctor'
+  phone?: string
+  specialization?: string
+  licenseNumber?: string
+}
+
+export async function completeGoogleSignup (payload: CompleteGooglePayload): Promise<AuthResponse> {
+  const res = await api.post('/auth/google/complete', payload)
+  const data: AuthResponse = res.data.data
+  persist(data)
+  return data
+}
+
 export async function sendEmailOTP (email: string): Promise<void> {
   await api.post('/auth/send-email-otp', { email })
 }
