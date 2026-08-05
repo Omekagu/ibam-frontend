@@ -213,7 +213,7 @@ export default function AdminLabsPage () {
                       className={s.testsBtn}
                       onClick={() => {
                         setKycLabId(kycLabId === lab._id ? null : lab._id)
-                        setKycMsg(''); setKycReason(''); setKycStatus('approved')
+                        setKycReason(''); setKycStatus('approved')
                         setEditingId(null)
                       }}
                     >

@@ -151,7 +151,7 @@ export default function AdminPharmacyPage () {
                       className={s.kycBtn}
                       onClick={() => {
                         setKycPharmId(kycPharmId === p._id ? null : p._id)
-                        setKycMsg(''); setKycReason(''); setKycStatus('approved')
+                        setKycReason(''); setKycStatus('approved')
                       }}
                     >
                       {kycPharmId === p._id ? 'Close KYC' : 'Verify KYC'}
