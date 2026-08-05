@@ -88,11 +88,6 @@ export default function Hero () {
         <div className={s.inner}>
           {/* Left: copy */}
           <div className={s.copy}>
-            <div className={s.badge}>
-              <span className={s.badgeDot} />
-              Diagnostics · Telemedicine · Pharmacy
-            </div>
-
             <h1 className={s.headline}>
               Quality Healthcare, <span className={s.accent}>Delivered</span> to
               You.
@@ -108,15 +103,15 @@ export default function Hero () {
               <Link href='/signup' className={s.btnPrimary}>
                 ORDER A LAB TEST <ArrowRight />
               </Link>
-              <button className={s.btnVideo} onClick={() => setVideoOpen(true)}>
+              {/* <button className={s.btnVideo} onClick={() => setVideoOpen(true)}>
                 <PlayIcon /> Watch Demo
-              </button>
+              </button> */}
               <Link href='#how-it-works' className={s.btnOutline}>
                 See How It Works
               </Link>
             </div>
 
-            <div className={s.trust}>
+            {/* <div className={s.trust}>
               {[
                 'FMOH Licensed',
                 'NDPR Protected',
@@ -128,7 +123,7 @@ export default function Hero () {
                   {b}
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Right: 3D flip carousel */}

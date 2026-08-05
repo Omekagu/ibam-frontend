@@ -171,12 +171,12 @@ export default function BookDoctor () {
               onClick={() => { setSelected(d); setDate(''); setSlots([]); setSlot(null) }}
             >
               <div className={s.docAvatar}>
-                {d.user.avatar
-                  ? <Image src={d.user.avatar} alt={d.user.name} fill sizes='40px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
-                  : d.user.name[0]}
+                {d.user?.avatar
+                  ? <Image src={d.user.avatar} alt={d.user?.name ?? ''} fill sizes='40px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
+                  : (d.user?.name?.[0] ?? '?')}
               </div>
               <div className={s.docInfo}>
-                <p className={s.docName}>{d.displayName || d.user.name}</p>
+                <p className={s.docName}>{d.displayName || d.user?.name}</p>
                 <span className={s.docSpec}>{d.specialization}</span>
                 <div className={s.docMeta}>
                   {(d.ratings?.average ?? 0) > 0 && (
@@ -199,12 +199,12 @@ export default function BookDoctor () {
         <form className={s.bookPanel} onSubmit={book}>
           <div className={s.bookHead}>
             <div className={s.bookAvatarWrap}>
-              {selected.user.avatar
-                ? <Image src={selected.user.avatar} alt={selected.user.name} fill sizes='56px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
-                : <span>{selected.user.name[0]}</span>}
+              {selected.user?.avatar
+                ? <Image src={selected.user.avatar} alt={selected.user?.name ?? ''} fill sizes='56px' style={{ objectFit: 'cover', borderRadius: '50%' }} />
+                : <span>{selected.user?.name?.[0] ?? '?'}</span>}
             </div>
             <div className={s.bookHeadInfo}>
-              <h3>{selected.displayName || selected.user.name}</h3>
+              <h3>{selected.displayName || selected.user?.name}</h3>
               <p className={s.bookSpec}>{selected.specialization}</p>
               <div className={s.bookMetaRow}>
                 {(selected.ratings?.average ?? 0) > 0 && (
