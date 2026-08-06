@@ -17,20 +17,8 @@ interface Prescription {
   createdAt: string
   forwardedToPharmacy: boolean
 }
-interface PharmacyPartner {
-  _id: string
-  name: string
-  address: string
-  phone: string
-}
-interface Drug {
-  _id: string
-  name: string
-  price: number
-  unit: string
-  requiresPrescription: boolean
-  inStock: boolean
-}
+interface PharmacyPartner { _id: string; name: string; address: string; phone: string }
+interface Drug { _id: string; name: string; price: number; unit: string; requiresPrescription: boolean; inStock: boolean }
 interface CartItem { drugId: string; name: string; price: number; qty: number; requiresPrescription: boolean }
 interface PharmacyOrder {
   _id: string
@@ -45,6 +33,12 @@ interface PharmacyOrder {
   adminApprovalStatus?: string
   createdAt: string
 }
+interface BankSettings {
+  companyBankName: string
+  companyAccountNumber: string
+  companyAccountName: string
+  directPaymentNote?: string
+}
 
 type Tab = 'shop' | 'prescription' | 'orders'
 
@@ -56,47 +50,62 @@ function PharmacyContent () {
   const [partners,      setPartners]     = useState<PharmacyPartner[]>([])
   const [orders,        setOrders]       = useState<PharmacyOrder[]>([])
   const [loading,       setLoading]      = useState(true)
+  const [bankSettings,  setBankSettings] = useState<BankSettings | null>(null)
 
   // shop tab
-  const [shopPharmacy,  setShopPharmacy] = useState('')
-  const [catalog,       setCatalog]      = useState<Drug[]>([])
-  const [catalogLoad,   setCatalogLoad]  = useState(false)
-  const [cart,          setCart]         = useState<CartItem[]>([])
+  const [shopPharmacy,      setShopPharmacy]      = useState('')
+  const [catalog,           setCatalog]           = useState<Drug[]>([])
+  const [catalogLoad,       setCatalogLoad]       = useState(false)
+  const [cart,              setCart]              = useState<CartItem[]>([])
   const [shopFulfill,       setShopFulfill]       = useState<'pickup' | 'delivery'>('pickup')
   const [shopAddress,       setShopAddress]       = useState('')
   const [shopPickupAddr,    setShopPickupAddr]    = useState('')
   const [shopPickupCoords,  setShopPickupCoords]  = useState<{ lat: number; lng: number } | null>(null)
   const [shopPickupLoading, setShopPickupLoading] = useState(false)
   const [shopNotes,         setShopNotes]         = useState('')
-  const [rxFile,        setRxFile]       = useState<File | null>(null)
+  const [rxFile,            setRxFile]            = useState<File | null>(null)
   const rxInputRef = useRef<HTMLInputElement>(null)
-  const [shopSub,       setShopSub]      = useState(false)
+  const [shopSub,           setShopSub]           = useState(false)
+
+  // Bank transfer modal for direct delivery orders
+  const [showPayModal,   setShowPayModal]   = useState(false)
+  const [transferRef,    setTransferRef]    = useState('')
+  const [submittingRef,  setSubmittingRef]  = useState(false)
+  const pendingCartRef = useRef<CartItem[]>([])
+  const pendingAmountRef = useRef(0)
 
   // prescription tab
-  const [selected,      setSelected]     = useState<string | null>(null)
-  const [pharmacyId,    setPharmacyId]   = useState('')
+  const [selected,       setSelected]      = useState<string | null>(null)
+  const [pharmacyId,     setPharmacyId]    = useState('')
   const [fulfillment,    setFulfillment]   = useState<'delivery' | 'pickup'>('pickup')
   const [rxAddress,      setRxAddress]     = useState('')
   const [rxPickupAddr,   setRxPickupAddr]  = useState('')
   const [rxPickupCoords, setRxPickupCoords]= useState<{ lat: number; lng: number } | null>(null)
-  const [rxNotes,       setRxNotes]      = useState('')
-  const [rxSub,         setRxSub]        = useState(false)
+  const [rxNotes,        setRxNotes]       = useState('')
+  const [rxSub,          setRxSub]         = useState(false)
 
-  const [paying,        setPaying]       = useState<string | null>(null)
+  // Bank transfer for order in orders tab (prescription orders where pharmacy set a price)
+  const [orderTransferRef, setOrderTransferRef] = useState<Record<string, string>>({})
+  const [orderPayPanelId,  setOrderPayPanelId]  = useState<string | null>(null)
+  const [submittingOrder,  setSubmittingOrder]  = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
       api.get('/prescriptions/mine'),
       api.get('/pharmacy/partners'),
       api.get('/pharmacy/orders/mine'),
-    ]).then(([rxRes, parRes, ordRes]) => {
+      api.get('/payments/settings'),
+    ]).then(([rxRes, parRes, ordRes, payRes]) => {
       const all: Prescription[] = rxRes.data.data?.prescriptions ?? []
       setPrescriptions(all.filter(p => p.forwardedToPharmacy))
       setPartners(parRes.data.data?.partners ?? [])
       setOrders(ordRes.data.data?.orders ?? [])
+      const ps = payRes.data.data?.settings
+      if (ps?.directPaymentEnabled) setBankSettings(ps)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
+  // Handle Paystack callback (kept for backwards compatibility with existing orders)
   useEffect(() => {
     const ref = params.get('reference')
     if (!ref) return
@@ -127,30 +136,38 @@ function PharmacyContent () {
         return delta < 1 ? prev : [...prev, { drugId: drug._id, name: drug.name, price: drug.price, qty: 1, requiresPrescription: drug.requiresPrescription }]
       }
       const newQty = existing.qty + delta
-      return newQty <= 0
-        ? prev.filter(c => c.drugId !== drug._id)
-        : prev.map(c => c.drugId === drug._id ? { ...c, qty: newQty } : c)
+      return newQty <= 0 ? prev.filter(c => c.drugId !== drug._id) : prev.map(c => c.drugId === drug._id ? { ...c, qty: newQty } : c)
     })
   }
 
   const cartTotal = cart.reduce((sum, c) => sum + c.price * c.qty, 0)
   const needsRx = cart.some(c => c.requiresPrescription)
 
-  function useGPS (
-    setAddr: (a: string) => void,
-    setCoords: (c: { lat: number; lng: number } | null) => void,
-    setLoading: (l: boolean) => void
-  ) {
+  function useGPS (setAddr: (a: string) => void, setCoords: (c: { lat: number; lng: number } | null) => void, setLoad: (l: boolean) => void) {
     if (!navigator.geolocation) { alert('Geolocation not supported in this browser.'); return }
-    setLoading(true)
+    setLoad(true)
     navigator.geolocation.getCurrentPosition(
       pos => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setAddr(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`)
-        setLoading(false)
+        setLoad(false)
       },
-      () => { alert('Could not get your location.'); setLoading(false) }
+      () => { alert('Could not get your location.'); setLoad(false) }
     )
+  }
+
+  function buildDirectForm (useCart = cart) {
+    const form = new FormData()
+    form.append('pharmacyId', shopPharmacy)
+    form.append('items', JSON.stringify(useCart.map(c => ({ drugId: c.drugId, qty: c.qty, name: c.name }))))
+    form.append('fulfillmentType', shopFulfill)
+    if (shopFulfill === 'delivery') form.append('deliveryAddress', shopAddress)
+    if (shopFulfill === 'pickup' && (shopPickupAddr || shopPickupCoords)) {
+      form.append('pickupLocation', JSON.stringify({ address: shopPickupAddr, ...shopPickupCoords }))
+    }
+    if (shopNotes) form.append('notes', shopNotes)
+    if (rxFile) form.append('prescription', rxFile)
+    return form
   }
 
   async function submitDirectOrder (e: FormEvent) {
@@ -158,34 +175,71 @@ function PharmacyContent () {
     if (!cart.length) { modal.show({ variant: 'declined', title: 'Cart Empty', message: 'Add at least one item to your cart.' }); return }
     if (shopFulfill === 'delivery' && !shopAddress.trim()) { modal.show({ variant: 'declined', title: 'Missing Address', message: 'Enter delivery address.' }); return }
     if (needsRx && !rxFile) { modal.show({ variant: 'declined', title: 'Prescription Required', message: 'Upload a prescription for Rx-required drugs.' }); return }
+
+    // Delivery with known total + bank configured → show payment modal first, order placed after reference
+    if (shopFulfill === 'delivery' && cartTotal > 0 && bankSettings) {
+      pendingCartRef.current   = [...cart]
+      pendingAmountRef.current = cartTotal
+      setShowPayModal(true)
+      return
+    }
+
+    // Pickup OR delivery without bank → place order directly
     setShopSub(true)
     try {
-      const form = new FormData()
-      form.append('pharmacyId', shopPharmacy)
-      form.append('items', JSON.stringify(cart.map(c => ({ drugId: c.drugId, qty: c.qty, name: c.name }))))
-      form.append('fulfillmentType', shopFulfill)
-      if (shopFulfill === 'delivery') form.append('deliveryAddress', shopAddress)
-      if (shopFulfill === 'pickup' && (shopPickupAddr || shopPickupCoords)) {
-        form.append('pickupLocation', JSON.stringify({ address: shopPickupAddr, ...shopPickupCoords }))
-      }
-      if (shopNotes) form.append('notes', shopNotes)
-      if (rxFile) form.append('prescription', rxFile)
-      const r = await api.post('/pharmacy/order/direct', form)
+      const r = await api.post('/pharmacy/order/direct', buildDirectForm())
       setOrders(prev => [r.data.data?.order, ...prev])
-      modal.show({
-        variant: 'success',
-        title: 'Order Placed',
-        message: r.data.data?.requiresApproval
-          ? 'Order submitted! Admin will review your prescription shortly.'
-          : 'Order placed! The pharmacy will prepare your drugs.',
-      })
       setCart([]); setShopPharmacy(''); setShopAddress(''); setShopNotes(''); setRxFile(null)
+      if (shopFulfill === 'pickup') {
+        modal.show({
+          variant: 'success',
+          title: 'Order Placed!',
+          message: `Visit the pharmacy and pay ₦${cartTotal.toLocaleString()} at the counter. They will confirm your payment.`,
+        })
+      } else {
+        modal.show({
+          variant: 'pending',
+          title: 'Order Placed!',
+          message: 'Your order has been submitted. Our team will contact you with payment details and delivery confirmation.',
+        })
+      }
       setTimeout(() => setTab('orders'), 3000)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.'
-      modal.show({ variant: 'declined', title: 'Order Failed', message: msg })
+      modal.show({ variant: 'declined', title: 'Order Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.' })
     }
     setShopSub(false)
+  }
+
+  // Places the delivery order AND submits the transfer reference together
+  async function handleSubmitDirectTransfer () {
+    if (!transferRef.trim()) return
+    setSubmittingRef(true)
+    try {
+      const r = await api.post('/pharmacy/order/direct', buildDirectForm(pendingCartRef.current))
+      const orderId: string = r.data.data?.order?._id
+      setOrders(prev => [r.data.data?.order, ...prev])
+
+      await api.post('/payments/submit-transfer', {
+        type: 'pharmacy',
+        referenceId: orderId,
+        amount: pendingAmountRef.current * 100,
+        transferReference: transferRef.trim(),
+      })
+
+      setCart([]); setShopPharmacy(''); setShopAddress(''); setShopNotes(''); setRxFile(null)
+      setShowPayModal(false); setTransferRef('')
+      modal.show({
+        variant: 'pending',
+        title: 'Order & Payment Submitted!',
+        message: `Your ₦${pendingAmountRef.current.toLocaleString()} transfer reference has been submitted. Admin will confirm and your order will be dispatched.`,
+        actionLabel: 'View Orders',
+        onAction: () => setTab('orders')
+      })
+    } catch (err: unknown) {
+      modal.show({ variant: 'declined', title: 'Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not complete your order. Please try again.' })
+    } finally {
+      setSubmittingRef(false)
+    }
   }
 
   async function submitRxOrder (e: FormEvent) {
@@ -201,24 +255,40 @@ function PharmacyContent () {
         fulfillmentType: fulfillment, deliveryAddress: fulfillment === 'delivery' ? rxAddress : undefined,
         pickupLocation: pickupLoc, notes: rxNotes || undefined })
       setOrders(prev => [r.data.data?.order, ...prev])
-      modal.show({ variant: 'success', title: 'Order Placed', message: 'The pharmacy will confirm the total and prepare your drugs.' })
+      if (fulfillment === 'pickup') {
+        modal.show({ variant: 'success', title: 'Order Placed', message: 'Visit the pharmacy and pay at the counter when your order is ready.' })
+      } else {
+        modal.show({ variant: 'pending', title: 'Order Placed', message: 'The pharmacy will confirm the total. You\'ll transfer to the platform account to confirm delivery.' })
+      }
       setSelected(null); setPharmacyId(''); setRxAddress(''); setRxNotes('')
       setTimeout(() => setTab('orders'), 2500)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.'
-      modal.show({ variant: 'declined', title: 'Order Failed', message: msg })
+      modal.show({ variant: 'declined', title: 'Order Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to place order.' })
     }
     setRxSub(false)
   }
 
-  async function initiatePayment (order: PharmacyOrder) {
-    if (!order.totalAmount) { alert("The pharmacy hasn't set a total yet."); return }
-    setPaying(order._id)
+  // Bank transfer for orders already placed (e.g. prescription orders where pharmacy confirmed the total)
+  async function submitOrderTransfer (order: PharmacyOrder) {
+    const ref = orderTransferRef[order._id]
+    if (!ref?.trim()) return
+    setSubmittingOrder(order._id)
     try {
-      const r = await api.post('/payments/initiate', { type: 'pharmacy', serviceId: order._id, amount: order.totalAmount })
-      const url: string | undefined = r.data.data?.authorizationUrl
-      if (url) window.location.href = url
-    } catch { alert('Could not initiate payment.'); setPaying(null) }
+      await api.post('/payments/submit-transfer', {
+        type: 'pharmacy',
+        referenceId: order._id,
+        amount: order.totalAmount * 100,
+        transferReference: ref.trim(),
+      })
+      setOrderPayPanelId(null)
+      setOrderTransferRef(prev => ({ ...prev, [order._id]: '' }))
+      modal.show({ variant: 'pending', title: 'Transfer Submitted', message: 'Admin will confirm your payment and process your order.' })
+      api.get('/pharmacy/orders/mine').then(r => setOrders(r.data.data?.orders ?? []))
+    } catch (err: unknown) {
+      modal.show({ variant: 'declined', title: 'Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not submit transfer reference.' })
+    } finally {
+      setSubmittingOrder(null)
+    }
   }
 
   const orderedRxIds = new Set(orders.map(o => (typeof o.prescription === 'object' ? o.prescription?._id : o.prescription)))
@@ -311,8 +381,7 @@ function PharmacyContent () {
                   <div className={s.locationRow}>
                     <input type='text' className={s.textInput} value={shopPickupAddr}
                       onChange={e => setShopPickupAddr(e.target.value)} placeholder='Your address or nearest landmark…' />
-                    <button type='button' className={s.gpsBtn}
-                      disabled={shopPickupLoading}
+                    <button type='button' className={s.gpsBtn} disabled={shopPickupLoading}
                       onClick={() => useGPS(setShopPickupAddr, setShopPickupCoords, setShopPickupLoading)}>
                       {shopPickupLoading ? '…' : <><MapPinIcon size={13} /> Use GPS</>}
                     </button>
@@ -332,6 +401,20 @@ function PharmacyContent () {
                 </div>
               )}
 
+              {/* Payment note */}
+              {cart.length > 0 && shopFulfill === 'pickup' && (
+                <div className={s.paymentNote}>
+                  <span className={s.paymentNoteIcon}>💵</span>
+                  <p>You will pay at the pharmacy counter. The pharmacy will confirm your payment when you arrive.</p>
+                </div>
+              )}
+              {cart.length > 0 && shopFulfill === 'delivery' && cartTotal > 0 && bankSettings && (
+                <div className={s.paymentNote} data-variant='transfer'>
+                  <span className={s.paymentNoteIcon}>🏦</span>
+                  <p>Total: <strong>₦{cartTotal.toLocaleString()}</strong>. You will transfer to the platform bank account and enter your reference to confirm this delivery order.</p>
+                </div>
+              )}
+
               <div className={s.section}>
                 <h3>Notes (optional)</h3>
                 <textarea rows={2} value={shopNotes} onChange={e => setShopNotes(e.target.value)} placeholder='Special instructions…' />
@@ -340,13 +423,19 @@ function PharmacyContent () {
           )}
 
           <button type='submit' className={s.submitBtn} disabled={shopSub || !cart.length}>
-            {shopSub ? 'Placing Order…' : `Place Order${cart.length > 0 ? ` — ₦${cartTotal.toLocaleString()}` : ''}`}
+            {shopSub ? <Loader inline size='sm' /> : (
+              shopFulfill === 'pickup'
+                ? `Place Order — Pay at Counter`
+                : cartTotal > 0 && bankSettings
+                  ? `Continue to Payment — ₦${cartTotal.toLocaleString()}`
+                  : `Place Order${cart.length > 0 ? ` — ₦${cartTotal.toLocaleString()}` : ''}`
+            )}
           </button>
         </form>
 
       ) : tab === 'prescription' ? (
         prescriptions.length === 0
-          ? <div className={s.empty}><p>No forwarded prescriptions.</p><p>Go to <strong>Health Records → Prescriptions</strong> and click "Send to Pharmacy" first.</p></div>
+          ? <div className={s.empty}><p>No forwarded prescriptions.</p><p>Go to <strong>Health Records → Prescriptions</strong> and click &quot;Send to Pharmacy&quot; first.</p></div>
           : <form className={s.orderForm} onSubmit={submitRxOrder}>
               <div className={s.section}>
                 <h3>Select Prescription</h3>
@@ -402,16 +491,27 @@ function PharmacyContent () {
                   <div className={s.locationRow}>
                     <input type='text' className={s.textInput} value={rxPickupAddr}
                       onChange={e => setRxPickupAddr(e.target.value)} placeholder='Your address or nearest landmark…' />
-                    <button type='button' className={s.gpsBtn}
-                      onClick={() => useGPS(setRxPickupAddr, setRxPickupCoords, () => {})}>
+                    <button type='button' className={s.gpsBtn} onClick={() => useGPS(setRxPickupAddr, setRxPickupCoords, () => {})}>
                       <MapPinIcon size={13} /> Use GPS
                     </button>
                   </div>
                   {rxPickupCoords && <p className={s.coordsNote}>GPS: {rxPickupCoords.lat.toFixed(5)}, {rxPickupCoords.lng.toFixed(5)}</p>}
                 </div>
               )}
+              {fulfillment === 'pickup' && (
+                <div className={s.paymentNote}>
+                  <span className={s.paymentNoteIcon}>💵</span>
+                  <p>Pay at the pharmacy counter when you pick up your order. The pharmacy confirms your payment.</p>
+                </div>
+              )}
+              {fulfillment === 'delivery' && (
+                <div className={s.paymentNote} data-variant='transfer'>
+                  <span className={s.paymentNoteIcon}>🏦</span>
+                  <p>The pharmacy will confirm your total. You will then transfer to the platform bank account from My Orders.</p>
+                </div>
+              )}
               <button type='submit' className={s.submitBtn} disabled={rxSub || !selected || !partners.length}>
-                {rxSub ? 'Placing Order…' : 'Place Order'}
+                {rxSub ? <Loader inline size='sm' /> : (fulfillment === 'pickup' ? 'Place Order — Pay at Counter' : 'Place Order')}
               </button>
             </form>
 
@@ -423,6 +523,8 @@ function PharmacyContent () {
               const itemNames = o.orderType === 'direct'
                 ? (o.items ?? []).map(i => `${i.name} ×${i.qty}`).join(', ')
                 : rx ? rx.medications.map((m: Medication) => m.name).join(', ') : 'Prescription order'
+              const isPendingPayment = o.status === 'pending' && o.totalAmount > 0 && o.adminApprovalStatus !== 'pending'
+              const showPanel = orderPayPanelId === o._id
               return (
                 <div key={o._id} className={s.orderCard}>
                   <div className={s.orderTop}>
@@ -440,22 +542,65 @@ function PharmacyContent () {
                       {o.totalAmount > 0 && <span className={s.amount}>₦{o.totalAmount.toLocaleString()}</span>}
                     </div>
                   </div>
-                  {o.status === 'pending' && o.totalAmount > 0 && o.adminApprovalStatus !== 'pending' && (
+
+                  {/* Pickup orders — pay at counter note */}
+                  {o.status === 'pending' && o.fulfillmentType === 'pickup' && o.adminApprovalStatus !== 'pending' && (
                     <div className={s.orderFooter}>
-                      <button className={s.payBtn} disabled={paying === o._id} onClick={() => initiatePayment(o)}>
-                        {paying === o._id ? 'Redirecting…' : `Pay ₦${o.totalAmount.toLocaleString()}`}
-                      </button>
+                      <p className={s.counterNote}>
+                        💵 {o.totalAmount > 0 ? `Pay ₦${o.totalAmount.toLocaleString()} at the pharmacy counter.` : 'Pay at the pharmacy counter when your order is ready.'}
+                      </p>
                     </div>
                   )}
+
+                  {/* Delivery orders — bank transfer */}
+                  {isPendingPayment && o.fulfillmentType === 'delivery' && (
+                    <div className={s.orderFooter}>
+                      {!showPanel ? (
+                        <button className={s.payBtn} onClick={() => setOrderPayPanelId(o._id)}>
+                          Submit Transfer Reference
+                        </button>
+                      ) : (
+                        <div className={s.transferPanel}>
+                          {bankSettings && (
+                            <div className={s.bankCardSm}>
+                              <BankRow label='Bank' value={bankSettings.companyBankName} />
+                              <BankRow label='Account No.' value={bankSettings.companyAccountNumber} copyable />
+                              <BankRow label='Account Name' value={bankSettings.companyAccountName} />
+                            </div>
+                          )}
+                          <p className={s.transferInstruction}>
+                            Transfer <strong>₦{o.totalAmount.toLocaleString()}</strong> to the account above, then enter your reference:
+                          </p>
+                          <div className={s.transferInputRow}>
+                            <input
+                              className={s.refInput}
+                              placeholder='Transfer reference…'
+                              value={orderTransferRef[o._id] ?? ''}
+                              onChange={e => setOrderTransferRef(prev => ({ ...prev, [o._id]: e.target.value.toUpperCase() }))}
+                              autoComplete='off'
+                            />
+                            <button
+                              className={s.payConfirmBtn}
+                              disabled={!orderTransferRef[o._id]?.trim() || submittingOrder === o._id}
+                              onClick={() => submitOrderTransfer(o)}
+                            >
+                              {submittingOrder === o._id ? <Loader inline size='sm' /> : 'Confirm'}
+                            </button>
+                            <button className={s.cancelTransferBtn} onClick={() => setOrderPayPanelId(null)}>✕</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {o.status === 'pending' && !o.totalAmount && o.adminApprovalStatus !== 'pending' && (
-                    <div className={s.orderFooter}><p className={s.codNote}>Awaiting pharmacy confirmation.</p></div>
+                    <div className={s.orderFooter}><p className={s.codNote}>Awaiting pharmacy confirmation of your order total.</p></div>
                   )}
                   {['ready', 'dispatched'].includes(o.status) && (
                     <div className={s.orderFooter}><p className={s.readyNote}>
                       {o.status === 'ready'
                         ? <><CheckCircleIcon size={13} /> Ready! {o.fulfillmentType === 'pickup' ? 'Visit the pharmacy.' : 'Delivery on the way.'}</>
-                        : <><TruckIcon size={13} /> Your order is on the way!</>
-                      }
+                        : <><TruckIcon size={13} /> Your order is on the way!</>}
                     </p></div>
                   )}
                 </div>
@@ -463,6 +608,46 @@ function PharmacyContent () {
             })}
           </div>
         )
+      )}
+
+      {/* ── Bank Transfer Modal (for new direct delivery orders) ── */}
+      {showPayModal && (
+        <div className={s.payOverlay}>
+          <div className={s.payPanel}>
+            <div className={s.payPanelHeader}>
+              <h2 className={s.payPanelTitle}>Pay for Delivery Order</h2>
+              <button className={s.payPanelClose} onClick={() => setShowPayModal(false)}>✕</button>
+            </div>
+            <p className={s.payPanelSub}>
+              Transfer <strong>₦{pendingAmountRef.current.toLocaleString()}</strong> to the platform bank account, then enter your reference. Your order is placed only after this step.
+            </p>
+
+            {bankSettings && (
+              <div className={s.bankCard}>
+                <BankRow label='Bank' value={bankSettings.companyBankName} />
+                <BankRow label='Account Number' value={bankSettings.companyAccountNumber} copyable />
+                <BankRow label='Account Name' value={bankSettings.companyAccountName} />
+                {bankSettings.directPaymentNote && <p className={s.bankNote}>{bankSettings.directPaymentNote}</p>}
+              </div>
+            )}
+
+            <input
+              className={s.refInput}
+              placeholder='Enter your bank transfer reference…'
+              value={transferRef}
+              onChange={e => setTransferRef(e.target.value.toUpperCase())}
+              autoComplete='off'
+            />
+
+            <button
+              className={s.payConfirmBtn}
+              disabled={!transferRef.trim() || submittingRef}
+              onClick={handleSubmitDirectTransfer}
+            >
+              {submittingRef ? <Loader inline size='sm' /> : 'Place Order & Submit Reference'}
+            </button>
+          </div>
+        </div>
       )}
     </>
   )
@@ -478,4 +663,17 @@ export default function PharmacyPage () {
 
 function statusLabel (st: string) {
   return ({ pending: 'Pending', processing: 'Processing', ready: 'Ready', dispatched: 'Dispatched', delivered: 'Delivered', cancelled: 'Cancelled' }[st] ?? st)
+}
+
+function BankRow ({ label, value, copyable }: { label: string; value: string; copyable?: boolean }) {
+  function copy () { navigator.clipboard?.writeText(value).catch(() => {}) }
+  return (
+    <div className={s.bankRow}>
+      <span className={s.bankRowLabel}>{label}</span>
+      <span className={s.bankRowVal}>
+        {value || '—'}
+        {copyable && value && <button type='button' className={s.copyBtn} onClick={copy} title='Copy'>⧉</button>}
+      </span>
+    </div>
+  )
 }

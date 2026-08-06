@@ -79,7 +79,7 @@ export default function PharmacyCatalogPage () {
         </button>
       </div>
 
-      {loading ? <p className={s.empty}><Loader label='Loading catalog…' /></p> : (
+      {loading ? <div className={s.empty}><Loader label='Loading catalog…' /></div> : (
         <div className={s.tableWrap}>
           <div className={s.tableHead}>
             <span>Drug Name</span>

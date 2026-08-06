@@ -8,11 +8,21 @@ import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
 
+type QualItem = string | { degree: string; institution?: string; year?: number | string }
+
+function qualToString (q: QualItem): string {
+  if (typeof q === 'string') return q
+  let s = q.degree
+  if (q.institution) s += `, ${q.institution}`
+  if (q.year)        s += ` (${q.year})`
+  return s
+}
+
 interface Doctor {
   bio?: string
   consultationFee: number
   yearsOfExperience: number
-  qualifications: string[]
+  qualifications: QualItem[]
   specialization: string
   licenseNumber: string
   isApproved: boolean
@@ -44,7 +54,8 @@ const DAYS = [
 const DURATIONS = [15, 20, 30, 45, 60, 90]
 
 export default function DoctorProfile () {
-  const cached = getStoredUser()
+  const [cached, setCached] = useState<ReturnType<typeof getStoredUser>>(null)
+  useEffect(() => { setCached(getStoredUser()) }, [])
   const modal = useStatusModal()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
@@ -94,16 +105,18 @@ export default function DoctorProfile () {
   const [avSaved, setAvSaved] = useState(false)
 
   useEffect(() => {
-    api
-      .get('/doctors/my/profile')
-      .then(r => {
-        const d: Doctor = r.data.data?.doctor
+    Promise.all([
+      api.get('/doctors/my/profile'),
+      api.get('/doctors/my/availability').catch(() => ({ data: { data: { availabilities: [] } } }))
+    ])
+      .then(([profileRes, availRes]) => {
+        const d: Doctor = profileRes.data.data?.doctor
         if (!d) return
         setDoctor(d)
         setBio(d.bio ?? '')
         setFee(d.consultationFee ?? 0)
         setExp(d.yearsOfExperience ?? 0)
-        setQuals(d.qualifications ?? [])
+        setQuals((d.qualifications ?? []).map(qualToString))
         setRateType(d.rateType ?? 'per_session')
         setSessionDuration(d.sessionDurationMinutes ?? 30)
         setUrgentAvailable(d.urgentAvailable ?? false)
@@ -120,6 +133,19 @@ export default function DoctorProfile () {
         setSocialTwitter(d.socialLinks?.twitter ?? '')
         setSocialLinkedin(d.socialLinks?.linkedin ?? '')
         setSocialWebsite(d.socialLinks?.website ?? '')
+
+        const entries: Array<{ type: string; dayOfWeek?: number; slots: Slot[] }> =
+          availRes.data.data?.availabilities ?? []
+        const recurring = entries.filter(e => e.type === 'recurring' && e.dayOfWeek != null)
+        if (recurring.length > 0) {
+          const days = Array(7).fill(false)
+          recurring.forEach(e => { days[e.dayOfWeek!] = true })
+          setAvDays(days)
+          const first = recurring[0]
+          if (first.slots?.length > 0) {
+            setAvSlots(first.slots.map(sl => ({ startTime: sl.startTime, endTime: sl.endTime })))
+          }
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))

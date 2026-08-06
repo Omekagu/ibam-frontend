@@ -16,18 +16,20 @@ interface Profile {
 }
 
 export default function PatientProfile () {
-  const cached = getStoredUser()
   const modal = useStatusModal()
-  const [profile, setProfile] = useState<Profile | null>(
-    cached ? { name: cached.name, email: cached.email, role: cached.role, isVerified: false } : null
-  )
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [refreshing, setRefreshing] = useState(true)
-  const [name,    setName]    = useState(cached?.name ?? '')
+  const [name,    setName]    = useState('')
   const [phone,   setPhone]   = useState('')
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
 
   useEffect(() => {
+    const cached = getStoredUser()
+    if (cached) {
+      setProfile({ name: cached.name, email: cached.email, role: cached.role, isVerified: false })
+      setName(cached.name ?? '')
+    }
     api.get('/users/profile')
       .then(r => {
         const u = r.data.data?.user ?? r.data.data
