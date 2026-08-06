@@ -35,7 +35,11 @@ function VerifyEmailForm () {
 
   useEffect(() => {
     const q = params.get('email')
-    if (q) handleSend(q)
+    if (q) {
+      // OTP was already sent during registration; just show the entry step
+      setEmail(q)
+      setSent(true)
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSend (emailArg?: string) {

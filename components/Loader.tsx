@@ -30,7 +30,7 @@ export function Loader ({
       <div className={s.overlay} role='status' aria-label={label ?? 'Loading'}>
         <div className={s.overlayBox}>
           {spinner}
-          {label && <p className={s.label}>{label}</p>}
+          {label && <span className={s.label}>{label}</span>}
         </div>
       </div>
     )
@@ -48,7 +48,7 @@ export function Loader ({
   return (
     <div className={s.box} role='status' aria-label={label ?? 'Loading'}>
       {spinner}
-      {label && <p className={s.label}>{label}</p>}
+      {label && <span className={s.label}>{label}</span>}
     </div>
   )
 }

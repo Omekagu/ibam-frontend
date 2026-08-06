@@ -6,11 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { register, completeGoogleSignup } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
-import {
-  UserIcon,
-  StethoscopeIcon,
-  PillIcon
-} from '@/components/icons'
+import { UserIcon, StethoscopeIcon, PillIcon } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
@@ -103,13 +99,15 @@ function SignupInner () {
 
   // Google pending token flow
   const googleToken = searchParams.get('googleToken') ?? ''
-  const [googleProfileLoading, setGoogleProfileLoading] = useState(!!googleToken)
+  const [googleProfileLoading, setGoogleProfileLoading] = useState(
+    !!googleToken
+  )
   const [googlePicture, setGooglePicture] = useState('')
 
   useEffect(() => {
     fetch(
       `${
-        process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+        process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
       }/admin/public/content`
     )
       .then(r => r.json())
@@ -135,8 +133,11 @@ function SignupInner () {
   // Fetch Google pending profile and pre-fill fields
   useEffect(() => {
     if (!googleToken) return
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
-    fetch(`${apiBase}/auth/google/pending?token=${encodeURIComponent(googleToken)}`)
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+    fetch(
+      `${apiBase}/auth/google/pending?token=${encodeURIComponent(googleToken)}`
+    )
       .then(r => r.json())
       .then(body => {
         if (body?.data) {
@@ -216,7 +217,14 @@ function SignupInner () {
 
   if (googleProfileLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh'
+        }}
+      >
         <Loader label='Loading your Google profile…' />
       </div>
     )
@@ -244,16 +252,52 @@ function SignupInner () {
             <>
               <h1 className={s.formTitle}>Almost there!</h1>
               <p className={s.formSub}>
-                Choose how you&apos;d like to use iBam Health.{' '}
-                Already have an account? <Link href='/login'>Log in</Link>
+                Choose how you&apos;d like to use iBam Health. Already have an
+                account? <Link href='/login'>Log in</Link>
               </p>
               {googlePicture && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '0.75rem 1rem', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '1.5rem',
+                    padding: '0.75rem 1rem',
+                    background: '#f0fdf4',
+                    borderRadius: '10px',
+                    border: '1px solid #bbf7d0'
+                  }}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={googlePicture} alt='' width={36} height={36} style={{ borderRadius: '50%' }} referrerPolicy='no-referrer' />
+                  <img
+                    src={googlePicture}
+                    alt=''
+                    width={36}
+                    height={36}
+                    style={{ borderRadius: '50%' }}
+                    referrerPolicy='no-referrer'
+                  />
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: '#166534' }}>Signing up with Google</p>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#166534', opacity: 0.8 }}>{email}</p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        color: '#166534'
+                      }}
+                    >
+                      Signing up with Google
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: '0.8rem',
+                        color: '#166534',
+                        opacity: 0.8
+                      }}
+                    >
+                      {email}
+                    </p>
                   </div>
                 </div>
               )}
@@ -326,7 +370,15 @@ function SignupInner () {
                 onChange={e => setEmail(e.target.value)}
                 required
                 disabled={!!googleToken}
-                style={googleToken ? { background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' } : undefined}
+                style={
+                  googleToken
+                    ? {
+                        background: '#f3f4f6',
+                        color: '#6b7280',
+                        cursor: 'not-allowed'
+                      }
+                    : undefined
+                }
               />
             </div>
 
@@ -429,7 +481,7 @@ function SignupInner () {
                 onClick={() => {
                   const api =
                     process.env.NEXT_PUBLIC_API_URL ??
-                    'https://api.ibamhealth.com/api'
+                    'http://10.0.1.19:5000/api'
                   const cb = window.location.origin + '/auth/google/callback'
                   window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                     cb
@@ -443,7 +495,9 @@ function SignupInner () {
               </button>
 
               <div className={s.partnerSection}>
-                <p className={s.partnerHeading}>Are you a healthcare partner?</p>
+                <p className={s.partnerHeading}>
+                  Are you a healthcare partner?
+                </p>
                 <div className={s.partnerLinks}>
                   <Link href='/onboard/pharmacy' className={s.partnerLink}>
                     <span className={s.partnerIcon}>

@@ -58,8 +58,7 @@ export default function PatientLabs () {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    const base =
-      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {

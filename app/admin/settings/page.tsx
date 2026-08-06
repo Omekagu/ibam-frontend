@@ -52,7 +52,7 @@ function PaymentTab() {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
-  if (loading) return <p className={s.empty}><Loader label='Loading…' /></p>
+  if (loading) return <div className={s.empty}><Loader label='Loading…' /></div>
 
   return (
     <div className={s.card}>
@@ -213,7 +213,7 @@ function SpecializationsTab() {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading…' /></p>
+        <div className={s.empty}><Loader label='Loading…' /></div>
       ) : items.length === 0 ? (
         <p className={s.empty}>No specializations yet.</p>
       ) : (
@@ -381,7 +381,7 @@ function ServicesTab() {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading…' /></p>
+        <div className={s.empty}><Loader label='Loading…' /></div>
       ) : items.length === 0 ? (
         <p className={s.empty}>No services yet.</p>
       ) : (
@@ -612,7 +612,7 @@ function LabTestsTab() {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading…' /></p>
+        <div className={s.empty}><Loader label='Loading…' /></div>
       ) : items.length === 0 ? (
         <p className={s.empty}>No lab tests configured yet.</p>
       ) : (
