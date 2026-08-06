@@ -55,6 +55,7 @@ function PharmacyContent () {
   // shop tab
   const [shopPharmacy,      setShopPharmacy]      = useState('')
   const [catalog,           setCatalog]           = useState<Drug[]>([])
+  const [drugSearch,        setDrugSearch]        = useState('')
   const [catalogLoad,       setCatalogLoad]       = useState(false)
   const [cart,              setCart]              = useState<CartItem[]>([])
   const [shopFulfill,       setShopFulfill]       = useState<'pickup' | 'delivery'>('pickup')
@@ -125,6 +126,7 @@ function PharmacyContent () {
       .catch(() => setCatalog([]))
       .finally(() => setCatalogLoad(false))
     setCart([])
+    setDrugSearch('')
   }, [shopPharmacy])
 
   function cartQty (drugId: string) { return cart.find(c => c.drugId === drugId)?.qty ?? 0 }
@@ -320,10 +322,18 @@ function PharmacyContent () {
             <>
               <div className={s.section}>
                 <h3>Available Drugs {catalogLoad && <Loader inline size='sm' />}</h3>
+                {!catalogLoad && catalog.length > 0 && (
+                  <input
+                    className={s.drugSearch}
+                    placeholder='Search drugs…'
+                    value={drugSearch}
+                    onChange={e => setDrugSearch(e.target.value)}
+                  />
+                )}
                 {!catalogLoad && catalog.length === 0
                   ? <p className={s.noPartners}>This pharmacy has no approved drugs listed yet.</p>
                   : <div className={s.drugGrid}>
-                      {catalog.map(drug => (
+                      {catalog.filter(d => d.name.toLowerCase().includes(drugSearch.toLowerCase())).map(drug => (
                         <div key={drug._id} className={s.drugCard}>
                           <div className={s.drugInfo}>
                             <p className={s.drugName}>{drug.name}</p>

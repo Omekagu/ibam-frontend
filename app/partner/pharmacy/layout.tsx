@@ -27,7 +27,7 @@ export default function PharmacyPartnerLayout ({ children }: { children: React.R
             <CatalogIcon /> Drug Catalog
           </Link>
           <Link href='/partner/pharmacy/profile' className={`${s.navLink} ${path === '/partner/pharmacy/profile' ? s.active : ''}`}>
-            <ProfileIcon /> Profile
+            <ProfileIcon /> Profile & Payouts
           </Link>
         </nav>
 

@@ -115,7 +115,7 @@ export default function AdminPlansPage () {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading plans…' /></p>
+        <div className={s.empty}><Loader label='Loading plans…' /></div>
       ) : (
         <div className={s.planGrid}>
           {plans.map(plan => (

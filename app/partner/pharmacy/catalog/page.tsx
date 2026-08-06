@@ -61,7 +61,7 @@ export default function PharmacyCatalogPage () {
           inStock: d.inStock !== false,
         })),
       })
-      modal.show({ variant: 'success', title: 'Catalog Saved', message: 'New drugs are pending admin approval.' })
+      modal.show({ variant: 'success', title: 'Catalog Saved', message: 'Your drug catalog has been updated.' })
       load()
     } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save. Please try again.' }) }
     setSaving(false)
@@ -72,7 +72,7 @@ export default function PharmacyCatalogPage () {
       <div className={s.pageHeader}>
         <div>
           <h1 className={s.title}>Drug Catalog</h1>
-          <p className={s.subtitle}>Manage the drugs your pharmacy offers. New drugs require admin approval before patients can see them.</p>
+          <p className={s.subtitle}>Manage the drugs your pharmacy offers. Changes are live immediately.</p>
         </div>
         <button className={s.saveBtn} onClick={save} disabled={saving}>
           {saving ? 'Saving…' : 'Save Catalog'}
@@ -110,8 +110,8 @@ export default function PharmacyCatalogPage () {
                     onChange={e => update(i, 'inStock', e.target.checked)} />
                   <span>{drug.inStock ? 'Yes' : 'No'}</span>
                 </label>
-                <span className={drug.adminApproved ? s.approvedBadge : s.pendingBadge}>
-                  {drug._id ? (drug.adminApproved ? 'Approved' : 'Pending') : 'New'}
+                <span className={drug.inStock ? s.approvedBadge : s.pendingBadge}>
+                  {drug.inStock ? 'In Stock' : 'Out of Stock'}
                 </span>
                 <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'>✕</button>
               </div>
@@ -123,8 +123,8 @@ export default function PharmacyCatalogPage () {
       )}
 
       <div className={s.hint}>
-        <p>Drugs marked "Rx Required" will trigger admin review for patient orders.</p>
-        <p>Only approved, in-stock drugs are visible to patients.</p>
+        <p>Drugs marked "Rx Required" will require patients to upload a prescription.</p>
+        <p>Only in-stock drugs are visible to patients.</p>
       </div>
     </div>
   )

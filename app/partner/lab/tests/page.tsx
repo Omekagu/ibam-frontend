@@ -31,7 +31,7 @@ export default function ManageTestsPage () {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading your test catalog…' /></p>
+        <div className={s.empty}><Loader label='Loading your test catalog…' /></div>
       ) : tests.length === 0 ? (
         <p className={s.empty}>No tests have been added to your lab yet. Please contact the iBam admin team.</p>
       ) : (

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { BankSelect } from '@/components/BankSelect'
 import s from './page.module.scss'
 
 interface Profile {
@@ -16,11 +17,21 @@ interface Profile {
   bankAccount?: { bankName?: string; accountNumber?: string; accountName?: string; bankCode?: string }
 }
 
+interface Earning {
+  _id: string
+  grossAmount: number
+  netAmount: number
+  payoutStatus: string
+  createdAt: string
+}
+
 export default function PharmacyProfilePage () {
   const modal = useStatusModal()
   const [profile,    setProfile]    = useState<Profile | null>(null)
   const [loading,    setLoading]    = useState(true)
   const [saving,     setSaving]     = useState(false)
+  const [earnings,   setEarnings]   = useState<Earning[]>([])
+  const [payoutReq,  setPayoutReq]  = useState(false)
 
   const [name,       setName]       = useState('')
   const [address,    setAddress]    = useState('')
@@ -37,17 +48,25 @@ export default function PharmacyProfilePage () {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await api.get('/pharmacy/profile')
-      const p: Profile = r.data.data?.partner
-      setProfile(p)
-      setName(p.name || '')
-      setAddress(p.address || '')
-      setPhone(p.phone || '')
-      setAreas((p.coverageAreas || []).join(', '))
-      setBankName(p.bankAccount?.bankName ?? '')
-      setAcctNumber(p.bankAccount?.accountNumber ?? '')
-      setAcctName(p.bankAccount?.accountName ?? '')
-      setBankCode(p.bankAccount?.bankCode ?? '')
+      const [profRes, earnRes] = await Promise.allSettled([
+        api.get('/pharmacy/profile'),
+        api.get('/pharmacy/earnings'),
+      ])
+      if (profRes.status === 'fulfilled') {
+        const p: Profile = profRes.value.data.data?.partner
+        setProfile(p)
+        setName(p.name || '')
+        setAddress(p.address || '')
+        setPhone(p.phone || '')
+        setAreas((p.coverageAreas || []).join(', '))
+        setBankName(p.bankAccount?.bankName ?? '')
+        setAcctNumber(p.bankAccount?.accountNumber ?? '')
+        setAcctName(p.bankAccount?.accountName ?? '')
+        setBankCode(p.bankAccount?.bankCode ?? '')
+      }
+      if (earnRes.status === 'fulfilled') {
+        setEarnings(earnRes.value.data.data?.earnings ?? [])
+      }
     } catch { }
     setLoading(false)
   }, [])
@@ -82,6 +101,22 @@ export default function PharmacyProfilePage () {
     setBankSaving(false)
   }
 
+  async function requestPayout () {
+    setPayoutReq(true)
+    try {
+      const r = await api.post('/pharmacy/earnings/request-payout')
+      const { totalRequested, count } = r.data.data ?? {}
+      alert(`Payout requested: ₦${totalRequested?.toLocaleString()} across ${count} record(s) submitted to admin.`)
+      load()
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Payout request failed. Please try again.')
+    }
+    setPayoutReq(false)
+  }
+
+  const pendingNet   = earnings.filter(e => e.payoutStatus === 'pending').reduce((s, e) => s + e.netAmount, 0)
+  const requestedNet = earnings.filter(e => e.payoutStatus === 'requested').reduce((s, e) => s + e.netAmount, 0)
+
   const STATUS_COLOR: Record<string, string> = {
     active: '#10B981', pending: '#F59E0B', suspended: '#EF4444', inactive: '#6B7280',
   }
@@ -101,7 +136,7 @@ export default function PharmacyProfilePage () {
       </div>
 
       {loading ? (
-        <p className={s.empty}><Loader label='Loading profile…' /></p>
+        <div className={s.empty}><Loader label='Loading profile…' /></div>
       ) : (
         <>
           {/* ── Business info ── */}
@@ -146,15 +181,13 @@ export default function PharmacyProfilePage () {
             <h2 className={s.sectionTitle}>Payout Account</h2>
             <p className={s.subtext}>Submit your bank details so the platform can settle your pharmacy payments.</p>
 
-            <div className={s.row2}>
-              <div className={s.field}>
-                <label>Bank Name</label>
-                <input className={s.input} value={bankName} onChange={e => setBankName(e.target.value)} placeholder='e.g. Access Bank' />
-              </div>
-              <div className={s.field}>
-                <label>Bank Code <span className={s.hint}>(optional)</span></label>
-                <input className={s.input} value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder='e.g. 044' />
-              </div>
+            <div className={s.field}>
+              <label>Bank</label>
+              <BankSelect
+                bankCode={bankCode}
+                bankName={bankName}
+                onChange={(code, name) => { setBankCode(code); setBankName(name) }}
+              />
             </div>
             <div className={s.row2}>
               <div className={s.field}>
@@ -168,8 +201,46 @@ export default function PharmacyProfilePage () {
             </div>
 
             <button className={s.saveBtn} onClick={saveBankAccount} disabled={bankSaving || !bankName || !acctNumber || !acctName}>
-              {bankSaving ? <Loader inline size='sm' label='Saving…' /> : 'Save Payout Account'}
+              {bankSaving ? 'Saving…' : 'Save Payout Account'}
             </button>
+          </div>
+
+          {/* ── Earnings & Payout ── */}
+          <div className={s.form} style={{ marginTop: '1.5rem' }}>
+            <h2 className={s.sectionTitle}>Earnings & Payout</h2>
+            <div className={s.row2}>
+              <div className={s.earningCard}>
+                <p className={s.earningLabel}>Available (pending)</p>
+                <p className={s.earningValue}>₦{pendingNet.toLocaleString()}</p>
+              </div>
+              <div className={s.earningCard}>
+                <p className={s.earningLabel}>Requested</p>
+                <p className={s.earningValue} style={{ color: '#60A5FA' }}>₦{requestedNet.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {pendingNet > 0 && (
+              <button className={s.saveBtn} onClick={requestPayout} disabled={payoutReq || !acctNumber}>
+                {payoutReq ? 'Requesting…' : `Request Payout — ₦${pendingNet.toLocaleString()}`}
+              </button>
+            )}
+            {!acctNumber && pendingNet > 0 && (
+              <p className={s.subtext} style={{ marginTop: '0.5rem' }}>Set up your payout account above before requesting.</p>
+            )}
+
+            {earnings.length > 0 ? (
+              <div className={s.earningTable}>
+                {earnings.map(e => (
+                  <div key={e._id} className={s.earningRow}>
+                    <span className={s.earningDate}>{new Date(e.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span className={s.earningNet}>₦{e.netAmount.toLocaleString()}</span>
+                    <span className={`${s.earningStatus} ${s[`es_${e.payoutStatus}`]}`}>{e.payoutStatus}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={s.subtext}>No earnings yet. Earnings are recorded when patient payments are confirmed.</p>
+            )}
           </div>
         </>
       )}

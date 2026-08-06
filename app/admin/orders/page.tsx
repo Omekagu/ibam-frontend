@@ -85,8 +85,8 @@ export default function AdminOrdersPage () {
       </div>
 
       <div className={s.panel}>
-        {loading ? <p className={s.empty}><Loader label='Loading…' /></p> : orders.length === 0 ? (
-          <p className={s.empty}>No orders found.</p>
+        {loading ? <div className={s.empty}><Loader label='Loading…' /></div> : orders.length === 0 ? (
+          <div className={s.empty}>No orders found.</div>
         ) : (
           <div className={s.list}>
             {orders.map(o => (

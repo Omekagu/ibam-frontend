@@ -256,7 +256,8 @@ function LoginInner () {
             className={s.googleBtn}
             onClick={() => {
               const api =
-                process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+                process.env.NEXT_PUBLIC_API_URL ??
+                'http://10.59.157.88:5000/api'
               const cb = window.location.origin + '/auth/google/callback'
               window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                 cb

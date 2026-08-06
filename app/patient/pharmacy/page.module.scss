@@ -316,6 +316,14 @@
 // ─── Drug catalog / shop ──────────────────────────────
 .loading { font-size: 0.75rem; color: var(--text-faint); font-weight: 400; margin-left: 8px; }
 
+.drugSearch {
+  width: 100%; background: var(--input-bg); border: 1px solid $navy-border;
+  border-radius: $radius-md; padding: 0.5rem 0.875rem; font-size: 0.875rem;
+  color: var(--text); font-family: inherit; outline: none; margin-bottom: 0.75rem;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+}
+
 .drugGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.625rem; }
 
 .drugCard {

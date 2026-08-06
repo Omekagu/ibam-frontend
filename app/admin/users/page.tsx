@@ -44,13 +44,28 @@ const KYC_COLORS: Record<string, string> = {
   rejected:      'red',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyProfile = Record<string, any>
+
+function BankRow ({ label, value }: { label: string; value?: string }) {
+  if (!value) return null
+  return (
+    <div className={s.detailItem}>
+      <span className={s.detailLabel}>{label}</span>
+      <span className={s.detailValue}>{value}</span>
+    </div>
+  )
+}
+
 export default function AdminUsersPage () {
-  const [users, setUsers] = useState<User[]>([])
-  const [total, setTotal] = useState(0)
-  const [search, setSearch] = useState('')
+  const [users,      setUsers]    = useState<User[]>([])
+  const [total,      setTotal]    = useState(0)
+  const [search,     setSearch]   = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [loading,    setLoading]  = useState(true)
+  const [expanded,   setExpanded] = useState<string | null>(null)
+  const [profiles,   setProfiles] = useState<Record<string, AnyProfile | null>>({})
+  const [profLoad,   setProfLoad] = useState<string | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -76,7 +91,22 @@ export default function AdminUsersPage () {
     } catch { }
   }
 
-  const kycLabel = (s: string) => s?.replace('_', ' ') ?? 'pending'
+  async function toggleExpand (id: string) {
+    if (expanded === id) { setExpanded(null); return }
+    setExpanded(id)
+    if (!(id in profiles)) {
+      setProfLoad(id)
+      try {
+        const r = await api.get(`/admin/users/${id}/profile`)
+        setProfiles(prev => ({ ...prev, [id]: r.data.data?.profile ?? null }))
+      } catch {
+        setProfiles(prev => ({ ...prev, [id]: null }))
+      }
+      setProfLoad(null)
+    }
+  }
+
+  const kycLabel = (v: string) => v?.replace(/_/g, ' ') ?? 'pending'
 
   return (
     <>
@@ -130,7 +160,7 @@ export default function AdminUsersPage () {
                 <Fragment key={u._id}>
                   <tr
                     className={expanded === u._id ? s.expandedRow : ''}
-                    onClick={() => setExpanded(expanded === u._id ? null : u._id)}
+                    onClick={() => toggleExpand(u._id)}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>
@@ -176,9 +206,11 @@ export default function AdminUsersPage () {
                       </button>
                     </td>
                   </tr>
+
                   {expanded === u._id && (
                     <tr className={s.detailRow}>
                       <td colSpan={8}>
+                        {/* Base user details */}
                         <div className={s.detailGrid}>
                           <div className={s.detailItem}>
                             <span className={s.detailLabel}>User ID</span>
@@ -221,6 +253,77 @@ export default function AdminUsersPage () {
                             <span className={s.detailValue}>{new Date(u.createdAt).toLocaleString('en-NG')}</span>
                           </div>
                         </div>
+
+                        {/* Partner profile */}
+                        {profLoad === u._id ? (
+                          <div className={s.profileLoading}><Loader label='Loading profile…' /></div>
+                        ) : (id => {
+                          const prof = profiles[id]
+                          if (prof === undefined) return null
+
+                          if (u.role === 'doctor' && prof) return (
+                            <div className={s.profileSection}>
+                              <p className={s.sectionDivider}>Doctor Profile</p>
+                              <div className={s.detailGrid}>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Specialization</span><span className={s.detailValue}>{prof.specialization ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>License No.</span><span className={s.detailValue}>{prof.licenseNumber ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Experience</span><span className={s.detailValue}>{prof.yearsOfExperience != null ? `${prof.yearsOfExperience} yrs` : '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Consultation Fee</span><span className={s.detailValue}>{prof.consultationFee != null ? `₦${prof.consultationFee.toLocaleString()}` : '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Approved</span><span className={s.detailValue}>{prof.isApproved ? 'Yes' : 'No'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Available</span><span className={s.detailValue}>{prof.isAvailable ? 'Yes' : 'No'}</span></div>
+                                {prof.ratings?.average != null && (
+                                  <div className={s.detailItem}><span className={s.detailLabel}>Rating</span><span className={s.detailValue}>{prof.ratings.average.toFixed(1)} ({prof.ratings.count})</span></div>
+                                )}
+                              </div>
+                              {prof.bankAccount?.accountNumber ? (
+                                <>
+                                  <p className={s.sectionDivider}>Bank Account (Payout)</p>
+                                  <div className={s.detailGrid}>
+                                    <BankRow label='Bank' value={prof.bankAccount.bankName} />
+                                    <BankRow label='Account No.' value={prof.bankAccount.accountNumber} />
+                                    <BankRow label='Account Name' value={prof.bankAccount.accountName} />
+                                  </div>
+                                </>
+                              ) : (
+                                <p className={s.noBankNote}>No bank account set for this doctor.</p>
+                              )}
+                            </div>
+                          )
+
+                          if ((u.role === 'pharmacy_partner' || u.role === 'lab_partner') && prof) return (
+                            <div className={s.profileSection}>
+                              <p className={s.sectionDivider}>{u.role === 'pharmacy_partner' ? 'Pharmacy' : 'Lab'} Profile</p>
+                              <div className={s.detailGrid}>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Business Name</span><span className={s.detailValue}>{prof.name ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Address</span><span className={s.detailValue}>{prof.address ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Phone</span><span className={s.detailValue}>{prof.phone ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>License No.</span><span className={s.detailValue}>{prof.licenseNumber ?? '—'}</span></div>
+                                <div className={s.detailItem}><span className={s.detailLabel}>Status</span><span className={s.detailValue}>{prof.status ?? '—'}</span></div>
+                                {prof.coverageAreas?.length > 0 && (
+                                  <div className={s.detailItem}><span className={s.detailLabel}>Coverage Areas</span><span className={s.detailValue}>{prof.coverageAreas.join(', ')}</span></div>
+                                )}
+                              </div>
+                              {prof.bankAccount?.accountNumber ? (
+                                <>
+                                  <p className={s.sectionDivider}>Bank Account (Payout)</p>
+                                  <div className={s.detailGrid}>
+                                    <BankRow label='Bank' value={prof.bankAccount.bankName} />
+                                    <BankRow label='Account No.' value={prof.bankAccount.accountNumber} />
+                                    <BankRow label='Account Name' value={prof.bankAccount.accountName} />
+                                  </div>
+                                </>
+                              ) : (
+                                <p className={s.noBankNote}>No bank account set — partner must add payout details.</p>
+                              )}
+                            </div>
+                          )
+
+                          if (prof === null && ['doctor', 'pharmacy_partner', 'lab_partner'].includes(u.role)) return (
+                            <p className={s.noBankNote}>No partner profile found for this user.</p>
+                          )
+
+                          return null
+                        })(u._id)}
                       </td>
                     </tr>
                   )}

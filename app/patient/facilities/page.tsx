@@ -153,7 +153,7 @@ export default function FacilitiesPage () {
 
       {/* Results */}
       {loading ? (
-        <p className={s.empty}><Loader label='Searching nearby facilities…' /></p>
+        <div className={s.empty}><Loader label='Searching nearby facilities…' /></div>
       ) : located && facilities.length === 0 ? (
         <p className={s.empty}>No facilities found in this area. Try increasing the radius.</p>
       ) : (

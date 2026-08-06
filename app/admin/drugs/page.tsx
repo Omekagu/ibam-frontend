@@ -77,7 +77,7 @@ export default function DrugsPage () {
         </div>
       </div>
 
-      {loading ? <p className={s.empty}><Loader label='Loading drug catalog…' /></p>
+      {loading ? <div className={s.empty}><Loader label='Loading drug catalog…' /></div>
         : filtered.length === 0 ? <p className={s.empty}>No drugs match your filter.</p>
         : (
           <div className={s.tableWrap}>

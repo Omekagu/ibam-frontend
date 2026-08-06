@@ -48,7 +48,8 @@ function getIcon (name: string, size: number) {
 
 async function fetchServices (): Promise<PlatformService[]> {
   try {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.19:5000/api'
+    const base =
+      process.env.NEXT_PUBLIC_API_URL ?? 'http://10.59.157.88:5000/api'
     const res = await fetch(`${base}/admin/public/content`, {
       next: { revalidate: 300 }
     })

@@ -8,6 +8,8 @@ import s from './page.module.scss'
 // ─── Payment settings ─────────────────────────────────────────────────────────
 interface PaymentSettings {
   paystackEnabled: boolean
+  paystackKeySet: boolean
+  paystackPublicKey: string
   directPaymentEnabled: boolean
   companyBankName: string
   companyAccountNumber: string
@@ -18,6 +20,8 @@ interface PaymentSettings {
 
 const DEFAULT_PAYMENT: PaymentSettings = {
   paystackEnabled: true,
+  paystackKeySet: false,
+  paystackPublicKey: '',
   directPaymentEnabled: false,
   companyBankName: '',
   companyAccountNumber: '',
@@ -28,9 +32,15 @@ const DEFAULT_PAYMENT: PaymentSettings = {
 
 function PaymentTab() {
   const modal = useStatusModal()
-  const [settings, setSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
+  const [settings,      setSettings]    = useState<PaymentSettings>(DEFAULT_PAYMENT)
+  const [loading,       setLoading]     = useState(true)
+  const [saving,        setSaving]      = useState(false)
+  const [otpMode,       setOtpMode]     = useState(false)
+  const [otpSent,       setOtpSent]     = useState(false)
+  const [otpSending,    setOtpSending]  = useState(false)
+  const [otp,           setOtp]         = useState('')
+  const [newSecretKey,  setNewSecretKey] = useState('')
+  const [newPublicKey,  setNewPublicKey] = useState('')
 
   useEffect(() => {
     api.get('/admin/settings')
@@ -39,12 +49,43 @@ function PaymentTab() {
       .finally(() => setLoading(false))
   }, [])
 
+  async function sendOtp() {
+    setOtpSending(true)
+    try {
+      await api.post('/admin/settings/request-otp')
+      setOtpSent(true)
+    } catch {
+      modal.show({ variant: 'declined', title: 'OTP Failed', message: 'Could not send OTP. Try again.' })
+    }
+    setOtpSending(false)
+  }
+
   async function save() {
     setSaving(true)
     try {
-      await api.put('/admin/settings', settings)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body: Record<string, any> = {
+        paystackEnabled:        settings.paystackEnabled,
+        directPaymentEnabled:   settings.directPaymentEnabled,
+        companyBankName:        settings.companyBankName,
+        companyAccountNumber:   settings.companyAccountNumber,
+        companyAccountName:     settings.companyAccountName,
+        companyBankCode:        settings.companyBankCode,
+        directPaymentNote:      settings.directPaymentNote,
+      }
+      if (otpMode && newSecretKey.trim()) {
+        body.paystackSecretKey = newSecretKey.trim()
+        body.paystackPublicKey = newPublicKey.trim()
+        if (settings.paystackKeySet) body.otp = otp
+      }
+      const r = await api.put('/admin/settings', body)
+      setSettings(prev => ({ ...prev, ...r.data.data?.settings }))
+      setOtpMode(false); setOtpSent(false); setOtp(''); setNewSecretKey(''); setNewPublicKey('')
       modal.show({ variant: 'success', title: 'Settings Saved', message: 'Payment settings have been updated.' })
-    } catch { modal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save settings.' }) }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      modal.show({ variant: 'declined', title: 'Save Failed', message: msg ?? 'Failed to save settings.' })
+    }
     setSaving(false)
   }
 
@@ -59,8 +100,8 @@ function PaymentTab() {
 
       <h2 className={s.sectionTitle}>Paystack</h2>
       <p className={s.subtext}>
-        Paystack keys are configured via server environment variables (<code>PAYSTACK_SECRET_KEY</code>).
-        Use this toggle to enable or disable Paystack as a payment option for patients.
+        Configure Paystack integration. API keys are stored securely in the database.
+        Changes to API keys require email OTP verification.
       </p>
 
       <div className={s.toggleRow}>
@@ -75,6 +116,93 @@ function PaymentTab() {
         >
           <span className={s.toggleThumb} />
         </button>
+      </div>
+
+      {/* API Keys */}
+      <div className={s.keySection}>
+        <div className={s.keySectionHead}>
+          <div>
+            <p className={s.sectionTitle}>API Keys</p>
+            <p className={s.subtext} style={{ marginTop: 4 }}>
+              {settings.paystackKeySet ? 'Keys are saved and active.' : 'No keys saved yet — add them below.'}
+            </p>
+          </div>
+          {settings.paystackKeySet && !otpMode && (
+            <button className={s.editKeyBtn} onClick={() => setOtpMode(true)}>Change Keys</button>
+          )}
+        </div>
+
+        {settings.paystackKeySet && !otpMode ? (
+          <div className={s.lockedKeyRow}>
+            <div className={s.lockedKeyItem}>
+              <span className={s.lockedKeyLabel}>Secret Key</span>
+              <span className={s.lockedKeyValue}>sk_••••••••••••••••••••••••••••••</span>
+            </div>
+            <div className={s.lockedKeyItem}>
+              <span className={s.lockedKeyLabel}>Public Key</span>
+              <span className={s.lockedKeyValue}>{settings.paystackPublicKey || 'pk_••••••••••••••••••••••••••••••'}</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            {settings.paystackKeySet && !otpSent && (
+              <div className={s.otpPrompt}>
+                <p className={s.otpPromptText}>An OTP will be sent to your admin email to authorize this change.</p>
+                <div className={s.otpBtnRow}>
+                  <button className={s.otpSendBtn} onClick={sendOtp} disabled={otpSending}>
+                    {otpSending ? 'Sending…' : 'Send OTP to my email'}
+                  </button>
+                  <button className={s.cancelKeyBtn} onClick={() => { setOtpMode(false); setOtpSent(false); setOtp('') }}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {(!settings.paystackKeySet || otpSent) && (
+              <>
+                {settings.paystackKeySet && (
+                  <div className={s.field}>
+                    <label>OTP <span className={s.hint}>(check your email)</span></label>
+                    <input
+                      className={s.input}
+                      value={otp}
+                      onChange={e => setOtp(e.target.value)}
+                      placeholder='6-digit OTP'
+                      maxLength={6}
+                      style={{ maxWidth: 200 }}
+                    />
+                  </div>
+                )}
+                <div className={s.row2}>
+                  <div className={s.field}>
+                    <label>Secret Key</label>
+                    <input
+                      className={s.input}
+                      value={newSecretKey}
+                      onChange={e => setNewSecretKey(e.target.value)}
+                      placeholder='sk_live_…'
+                      type='password'
+                      autoComplete='new-password'
+                    />
+                  </div>
+                  <div className={s.field}>
+                    <label>Public Key</label>
+                    <input
+                      className={s.input}
+                      value={newPublicKey}
+                      onChange={e => setNewPublicKey(e.target.value)}
+                      placeholder='pk_live_…'
+                    />
+                  </div>
+                </div>
+                {settings.paystackKeySet && (
+                  <button className={s.cancelKeyBtn} onClick={() => { setOtpMode(false); setOtpSent(false); setOtp('') }} style={{ alignSelf: 'flex-start' }}>
+                    Cancel
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
       </div>
 
       <div className={s.divider} />
