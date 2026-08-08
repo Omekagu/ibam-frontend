@@ -109,8 +109,8 @@ export default function Hero () {
 
             <p className={s.sub}>
               Order lab tests with results in as little as 1 hour, Consult
-              verified doctors , and get medications delivered — all from your
-              phone, anywhere in Nigeria.
+              verified doctors , and get medications delivered all from your
+              phone.
             </p>
 
             <div className={s.ctaRow}>
