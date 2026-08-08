@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import s from './Hero.module.scss'
-import { StethoscopeIcon, VideoCameraIcon } from '@/components/icons'
+import { VideoCameraIcon } from '@/components/icons'
 
 /* ── Flip carousel scenes ──────────────────────────────
    Drop images in /public/images/ to replace the gradient cards.
@@ -53,7 +53,6 @@ const SCENES = [
   }
 ]
 
-const SLOTS = ['09:00', '10:30', '14:00', '16:30']
 const STATS = [
   { value: '500+', label: 'Verified Physicians' },
   { value: '24/7', label: 'Always Available' },
@@ -144,7 +143,6 @@ export default function Hero () {
 
                   <div className={s.sceneContent}>
                     <span className={s.sceneTag}>{cur.tag}</span>
-                    <div className={s.sceneIcon}>{cur.icon}</div>
                     <h3
                       className={s.sceneTitle}
                       style={{ whiteSpace: 'pre-line' }}
@@ -352,24 +350,24 @@ function ArrowRight () {
     </svg>
   )
 }
-function PlayIcon () {
-  return (
-    <svg width='16' height='16' fill='currentColor' viewBox='0 0 20 20'>
-      <path d='M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z' />
-    </svg>
-  )
-}
-function CheckIcon ({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox='0 0 20 20' fill='currentColor'>
-      <path
-        fillRule='evenodd'
-        d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z'
-        clipRule='evenodd'
-      />
-    </svg>
-  )
-}
+// function PlayIcon () {
+//   return (
+//     <svg width='16' height='16' fill='currentColor' viewBox='0 0 20 20'>
+//       <path d='M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z' />
+//     </svg>
+//   )
+// }
+// function CheckIcon ({ className }: { className?: string }) {
+//   return (
+//     <svg className={className} viewBox='0 0 20 20' fill='currentColor'>
+//       <path
+//         fillRule='evenodd'
+//         d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z'
+//         clipRule='evenodd'
+//       />
+//     </svg>
+//   )
+// }
 function CheckCircle ({ color }: { color: string }) {
   return (
     <svg width='16' height='16' viewBox='0 0 20 20' fill={color}>
@@ -381,51 +379,51 @@ function CheckCircle ({ color }: { color: string }) {
     </svg>
   )
 }
-function DocIcon ({ color }: { color: string }) {
-  return (
-    <svg width='16' height='16' fill='none' stroke={color} viewBox='0 0 24 24'>
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        strokeWidth={2}
-        d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-      />
-    </svg>
-  )
-}
-function FlaskIcon () {
-  return (
-    <svg
-      width='16'
-      height='16'
-      fill='none'
-      stroke='#10B981'
-      viewBox='0 0 24 24'
-    >
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        strokeWidth={2}
-        d='M9 3v8.5L4.5 18A2 2 0 006.32 21h11.36a2 2 0 001.82-3L15 11.5V3M9 3h6M9 3H7m8 0h2'
-      />
-    </svg>
-  )
-}
-function PackageIcon () {
-  return (
-    <svg
-      width='16'
-      height='16'
-      fill='none'
-      stroke='#F59E0B'
-      viewBox='0 0 24 24'
-    >
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        strokeWidth={2}
-        d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-      />
-    </svg>
-  )
-}
+// function DocIcon ({ color }: { color: string }) {
+//   return (
+//     <svg width='16' height='16' fill='none' stroke={color} viewBox='0 0 24 24'>
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         strokeWidth={2}
+//         d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+//       />
+//     </svg>
+//   )
+// }
+// function FlaskIcon () {
+//   return (
+//     <svg
+//       width='16'
+//       height='16'
+//       fill='none'
+//       stroke='#10B981'
+//       viewBox='0 0 24 24'
+//     >
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         strokeWidth={2}
+//         d='M9 3v8.5L4.5 18A2 2 0 006.32 21h11.36a2 2 0 001.82-3L15 11.5V3M9 3h6M9 3H7m8 0h2'
+//       />
+//     </svg>
+//   )
+// }
+// function PackageIcon () {
+//   return (
+//     <svg
+//       width='16'
+//       height='16'
+//       fill='none'
+//       stroke='#F59E0B'
+//       viewBox='0 0 24 24'
+//     >
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         strokeWidth={2}
+//         d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+//       />
+//     </svg>
+//   )
+// }
