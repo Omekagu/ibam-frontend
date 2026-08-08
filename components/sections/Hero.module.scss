@@ -245,9 +245,9 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0,0,0,0.55) 0%,
-    rgba($navy-dark, 0.65) 40%,
-    rgba($primary-dark, 0.92) 100%
+    rgba(0,0,0,0.3) 0%,
+    rgba($navy-dark, 0.45) 40%,
+    rgba($primary-dark, 0.88) 100%
   );
   z-index: 0;
 }
@@ -300,11 +300,11 @@
 
 // Booking strip at bottom of card
 .sceneStrip {
-  background: rgba($navy-dark, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding: 1.25rem 1.5rem;
+  background: rgba($navy-dark, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 1rem 1.25rem 1.25rem;
   position: relative;
   z-index: 1;
 }
@@ -316,7 +316,13 @@
   align-items: center;
   gap: 0.75rem;
 
-  .stripAvatar { font-size: 1.75rem; flex-shrink: 0; }
+  .stripAvatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
   .stripName   { font-size: 0.8125rem; font-weight: 700; color: $white; }
   .stripSpec   { font-size: 0.7rem; color: $text-light-muted; margin-top: 1px; }
 

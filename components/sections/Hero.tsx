@@ -13,28 +13,43 @@ const SCENES = [
     bg: 'linear-gradient(145deg,#082208 0%,#0A2810 45%,#22C55E 100%)',
     imageSrc:
       'https://plus.unsplash.com/premium_photo-1676325101955-1089267548d4?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    icon: '',
     tag: 'Diagnostics',
     title: 'Lab results\nready in 1 hour',
-    stat: 'Home or walk-in sample collection'
+    stat: 'Home or walk-in sample collection',
+    strip: {
+      type: 'lab' as const,
+      label: 'Malaria RDT + Blood Panel',
+      sub: 'Ready in ~45 mins',
+      price: '₦4,500'
+    }
   },
   {
     bg: 'linear-gradient(145deg,#0A2810 0%,#22C55E 60%,#15803D 100%)',
     imageSrc:
       'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    icon: '',
     tag: 'Telemedicine',
     title: 'See a doctor\nin minutes',
-    stat: '500+ verified physicians'
+    stat: '500+ verified physicians',
+    strip: {
+      type: 'doctor' as const,
+      label: 'Dr. Amara Nwosu',
+      sub: 'Cardiologist',
+      price: '₦5,000'
+    }
   },
   {
     bg: 'linear-gradient(145deg,#0A2810 0%,#15803D 45%,#F59E0B 100%)',
     imageSrc:
       'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=1240&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    icon: '',
     tag: 'Pharmacy',
     title: 'Medications\ndelivered today',
-    stat: 'Same-day in Enugu & Abuja'
+    stat: 'Same-day in Enugu.',
+    strip: {
+      type: 'pharmacy' as const,
+      label: 'Amoxicillin 500mg · 3×/day',
+      sub: 'Arrives in ~2 hrs',
+      price: '₦3,200'
+    }
   }
 ]
 
@@ -94,8 +109,8 @@ export default function Hero () {
             </h1>
 
             <p className={s.sub}>
-              Consult verified doctors, order lab tests with results in as
-              little as 1 hour, and get medications delivered — all from your
+              Order lab tests with results in as little as 1 hour, Consult
+              verified doctors , and get medications delivered — all from your
               phone, anywhere in Nigeria.
             </p>
 
@@ -110,20 +125,6 @@ export default function Hero () {
                 See How It Works
               </Link>
             </div>
-
-            {/* <div className={s.trust}>
-              {[
-                'FMOH Licensed',
-                'NDPR Protected',
-                'Encrypted Consultations',
-                'ISO 27001'
-              ].map(b => (
-                <div key={b} className={s.trustItem}>
-                  <CheckIcon className={s.trustIcon} />
-                  {b}
-                </div>
-              ))}
-            </div> */}
           </div>
 
           {/* Right: 3D flip carousel */}
@@ -153,33 +154,62 @@ export default function Hero () {
                     <p className={s.sceneStat}>{cur.stat}</p>
                   </div>
 
-                  {/* Embedded booking strip */}
+                  {/* Scene-specific strip */}
                   <div className={s.sceneStrip}>
                     <div className={s.stripRow}>
                       <div className={s.stripDoc}>
-                        <span className={s.stripAvatar}>
-                          <StethoscopeIcon size={18} />
-                        </span>
-                        <div>
-                          <div className={s.stripName}>Dr. Amara Nwosu</div>
-                          <div className={s.stripSpec}>Cardiologist</div>
-                        </div>
-                        <span className={s.stripDot} />
+                        {/* <span
+                          className={s.stripAvatar}
+                          style={
+                            cur.strip.type === 'lab'
+                              ? {
+                                  background: 'rgba(16,185,129,0.15)',
+                                  borderRadius: '8px'
+                                }
+                              : cur.strip.type === 'pharmacy'
+                              ? {
+                                  background: 'rgba(245,158,11,0.15)',
+                                  borderRadius: '8px'
+                                }
+                              : undefined
+                          }
+                        >
+                          {cur.strip.type === 'lab' && <FlaskIcon />}
+                          {cur.strip.type === 'doctor' && (
+                            <StethoscopeIcon size={16} />
+                          )}
+                          {cur.strip.type === 'pharmacy' && <PackageIcon />}
+                        </span> */}
+                        {/* <div>
+                          <div className={s.stripName}>{cur.strip.label}</div>
+                          <div className={s.stripSpec}>{cur.strip.sub}</div>
+                        </div> */}
+                        {/* <span className={s.stripDot} /> */}
                       </div>
                     </div>
-                    <div className={s.slotGrid}>
-                      {SLOTS.map((t, i) => (
-                        <button
-                          key={t}
-                          className={`${s.slot} ${i === 1 ? s.slotActive : ''}`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    <button className={s.bookBtn}>
-                      Confirm Booking — ₦5,000
-                    </button>
+
+                    {/* {cur.strip.type === 'doctor' && (
+                      <div className={s.slotGrid}>
+                        {SLOTS.map((t, i) => (
+                          <button
+                            key={t}
+                            className={`${s.slot} ${
+                              i === 1 ? s.slotActive : ''
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    )} */}
+
+                    {/* <button className={s.bookBtn}>
+                      {cur.strip.type === 'lab'
+                        ? `Order Test — ${cur.strip.price}`
+                        : cur.strip.type === 'doctor'
+                        ? `Confirm Booking — ${cur.strip.price}`
+                        : `Order Now — ${cur.strip.price}`}
+                    </button> */}
                   </div>
                 </div>
               </div>
@@ -220,7 +250,7 @@ export default function Hero () {
               </div>
             </div>
 
-            <div
+            {/* <div
               className={`${s.badgeFloat} ${s.badgeBottom}`}
               suppressHydrationWarning
             >
@@ -234,7 +264,7 @@ export default function Hero () {
                 <p className={s.badgeLabel}>E-Prescription Sent</p>
                 <p className={s.badgeSub}>Amoxicillin 500mg · 5 days</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -359,6 +389,42 @@ function DocIcon ({ color }: { color: string }) {
         strokeLinejoin='round'
         strokeWidth={2}
         d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+      />
+    </svg>
+  )
+}
+function FlaskIcon () {
+  return (
+    <svg
+      width='16'
+      height='16'
+      fill='none'
+      stroke='#10B981'
+      viewBox='0 0 24 24'
+    >
+      <path
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth={2}
+        d='M9 3v8.5L4.5 18A2 2 0 006.32 21h11.36a2 2 0 001.82-3L15 11.5V3M9 3h6M9 3H7m8 0h2'
+      />
+    </svg>
+  )
+}
+function PackageIcon () {
+  return (
+    <svg
+      width='16'
+      height='16'
+      fill='none'
+      stroke='#F59E0B'
+      viewBox='0 0 24 24'
+    >
+      <path
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth={2}
+        d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
       />
     </svg>
   )
