@@ -6,6 +6,8 @@ import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
 
+const SOCKET_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api').replace(/\/api$/, '')
+
 const AgoraClient = dynamic(() => import('./AgoraClient'), { ssr: false })
 
 // ─── Types ────────────────────────────────────────────
@@ -75,9 +77,15 @@ function ConsultationInner () {
   const [rxDiagnosis, setRxDiagnosis] = useState('')
   const [rxList, setRxList] = useState<{ _id: string; medications: RxDrug[]; diagnosis?: string; createdAt: string }[]>([])
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const chatInputRef   = useRef<HTMLInputElement>(null)
-  const lastMsgCount   = useRef(0)
+  const [otherTyping, setOtherTyping] = useState(false)
+
+  const messagesEndRef  = useRef<HTMLDivElement>(null)
+  const chatInputRef    = useRef<HTMLInputElement>(null)
+  const lastMsgCount    = useRef(0)
+  const socketRef       = useRef<any>(null)
+  const typingTimer     = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const chatOpenRef     = useRef(chatOpen)
+  useEffect(() => { chatOpenRef.current = chatOpen }, [chatOpen])
 
   const isDoctor = me?.role === 'doctor'
   const myName   = me?.name ?? 'You'
@@ -120,9 +128,58 @@ function ConsultationInner () {
 
   useEffect(() => {
     fetchMessages()
-    const poll = setInterval(fetchMessages, 6000)
+    const poll = setInterval(fetchMessages, 30000)
     return () => clearInterval(poll)
   }, [fetchMessages])
+
+  // ── Socket.io real-time chat ──
+  useEffect(() => {
+    if (!cid || !me?._id) return
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) return
+
+    let socket: any
+    import('socket.io-client').then(({ io }) => {
+      socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket', 'polling'] })
+      socketRef.current = socket
+
+      socket.on('connect', () => {
+        socket.emit('join_consultation', cid)
+      })
+
+      socket.on('new_message', (data: { consultationId: string; message: any }) => {
+        if (data.consultationId !== cid) return
+        const normalized = normalizeMsg(data.message, me._id, myName)
+        setMessages(prev => {
+          // replace the most recent optimistic tmp message with same text from me
+          if (normalized.from === 'me') {
+            const tmpIdx = [...prev].reverse().findIndex(m => m.id?.startsWith('tmp-') && m.text === normalized.text)
+            if (tmpIdx >= 0) {
+              const realIdx = prev.length - 1 - tmpIdx
+              return prev.map((m, i) => i === realIdx ? normalized : m)
+            }
+          }
+          if (prev.some(m => m._id === normalized._id)) return prev
+          return [...prev, normalized]
+        })
+        if (normalized.from === 'them' && !chatOpenRef.current) {
+          setUnread(n => n + 1)
+        }
+      })
+
+      socket.on('user_typing', ({ isTyping }: { userId: string; isTyping: boolean }) => {
+        setOtherTyping(isTyping)
+      })
+    })
+
+    return () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+      socketRef.current?.emit('leave_consultation', cid)
+      socketRef.current?.disconnect()
+      socketRef.current = null
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cid, me?._id])
 
   useEffect(() => {
     if (chatOpen) {
@@ -178,12 +235,25 @@ function ConsultationInner () {
     return `${m}:${ss}`
   }
 
+  function handleInputChange (e: React.ChangeEvent<HTMLInputElement>) {
+    setInput(e.target.value)
+    if (socketRef.current && cid) {
+      socketRef.current.emit('typing', { consultationId: cid, isTyping: true })
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+      typingTimer.current = setTimeout(() => {
+        socketRef.current?.emit('typing', { consultationId: cid, isTyping: false })
+      }, 2000)
+    }
+  }
+
   async function sendMessage (e: FormEvent) {
     e.preventDefault()
     const text = input.trim()
     if (!text || !cid) return
     setInput('')
     setSending(true)
+    if (typingTimer.current) clearTimeout(typingTimer.current)
+    socketRef.current?.emit('typing', { consultationId: cid, isTyping: false })
     const time = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
     setMessages(prev => [...prev, { id: `tmp-${Date.now()}`, text, from: 'me', time }])
     try { await api.post(`/consultations/${cid}/messages`, { content: text }) } catch { }
@@ -290,10 +360,11 @@ function ConsultationInner () {
                 <span className={s.msgTime}>{m.time}</span>
               </div>
             ))}
+            {otherTyping && <div className={s.typingIndicator}><span /><span /><span /></div>}
             <div ref={messagesEndRef} />
           </div>
           <form className={s.chatInputRow} onSubmit={sendMessage}>
-            <input ref={chatInputRef} value={input} onChange={e => setInput(e.target.value)}
+            <input ref={chatInputRef} value={input} onChange={handleInputChange}
               placeholder='Type a message…' disabled={sending} autoComplete='off' />
             <button type='submit' className={s.sendBtn} disabled={!input.trim() || sending}>
               <IcSend />
@@ -401,6 +472,7 @@ function ConsultationInner () {
                 <span className={s.msgTime}>{m.time}</span>
               </div>
             ))}
+            {otherTyping && <div className={s.typingIndicator}><span /><span /><span /></div>}
             <div ref={messagesEndRef} />
           </div>
 
@@ -408,7 +480,7 @@ function ConsultationInner () {
             <input
               ref={chatInputRef}
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={handleInputChange}
               placeholder='Type a message…'
               disabled={sending}
               autoComplete='off'

@@ -108,9 +108,9 @@ export default function Hero () {
             </h1>
 
             <p className={s.sub}>
-              Order lab tests with results in as little as 1 hour, Consult
-              verified doctors , and get medications delivered all from your
-              phone.
+              Order laboratory tests, get your medications delivered, and
+              consult certified doctors - all from the comfort of your home in
+              Enugu.
             </p>
 
             <div className={s.ctaRow}>

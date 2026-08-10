@@ -216,8 +216,8 @@ export default function TermsPage () {
           taxes.
         </li>
         <li>
-          iBam Health retains a platform fee of up to 20% from each doctor
-          consultation fee.
+          iBam Health retains a platform fee of 25% per doctor consultation and
+          15% for pharmacy delivery.
         </li>
       </ul>
 
