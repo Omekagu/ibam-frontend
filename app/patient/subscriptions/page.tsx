@@ -181,7 +181,7 @@ export default function SubscriptionsPage () {
       await api.post(`/wellness-packages/${selectedPkg._id}/book`, payload)
       setShowBookModal(false)
       if (pkgCollection === 'walk_in') {
-        modal.show({ variant: 'success', title: 'Package Booked!', message: `Your "${selectedPkg.name}" package is confirmed. Visit the assigned lab and pay ₦${selectedPkg.walkInPrice.toLocaleString()} at the counter.` })
+        modal.show({ variant: 'success', title: 'Package Booked!', message: `Your "${selectedPkg.name}" package is confirmed. Visit the assigned lab for sample collection.` })
       } else {
         modal.show({ variant: 'pending', title: 'Package Booked!', message: `Your "${selectedPkg.name}" package is confirmed. Our team will contact you to schedule your home visit.` })
       }
@@ -335,7 +335,7 @@ export default function SubscriptionsPage () {
                       <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
                       <p>
                         {c === 'walk_in'
-                          ? `₦${selectedPkg.walkInPrice.toLocaleString('en-NG')} — pay at counter`
+                          ? `₦${selectedPkg.walkInPrice.toLocaleString('en-NG')} — visit lab for collection`
                           : `₦${selectedPkg.homeVisitPrice.toLocaleString('en-NG')} — agent comes to you`}
                       </p>
                     </label>
@@ -354,8 +354,8 @@ export default function SubscriptionsPage () {
 
                 <div className={s.priceHighlight}>
                   Total: <strong>₦{pkgPrice.toLocaleString('en-NG')}</strong>
-                  {pkgCollection === 'walk_in' && <span> — pay at the lab counter</span>}
-                  {pkgCollection === 'home_visit' && bankSettings && <span> — bank transfer required</span>}
+                  {pkgCollection === 'walk_in' && <span> — visit lab for sample collection</span>}
+                  {pkgCollection === 'home_visit' && bankSettings && <span> — transfer to company account</span>}
                 </div>
 
                 <button className={s.bookConfirmBtn} disabled={bookingSubmitting || (pkgCollection === 'home_visit' && !pkgAddress)} onClick={handleBookPackage}>
@@ -364,7 +364,7 @@ export default function SubscriptionsPage () {
               </>
             ) : (
               <>
-                <p className={s.bookPanelSub}>Transfer <strong>₦{pkgPrice.toLocaleString()}</strong> for your <strong>{selectedPkg.name}</strong> package, then enter your reference.</p>
+                <p className={s.bookPanelSub}>Transfer <strong>₦{pkgPrice.toLocaleString()}</strong> to the company bank account below for your <strong>{selectedPkg.name}</strong> package. Do not transfer to any personal account. Enter your reference to confirm.</p>
                 {bankSettings && (
                   <div className={s.bankCard}>
                     <BankRow label='Bank' value={bankSettings.companyBankName} />

@@ -177,7 +177,7 @@ export default function PatientLabs () {
       setRequests(prev => [r.data.data?.request, ...prev])
       resetForm()
       if (collection === 'walk_in') {
-        modal.show({ variant: 'success', title: 'Request Submitted!', message: 'Visit the assigned lab and pay at the counter. The lab partner will confirm your payment and process your tests.', actionLabel: 'View My Requests', onAction: () => setTab('results') })
+        modal.show({ variant: 'success', title: 'Request Submitted!', message: 'Your request has been submitted. Visit the assigned lab for sample collection — no payment at the counter.', actionLabel: 'View My Requests', onAction: () => setTab('results') })
       } else {
         modal.show({ variant: 'pending', title: 'Request Submitted!', message: 'Our team will assign a lab and send you payment details. Once confirmed, a home visit will be scheduled.', actionLabel: 'View My Requests', onAction: () => setTab('results') })
       }
@@ -239,7 +239,7 @@ export default function PatientLabs () {
       setRequests(prev => [r.data.data?.request, ...prev])
       setShowBookModal(false)
       if (pkgCollection === 'walk_in') {
-        modal.show({ variant: 'success', title: 'Package Booked!', message: `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab and pay ₦${selectedPackage.walkInPrice.toLocaleString()} at the counter.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
+        modal.show({ variant: 'success', title: 'Package Booked!', message: `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab for sample collection.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
       } else {
         modal.show({ variant: 'pending', title: 'Package Booked!', message: `Your "${selectedPackage.name}" package is confirmed. Our team will contact you to schedule your home visit.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
       }
@@ -308,16 +308,10 @@ export default function PatientLabs () {
             </div>
           </div>
 
-          {collection === 'walk_in' && selectedTests.length > 0 && (
-            <div className={s.paymentNote}>
-              <span className={s.paymentNoteIcon}>💵</span>
-              <p>You will pay at the lab counter on the day of your visit. The lab partner confirms your payment.</p>
-            </div>
-          )}
           {collection === 'home_visit' && estimatedTotal > 0 && bankSettings && (
             <div className={s.paymentNote} data-variant='transfer'>
               <span className={s.paymentNoteIcon}>🏦</span>
-              <p>Estimated total: <strong>₦{estimatedTotal.toLocaleString()}</strong>. You will transfer to the platform bank account and enter your reference to confirm your request.</p>
+              <p>Estimated total: <strong>₦{estimatedTotal.toLocaleString()}</strong>. Transfer to the company bank account (not a personal account) and enter your reference to confirm your request.</p>
             </div>
           )}
 
@@ -444,7 +438,7 @@ export default function PatientLabs () {
               <h2 className={s.payPanelTitle}>Pay for Home Visit</h2>
               <button className={s.payPanelClose} onClick={() => setShowPayModal(false)}>✕</button>
             </div>
-            <p className={s.payPanelSub}>Transfer <strong>₦{estimatedTotal.toLocaleString()}</strong> to the platform bank account, then enter your reference number below.</p>
+            <p className={s.payPanelSub}>Transfer <strong>₦{estimatedTotal.toLocaleString()}</strong> to the company bank account below, then enter your reference number. Do not transfer to any personal account.</p>
             {bankSettings && (
               <div className={s.bankCard}>
                 <BankRow label='Bank' value={bankSettings.companyBankName} />
@@ -482,7 +476,7 @@ export default function PatientLabs () {
                       <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
                       <p>
                         {c === 'walk_in'
-                          ? `₦${selectedPackage.walkInPrice.toLocaleString('en-NG')} — pay at counter`
+                          ? `₦${selectedPackage.walkInPrice.toLocaleString('en-NG')} — visit lab for collection`
                           : `₦${selectedPackage.homeVisitPrice.toLocaleString('en-NG')} — agent comes to you`}
                       </p>
                     </label>
@@ -504,8 +498,8 @@ export default function PatientLabs () {
 
                 <div className={s.pkgPriceHighlight}>
                   Total: <strong>₦{pkgPrice.toLocaleString('en-NG')}</strong>
-                  {pkgCollection === 'walk_in' && <span> — pay at the lab counter</span>}
-                  {pkgCollection === 'home_visit' && bankSettings && <span> — bank transfer required</span>}
+                  {pkgCollection === 'walk_in' && <span> — visit lab for sample collection</span>}
+                  {pkgCollection === 'home_visit' && bankSettings && <span> — transfer to company account</span>}
                 </div>
 
                 <button className={s.payConfirmBtn} disabled={bookingSubmitting || (pkgCollection === 'home_visit' && !pkgAddress)} onClick={handleBookPackage}>
@@ -515,7 +509,7 @@ export default function PatientLabs () {
             ) : (
               /* Payment step */
               <>
-                <p className={s.payPanelSub}>Transfer <strong>₦{pkgPrice.toLocaleString()}</strong> to the platform bank account for your <strong>{selectedPackage.name}</strong> package, then enter your reference.</p>
+                <p className={s.payPanelSub}>Transfer <strong>₦{pkgPrice.toLocaleString()}</strong> to the company bank account below for your <strong>{selectedPackage.name}</strong> package. Do not transfer to any personal account. Enter your reference to confirm.</p>
                 {bankSettings && (
                   <div className={s.bankCard}>
                     <BankRow label='Bank' value={bankSettings.companyBankName} />
