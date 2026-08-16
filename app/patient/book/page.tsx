@@ -3,6 +3,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import api from '@/lib/api'
+import { downloadReceipt } from '@/lib/receipt'
 import s from './page.module.scss'
 import { VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
@@ -54,6 +55,7 @@ export default function BookDoctor () {
   const [isUrgent,     setIsUrgent]     = useState(false)
   const [duration,     setDuration]     = useState(30)
   const [booking,      setBooking]      = useState(false)
+  const [paystackPublicKey, setPaystackPublicKey] = useState('')
 
   function typeFeeFor (doctor: Doctor, t: typeof TYPES[number]): number {
     return doctor.fees?.[t] ?? doctor.consultationFee ?? 0
@@ -78,7 +80,19 @@ export default function BookDoctor () {
       .finally(() => setLoadingDocs(false))
   }
 
-  useEffect(() => { loadDoctors() }, [])
+  useEffect(() => {
+    loadDoctors()
+    const script = document.createElement('script')
+    script.src = 'https://js.paystack.co/v2/inline.js'
+    script.async = true
+    document.body.appendChild(script)
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
+    fetch(`${base}/admin/public/content`)
+      .then(r => r.json())
+      .then(b => { if (b?.data?.paystackPublicKey) setPaystackPublicKey(b.data.paystackPublicKey) })
+      .catch(() => {})
+    return () => { try { document.body.removeChild(script) } catch { /* removed */ } }
+  }, [])
 
   useEffect(() => {
     if (!selected || !date) return
@@ -109,26 +123,60 @@ export default function BookDoctor () {
         sessionDurationMinutes: duration,
       })
       const appt = apptRes.data.data?.appointment
-      let paymentUrl: string | undefined
+
       if (appt?.consultationFee > 0) {
         const payRes = await api.post('/payments/initiate', {
           type: 'consultation',
           serviceId: appt._id,
           amount: appt.consultationFee,
         })
-        paymentUrl = payRes.data.data?.authorizationUrl
+        const { accessCode, reference } = payRes.data.data
+        const doctorName = selected.displayName || selected.user?.name
+        const feeSnap = appt.consultationFee as number
+        setBooking(false)
+        const paystack = new (window as any).PaystackPop()
+        paystack.newTransaction({
+          key: paystackPublicKey,
+          accessCode,
+          onSuccess: async () => {
+            try {
+              await api.get(`/payments/verify/${reference}`)
+              downloadReceipt({
+                bookingRef: `#${appt._id.slice(-8).toUpperCase()}`,
+                tests: [`${type} consultation with Dr. ${doctorName}`],
+                amount: feeSnap,
+                collectionType: 'walk_in',
+                transactionRef: reference,
+              })
+              modal.show({
+                variant: 'success',
+                title: 'Payment Confirmed!',
+                message: `Your ${type} consultation with Dr. ${doctorName} on ${date} at ${slot!.startTime} is confirmed. Receipt is downloading.`,
+                actionLabel: 'View Appointments',
+                onAction: () => router.push('/patient/appointments'),
+              })
+            } catch { /* silent */ }
+          },
+          onCancel: () => {
+            modal.show({
+              variant: 'declined',
+              title: 'Payment Cancelled',
+              message: 'Payment not completed. Your appointment slot is held — complete payment from My Appointments.',
+              actionLabel: 'View Appointments',
+              onAction: () => router.push('/patient/appointments'),
+            })
+          },
+        })
+        return
       }
+
+      // Free consultation
       modal.show({
         variant: 'success',
         title: 'Appointment Booked!',
-        message: paymentUrl
-          ? `Your ${type} consultation with Dr. ${selected.user?.name} is confirmed for ${date} at ${slot.startTime}. Complete payment to confirm your session.`
-          : `Your ${type} consultation with Dr. ${selected.user?.name} is scheduled for ${date} at ${slot.startTime}.`,
-        actionLabel: paymentUrl ? 'Pay Now →' : 'View My Appointments',
-        onAction: paymentUrl
-          ? () => { window.location.href = paymentUrl! }
-          : () => router.push('/patient/appointments'),
-        dismissLabel: paymentUrl ? 'Pay Later' : 'Close',
+        message: `Your ${type} consultation with Dr. ${selected.displayName || selected.user?.name} is scheduled for ${date} at ${slot.startTime}.`,
+        actionLabel: 'View My Appointments',
+        onAction: () => router.push('/patient/appointments'),
       })
     } catch (err: unknown) {
       modal.show({

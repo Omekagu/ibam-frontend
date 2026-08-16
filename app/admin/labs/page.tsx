@@ -52,6 +52,8 @@ export default function AdminLabsPage () {
   const [kycReason, setKycReason] = useState('')
   const [kycSaving, setKycSaving] = useState(false)
 
+  const [openingPortal, setOpeningPortal] = useState<string | null>(null)
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -140,6 +142,18 @@ export default function AdminLabsPage () {
     setCreating(false)
   }
 
+  async function openLabPortal (labId: string) {
+    setOpeningPortal(labId)
+    try {
+      const r = await api.post(`/admin/labs/${labId}/impersonate`)
+      const url: string = r.data.data?.url
+      window.open(url, '_blank', 'noopener')
+    } catch (err: any) {
+      modal.show({ variant: 'declined', title: 'Error', message: err?.response?.data?.message ?? 'Could not open lab portal.' })
+    }
+    setOpeningPortal(null)
+  }
+
   async function submitKyc (lab: Lab) {
     const userId = lab.user?._id
     if (!userId) { modal.show({ variant: 'declined', title: 'KYC Error', message: 'User ID not available.' }); return }
@@ -218,6 +232,14 @@ export default function AdminLabsPage () {
                       }}
                     >
                       {kycLabId === lab._id ? 'Close KYC' : 'Verify KYC'}
+                    </button>
+                    <button
+                      className={s.portalBtn}
+                      disabled={openingPortal === lab._id}
+                      onClick={() => openLabPortal(lab._id)}
+                      title="Open this lab&apos;s dashboard as admin"
+                    >
+                      {openingPortal === lab._id ? '…' : '↗ Open Lab Portal'}
                     </button>
                     {lab.status !== 'active' && (
                       <button className={s.approveBtn} disabled={updating === lab._id} onClick={() => setStatus(lab._id, 'active')}>

@@ -2,9 +2,10 @@
 import { useEffect, useState, useRef, FormEvent } from 'react'
 import api from '@/lib/api'
 import s from './page.module.scss'
-import { MapPinIcon } from '@/components/icons'
+import { MapPinIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { downloadReceipt } from '@/lib/receipt'
 
 interface LabRequest {
   _id: string
@@ -15,6 +16,9 @@ interface LabRequest {
   totalAmount: number
   adminApprovalStatus?: string
   createdAt: string
+  walkInExpiresAt?: string
+  wellnessPackage?: { name: string }
+  paymentRef?: { _id?: string; status?: string; amount?: number; method?: string; transferReference?: string }
 }
 interface LabResult {
   _id: string
@@ -59,65 +63,97 @@ export default function PatientLabs () {
   const [results, setResults] = useState<LabResult[]>([])
   const [loading, setLoading] = useState(true)
   const [catalogTests, setCatalogTests] = useState<LabTestCatalog[]>([])
-  const [wellnessPackages, setWellnessPackages] = useState<WellnessPackageItem[]>([])
+  const [wellnessPackages, setWellnessPackages] = useState<
+    WellnessPackageItem[]
+  >([])
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null)
+  const [paystackPublicKey, setPaystackPublicKey] = useState('')
 
   // Individual test order
   const [selectedTests, setSelectedTests] = useState<string[]>([])
-  const [collection, setCollection] = useState<'home_visit' | 'walk_in'>('walk_in')
+  const [collection, setCollection] = useState<'home_visit' | 'walk_in'>(
+    'walk_in'
+  )
   const [notes, setNotes] = useState('')
   const [referralFile, setReferralFile] = useState<File | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [homeAddr, setHomeAddr] = useState('')
-  const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [homeCoords, setHomeCoords] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
   const [gpsLoading, setGpsLoading] = useState(false)
+  const [preferredDate, setPreferredDate] = useState('')
+  const [preferredTime, setPreferredTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPayModal, setShowPayModal] = useState(false)
   const [transferRef, setTransferRef] = useState('')
   const [submittingRef, setSubmittingRef] = useState(false)
 
   // Wellness package booking
-  const [selectedPackage, setSelectedPackage] = useState<WellnessPackageItem | null>(null)
-  const [pkgCollection, setPkgCollection] = useState<'walk_in' | 'home_visit'>('walk_in')
+  const [selectedPackage, setSelectedPackage] =
+    useState<WellnessPackageItem | null>(null)
+  const [pkgCollection, setPkgCollection] = useState<'walk_in' | 'home_visit'>(
+    'walk_in'
+  )
   const [pkgAddress, setPkgAddress] = useState('')
-  const [pkgCoords, setPkgCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [pkgCoords, setPkgCoords] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
   const [pkgGpsLoading, setPkgGpsLoading] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
-  const [bookingStep, setBookingStep] = useState<'details' | 'payment'>('details')
-  const [bookingRef, setBookingRef] = useState('')
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null)
 
+  const [refundingId, setRefundingId] = useState<string | null>(null)
+  const [expandingResult, setExpandingResult] = useState<string | null>(null)
+
   const estimatedTotal = selectedTests.reduce((sum, name) => {
     const t = catalogTests.find(c => c.name === name)
-    const price = collection === 'home_visit'
-      ? (t?.homeVisitPrice ?? t?.estimatedPrice ?? 0)
-      : (t?.walkInPrice ?? t?.estimatedPrice ?? 0)
+    const price =
+      collection === 'home_visit'
+        ? t?.homeVisitPrice ?? t?.estimatedPrice ?? 0
+        : t?.walkInPrice ?? t?.estimatedPrice ?? 0
     return sum + price
   }, 0)
 
   const pkgPrice = selectedPackage
-    ? pkgCollection === 'walk_in' ? selectedPackage.walkInPrice : selectedPackage.homeVisitPrice
+    ? pkgCollection === 'walk_in'
+      ? selectedPackage.walkInPrice
+      : selectedPackage.homeVisitPrice
     : 0
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+    const script = document.createElement('script')
+    script.src = 'https://js.paystack.co/v2/inline.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => { try { document.body.removeChild(script) } catch { /* already removed */ } }
+  }, [])
+
+  useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {
         if (body?.data?.labTests?.length) setCatalogTests(body.data.labTests)
-        if (body?.data?.wellnessPackages?.length) setWellnessPackages(body.data.wellnessPackages)
+        if (body?.data?.wellnessPackages?.length)
+          setWellnessPackages(body.data.wellnessPackages)
+        if (body?.data?.paystackPublicKey) setPaystackPublicKey(body.data.paystackPublicKey)
       })
       .catch(() => {})
 
-    api.get('/payments/settings')
+    api
+      .get('/payments/settings')
       .then(r => {
         const st = r.data.data?.settings
         if (st?.directPaymentEnabled) setBankSettings(st)
       })
       .catch(() => {})
 
-    api.get('/diagnostics/results/mine')
+    api
+      .get('/diagnostics/results/mine')
       .then(r => {
         setRequests(r.data.data?.requests ?? [])
         setResults(r.data.data?.results ?? [])
@@ -129,20 +165,32 @@ export default function PatientLabs () {
   // ── Individual test order helpers ─────────────────────────────────────────
 
   function toggleTest (test: string) {
-    setSelectedTests(prev => prev.includes(test) ? prev.filter(t => t !== test) : [...prev, test])
+    setSelectedTests(prev =>
+      prev.includes(test) ? prev.filter(t => t !== test) : [...prev, test]
+    )
   }
 
   function useGPS () {
-    if (!navigator.geolocation) { alert('Geolocation not supported.'); return }
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported.')
+      return
+    }
     setGpsLoading(true)
     navigator.geolocation.getCurrentPosition(
       pos => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         setHomeCoords(coords)
-        setHomeAddr(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`)
+        setHomeAddr(
+          `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(
+            5
+          )}`
+        )
         setGpsLoading(false)
       },
-      () => { alert('Could not get your location.'); setGpsLoading(false) }
+      () => {
+        alert('Could not get your location.')
+        setGpsLoading(false)
+      }
     )
   }
 
@@ -152,24 +200,98 @@ export default function PatientLabs () {
     form.append('collectionType', collection)
     if (notes) form.append('notes', notes)
     if (referralFile) form.append('referral', referralFile)
-    if (collection === 'home_visit' && (homeAddr || homeCoords))
-      form.append('pickupLocation', JSON.stringify({ address: homeAddr, ...homeCoords }))
+    if (collection === 'home_visit') {
+      if (homeAddr || homeCoords)
+        form.append('pickupLocation', JSON.stringify({ address: homeAddr, ...homeCoords }))
+      if (preferredDate) form.append('preferredDate', preferredDate)
+      if (preferredTime) form.append('preferredTime', preferredTime)
+    }
     return form
   }
 
   function resetForm () {
-    setSelectedTests([]); setNotes(''); setReferralFile(null); setHomeAddr(''); setHomeCoords(null)
+    setSelectedTests([])
+    setNotes('')
+    setReferralFile(null)
+    setHomeAddr('')
+    setHomeCoords(null)
+    setPreferredDate('')
+    setPreferredTime('')
   }
 
   async function submitRequest (e: FormEvent) {
     e.preventDefault()
     if (!selectedTests.length) {
-      modal.show({ variant: 'declined', title: 'No Tests Selected', message: 'Please select at least one test before submitting.' }); return
+      modal.show({
+        variant: 'declined',
+        title: 'No Tests Selected',
+        message: 'Please select at least one test before submitting.'
+      })
+      return
     }
     if (collection === 'home_visit' && !homeAddr) {
-      modal.show({ variant: 'declined', title: 'Address Required', message: 'Please provide your home address for the home visit.' }); return
+      modal.show({
+        variant: 'declined',
+        title: 'Address Required',
+        message: 'Please provide your home address for the home visit.'
+      })
+      return
     }
-    if (collection === 'home_visit' && estimatedTotal > 0 && bankSettings) { setShowPayModal(true); return }
+    if (collection === 'home_visit' && !preferredDate) {
+      modal.show({
+        variant: 'declined',
+        title: 'Date Required',
+        message: 'Please select a preferred date for sample collection.'
+      })
+      return
+    }
+    // Any priced service (walk-in or home visit) → Paystack inline
+    if (estimatedTotal > 0) {
+      setSubmitting(true)
+      try {
+        const r = await api.post('/diagnostics/request', buildForm())
+        const reqId: string = r.data.data?.request?._id
+        setRequests(prev => [r.data.data?.request, ...prev])
+        const payRes = await api.post('/payments/initiate', {
+          type: 'lab_test',
+          referenceId: reqId,
+          amount: estimatedTotal,
+        })
+        const { accessCode, reference } = payRes.data.data
+        const testsSnap = [...selectedTests]
+        const amountSnap = estimatedTotal
+        const collectionSnap = collection
+        resetForm()
+        const paystack = new (window as any).PaystackPop()
+        paystack.newTransaction({
+          key: paystackPublicKey,
+          accessCode,
+          onSuccess: async () => {
+            try {
+              const vr = await api.get(`/payments/verify/${reference}`)
+              if (vr.data.data?.payment?.status === 'success') {
+                downloadReceipt({ bookingRef: `#${reqId.slice(-8).toUpperCase()}`, tests: testsSnap, amount: amountSnap, collectionType: collectionSnap, transactionRef: reference })
+                modal.show({ variant: 'success', title: 'Payment Confirmed!', message: `Booking confirmed. Reference: #${reqId.slice(-8).toUpperCase()}. Receipt is downloading.`, actionLabel: 'View My Results', onAction: () => setTab('results') })
+                api.get('/diagnostics/results/mine').then(rv => setRequests(rv.data.data?.requests ?? [])).catch(() => {})
+              }
+            } catch { /* silent */ }
+          },
+          onCancel: () => {
+            modal.show({ variant: 'declined', title: 'Payment Cancelled', message: 'Payment was not completed. Your request is saved — retry from My Results.' })
+            setTab('results')
+          },
+        })
+      } catch (err: unknown) {
+        modal.show({
+          variant: 'declined',
+          title: 'Booking Failed',
+          message:
+            (err as { response?: { data?: { message?: string } } })?.response
+              ?.data?.message ?? 'Could not initiate payment. Please try again.'
+        })
+      } finally { setSubmitting(false) }
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -177,13 +299,57 @@ export default function PatientLabs () {
       setRequests(prev => [r.data.data?.request, ...prev])
       resetForm()
       if (collection === 'walk_in') {
-        modal.show({ variant: 'success', title: 'Request Submitted!', message: 'Your request has been submitted. Visit the assigned lab for sample collection — no payment at the counter.', actionLabel: 'View My Requests', onAction: () => setTab('results') })
+        modal.show({
+          variant: 'success',
+          title: 'Request Submitted!',
+          message:
+            'Your request has been submitted. Visit the assigned lab for sample collection.',
+          actionLabel: 'View My Requests',
+          onAction: () => setTab('results')
+        })
       } else {
-        modal.show({ variant: 'pending', title: 'Request Submitted!', message: 'Our team will assign a lab and send you payment details. Once confirmed, a home visit will be scheduled.', actionLabel: 'View My Requests', onAction: () => setTab('results') })
+        modal.show({
+          variant: 'pending',
+          title: 'Request Submitted!',
+          message:
+            'Your request has been submitted. Our team will contact you to schedule your home visit.',
+          actionLabel: 'View My Requests',
+          onAction: () => setTab('results')
+        })
       }
     } catch (err: unknown) {
-      modal.show({ variant: 'declined', title: 'Submission Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not submit your request. Please try again.', actionLabel: 'Try Again' })
-    } finally { setSubmitting(false) }
+      modal.show({
+        variant: 'declined',
+        title: 'Submission Failed',
+        message:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ??
+          'Could not submit your request. Please try again.',
+        actionLabel: 'Try Again'
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleRefundRequest (req: LabRequest) {
+    const paymentId = req.paymentRef?._id
+    if (!paymentId) return
+    if (!confirm('Request a refund for this order?')) return
+    setRefundingId(req._id)
+    try {
+      await api.post('/payments/refund-request', {
+        paymentId,
+        reason: req.status === 'no_show' ? 'Lab request marked as no-show' : 'Lab request cancelled without service',
+      })
+      modal.show({ variant: 'success', title: 'Refund Requested', message: 'Refund request submitted. Our team will review within 24–48 hours.' })
+    } catch (err: unknown) {
+      modal.show({
+        variant: 'declined',
+        title: 'Error',
+        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not submit refund request.'
+      })
+    } finally { setRefundingId(null) }
   }
 
   async function handleSubmitTransferRef () {
@@ -193,76 +359,198 @@ export default function PatientLabs () {
       const r = await api.post('/diagnostics/request', buildForm())
       const reqId: string = r.data.data?.request?._id
       setRequests(prev => [r.data.data?.request, ...prev])
-      await api.post('/payments/submit-transfer', { type: 'lab_test', referenceId: reqId, amount: estimatedTotal * 100, transferReference: transferRef.trim() })
-      resetForm(); setShowPayModal(false); setTransferRef('')
-      modal.show({ variant: 'pending', title: 'Request & Payment Submitted!', message: `Your ₦${estimatedTotal.toLocaleString()} transfer reference has been submitted. Admin will confirm and schedule your home visit.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
+      await api.post('/payments/submit-transfer', {
+        type: 'lab_test',
+        referenceId: reqId,
+        amount: estimatedTotal * 100,
+        transferReference: transferRef.trim()
+      })
+      resetForm()
+      setShowPayModal(false)
+      setTransferRef('')
+      modal.show({
+        variant: 'pending',
+        title: 'Request & Payment Submitted!',
+        message: `Your ₦${estimatedTotal.toLocaleString()} transfer reference has been submitted. Admin will confirm and schedule your home visit.`,
+        actionLabel: 'View My Requests',
+        onAction: () => setTab('results')
+      })
     } catch (err: unknown) {
-      modal.show({ variant: 'declined', title: 'Submission Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not complete submission. Please try again.' })
-    } finally { setSubmittingRef(false) }
+      modal.show({
+        variant: 'declined',
+        title: 'Submission Failed',
+        message:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ??
+          'Could not complete submission. Please try again.'
+      })
+    } finally {
+      setSubmittingRef(false)
+    }
   }
 
   // ── Wellness package booking helpers ──────────────────────────────────────
 
   function openBookModal (pkg: WellnessPackageItem) {
-    setSelectedPackage(pkg); setPkgCollection('walk_in'); setPkgAddress(''); setPkgCoords(null)
-    setBookingStep('details'); setBookingRef(''); setShowBookModal(true)
+    setSelectedPackage(pkg)
+    setPkgCollection('walk_in')
+    setPkgAddress('')
+    setPkgCoords(null)
+    setShowBookModal(true)
   }
 
   function usePkgGPS () {
-    if (!navigator.geolocation) { alert('Geolocation not supported.'); return }
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported.')
+      return
+    }
     setPkgGpsLoading(true)
     navigator.geolocation.getCurrentPosition(
       pos => {
         setPkgCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setPkgAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`)
+        setPkgAddress(
+          `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(
+            5
+          )}`
+        )
         setPkgGpsLoading(false)
       },
-      () => { alert('Could not get your location.'); setPkgGpsLoading(false) }
+      () => {
+        alert('Could not get your location.')
+        setPkgGpsLoading(false)
+      }
     )
   }
 
   async function handleBookPackage () {
     if (!selectedPackage) return
     if (pkgCollection === 'home_visit' && !pkgAddress) {
-      modal.show({ variant: 'declined', title: 'Address Required', message: 'Please enter your home address for the visit.' }); return
+      modal.show({
+        variant: 'declined',
+        title: 'Address Required',
+        message: 'Please enter your home address for the visit.'
+      })
+      return
     }
-    // Home visit + bank: go to payment step first
-    if (pkgCollection === 'home_visit' && pkgPrice > 0 && bankSettings && bookingStep === 'details') {
-      setBookingStep('payment'); return
+
+    // Any priced booking (walk-in or home visit) → Paystack inline
+    if (pkgPrice > 0) {
+      setBookingSubmitting(true)
+      try {
+        const payload: Record<string, unknown> = { collectionType: pkgCollection }
+        if (pkgCollection === 'home_visit') {
+          payload.address = pkgAddress
+          if (pkgCoords) { payload.lat = pkgCoords.lat; payload.lng = pkgCoords.lng }
+        }
+        const r = await api.post(`/wellness-packages/${selectedPackage._id}/book`, payload)
+        const reqId: string = r.data.data?.request?._id
+        setRequests(prev => [r.data.data?.request, ...prev])
+        const payRes = await api.post('/payments/initiate', {
+          type: 'lab_test',
+          referenceId: reqId,
+          amount: pkgPrice,
+        })
+        const { accessCode, reference } = payRes.data.data
+        const priceSnap = pkgPrice
+        const pkgNameSnap = selectedPackage.name
+        const testsSnap = [...selectedPackage.includedTests]
+        const collectionSnap = pkgCollection
+        setShowBookModal(false)
+        const paystack = new (window as any).PaystackPop()
+        paystack.newTransaction({
+          key: paystackPublicKey,
+          accessCode,
+          onSuccess: async () => {
+            try {
+              const vr = await api.get(`/payments/verify/${reference}`)
+              if (vr.data.data?.payment?.status === 'success') {
+                downloadReceipt({ bookingRef: `#${reqId.slice(-8).toUpperCase()}`, tests: testsSnap, amount: priceSnap, collectionType: collectionSnap, transactionRef: reference, packageName: pkgNameSnap })
+                modal.show({ variant: 'success', title: 'Package Booked!', message: `"${pkgNameSnap}" is confirmed. Reference: #${reqId.slice(-8).toUpperCase()}. Receipt is downloading.`, actionLabel: 'View My Results', onAction: () => setTab('results') })
+                api.get('/diagnostics/results/mine').then(rv => setRequests(rv.data.data?.requests ?? [])).catch(() => {})
+              }
+            } catch { /* silent */ }
+          },
+          onCancel: () => {
+            modal.show({ variant: 'declined', title: 'Payment Cancelled', message: 'Payment was not completed. Your booking is saved — retry from My Results.' })
+          },
+        })
+      } catch (err: unknown) {
+        modal.show({
+          variant: 'declined',
+          title: 'Booking Failed',
+          message:
+            (err as { response?: { data?: { message?: string } } })?.response
+              ?.data?.message ?? 'Could not book the package. Please try again.'
+        })
+      } finally { setBookingSubmitting(false) }
+      return
     }
+
+    // Free package
     setBookingSubmitting(true)
     try {
       const payload: Record<string, unknown> = { collectionType: pkgCollection }
-      if (pkgCollection === 'home_visit') { payload.address = pkgAddress; if (pkgCoords) { payload.lat = pkgCoords.lat; payload.lng = pkgCoords.lng } }
-      if (bookingRef.trim()) payload.transferReference = bookingRef.trim()
+      if (pkgCollection === 'home_visit') {
+        payload.address = pkgAddress
+        if (pkgCoords) { payload.lat = pkgCoords.lat; payload.lng = pkgCoords.lng }
+      }
       const r = await api.post(`/wellness-packages/${selectedPackage._id}/book`, payload)
       setRequests(prev => [r.data.data?.request, ...prev])
       setShowBookModal(false)
-      if (pkgCollection === 'walk_in') {
-        modal.show({ variant: 'success', title: 'Package Booked!', message: `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab for sample collection.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
-      } else {
-        modal.show({ variant: 'pending', title: 'Package Booked!', message: `Your "${selectedPackage.name}" package is confirmed. Our team will contact you to schedule your home visit.`, actionLabel: 'View My Requests', onAction: () => setTab('results') })
-      }
+      modal.show({
+        variant: 'success',
+        title: 'Package Booked!',
+        message: pkgCollection === 'walk_in'
+          ? `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab for sample collection.`
+          : `Your "${selectedPackage.name}" package has been booked. Our team will contact you to schedule your home visit.`,
+        actionLabel: 'View My Requests',
+        onAction: () => setTab('results')
+      })
     } catch (err: unknown) {
-      modal.show({ variant: 'declined', title: 'Booking Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not book the package. Please try again.' })
+      modal.show({
+        variant: 'declined',
+        title: 'Booking Failed',
+        message:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ?? 'Could not book the package. Please try again.'
+      })
     } finally { setBookingSubmitting(false) }
   }
 
   const resultMap = new Map(results.map(r => [r.request, r]))
 
-  const GENDER_LABEL: Record<string, string> = { male: '♂ Men', female: '♀ Women', all: 'All' }
+  const GENDER_LABEL: Record<string, string> = {
+    male: '♂ Men',
+    female: '♀ Women',
+    all: 'All'
+  }
 
   return (
     <>
       <div className={s.tabs}>
-        <button className={`${s.tab} ${tab === 'order' ? s.active : ''}`} onClick={() => setTab('order')}>Order Tests</button>
-        <button className={`${s.tab} ${tab === 'packages' ? s.active : ''}`} onClick={() => setTab('packages')}>
-          Wellness Packages
-          {wellnessPackages.length > 0 && <span className={s.count}>{wellnessPackages.length}</span>}
+        <button
+          className={`${s.tab} ${tab === 'order' ? s.active : ''}`}
+          onClick={() => setTab('order')}
+        >
+          Order Tests
         </button>
-        <button className={`${s.tab} ${tab === 'results' ? s.active : ''}`} onClick={() => setTab('results')}>
+        <button
+          className={`${s.tab} ${tab === 'packages' ? s.active : ''}`}
+          onClick={() => setTab('packages')}
+        >
+          Wellness Packages
+          {wellnessPackages.length > 0 && (
+            <span className={s.count}>{wellnessPackages.length}</span>
+          )}
+        </button>
+        <button
+          className={`${s.tab} ${tab === 'results' ? s.active : ''}`}
+          onClick={() => setTab('results')}
+        >
           My Results
-          {requests.length > 0 && <span className={s.count}>{requests.length}</span>}
+          {requests.length > 0 && (
+            <span className={s.count}>{requests.length}</span>
+          )}
         </button>
       </div>
 
@@ -270,23 +558,46 @@ export default function PatientLabs () {
       {tab === 'order' && (
         <form className={s.orderForm} onSubmit={submitRequest}>
           <div className={s.infoNote}>
-            <strong>How it works:</strong> Select the tests you need, choose how your sample will be collected, and submit. Our team will assign a certified lab and notify you with next steps.
+            <strong>How it works:</strong> Select the tests you need, choose how
+            your sample will be collected, and submit. Our team will assign a
+            certified lab and notify you with next steps.
           </div>
 
           <div className={s.section}>
-            <h3>Select Tests <span className={s.selectedCount}>{selectedTests.length} selected</span></h3>
+            <h3>
+              Select Tests{' '}
+              <span className={s.selectedCount}>
+                {selectedTests.length} selected
+              </span>
+            </h3>
             {catalogTests.length === 0 ? (
               <Loader inline variant='dots' size='sm' label='Loading tests…' />
             ) : (
               <div className={s.testGrid}>
                 {catalogTests.map(t => {
-                  const price = collection === 'home_visit' ? (t.homeVisitPrice ?? t.estimatedPrice) : (t.walkInPrice ?? t.estimatedPrice)
+                  const price =
+                    collection === 'home_visit'
+                      ? t.homeVisitPrice ?? t.estimatedPrice
+                      : t.walkInPrice ?? t.estimatedPrice
                   return (
-                    <label key={t._id} className={`${s.testItem} ${selectedTests.includes(t.name) ? s.checked : ''}`}>
-                      <input type='checkbox' checked={selectedTests.includes(t.name)} onChange={() => toggleTest(t.name)} />
+                    <label
+                      key={t._id}
+                      className={`${s.testItem} ${
+                        selectedTests.includes(t.name) ? s.checked : ''
+                      }`}
+                    >
+                      <input
+                        type='checkbox'
+                        checked={selectedTests.includes(t.name)}
+                        onChange={() => toggleTest(t.name)}
+                      />
                       <div className={s.testContent}>
                         <span>{t.name}</span>
-                        {price != null && <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>₦{price.toLocaleString('en-NG')}</span>}
+                        {price != null && (
+                          <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>
+                            ₦{price.toLocaleString('en-NG')}
+                          </span>
+                        )}
                       </div>
                     </label>
                   )
@@ -299,54 +610,157 @@ export default function PatientLabs () {
             <h3>Sample Collection</h3>
             <div className={s.collectionRow}>
               {(['walk_in', 'home_visit'] as const).map(c => (
-                <label key={c} className={`${s.collectionOpt} ${collection === c ? s.picked : ''}`}>
-                  <input type='radio' name='collection' value={c} checked={collection === c} onChange={() => setCollection(c)} />
+                <label
+                  key={c}
+                  className={`${s.collectionOpt} ${
+                    collection === c ? s.picked : ''
+                  }`}
+                >
+                  <input
+                    type='radio'
+                    name='collection'
+                    value={c}
+                    checked={collection === c}
+                    onChange={() => setCollection(c)}
+                  />
                   <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
-                  <p>{c === 'walk_in' ? 'Visit the assigned lab yourself' : 'A lab professional visits you at home'}</p>
+                  <p>
+                    {c === 'walk_in'
+                      ? 'Visit the assigned lab yourself'
+                      : 'A lab professional visits you at home'}
+                  </p>
                 </label>
               ))}
             </div>
           </div>
 
-          {collection === 'home_visit' && estimatedTotal > 0 && bankSettings && (
+          {collection === 'home_visit' && estimatedTotal > 0 && (
             <div className={s.paymentNote} data-variant='transfer'>
-              <span className={s.paymentNoteIcon}>🏦</span>
-              <p>Estimated total: <strong>₦{estimatedTotal.toLocaleString()}</strong>. Transfer to the company bank account (not a personal account) and enter your reference to confirm your request.</p>
+              <span className={s.paymentNoteIcon}>💳</span>
+              <p>
+                Estimated total:{' '}
+                <strong>₦{estimatedTotal.toLocaleString()}</strong>. Pay securely via card — a booking confirmation will be sent after payment.
+              </p>
             </div>
           )}
 
           {collection === 'home_visit' && (
             <div className={s.section}>
-              <h3>Your Home Address</h3>
-              <p className={s.referralNote}>Provide your address so we can schedule a home collection visit.</p>
+              <h3>Home Visit Details</h3>
+              <p className={s.referralNote}>
+                Tell us where to come and when works best for you. Our team will confirm the visit.
+              </p>
+
+              {/* Address */}
               <div className={s.locationRow}>
-                <input type='text' value={homeAddr} onChange={e => setHomeAddr(e.target.value)} placeholder='Your full address or nearest landmark…' className={s.locationInput} required />
-                <button type='button' className={s.gpsBtn} disabled={gpsLoading} onClick={useGPS}>
+                <input
+                  type='text'
+                  value={homeAddr}
+                  onChange={e => setHomeAddr(e.target.value)}
+                  placeholder='Your full address or nearest landmark…'
+                  className={s.locationInput}
+                  required
+                />
+                <button
+                  type='button'
+                  className={s.gpsBtn}
+                  disabled={gpsLoading}
+                  onClick={useGPS}
+                >
                   {gpsLoading ? '…' : <><MapPinIcon size={13} /> GPS</>}
                 </button>
               </div>
-              {homeCoords && <p className={s.coordsNote}>GPS: {homeCoords.lat.toFixed(5)}, {homeCoords.lng.toFixed(5)}</p>}
+              {homeCoords && (
+                <p className={s.coordsNote}>
+                  GPS: {homeCoords.lat.toFixed(5)}, {homeCoords.lng.toFixed(5)}
+                </p>
+              )}
+
+              {/* Preferred date + time */}
+              <div className={s.scheduleRow}>
+                <div className={s.scheduleField}>
+                  <label className={s.scheduleLabel}>Preferred Date *</label>
+                  <input
+                    type='date'
+                    className={s.locationInput}
+                    value={preferredDate}
+                    min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                    onChange={e => setPreferredDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className={s.scheduleField}>
+                  <label className={s.scheduleLabel}>Preferred Time <span className={s.optional}>optional</span></label>
+                  <select
+                    className={s.locationInput}
+                    value={preferredTime}
+                    onChange={e => setPreferredTime(e.target.value)}
+                  >
+                    <option value=''>Any time</option>
+                    {['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(t => (
+                      <option key={t} value={t}>{t.replace(':', ':')} {Number(t.split(':')[0]) < 12 ? 'AM' : 'PM'}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           )}
 
           <div className={s.section}>
-            <h3>Doctor Referral / Prescription <span className={s.optional}>optional</span></h3>
-            <p className={s.referralNote}>Upload a referral note if you have one. Without an iBam doctor&apos;s referral, your request will be reviewed by admin first.</p>
-            <div className={s.fileUploadArea} onClick={() => fileRef.current?.click()}>
-              <input ref={fileRef} type='file' accept='.pdf,image/*' style={{ display: 'none' }} onChange={e => setReferralFile(e.target.files?.[0] ?? null)} />
-              {referralFile ? <p className={s.fileName}>{referralFile.name}</p> : <p>Click to upload referral (PDF or image)</p>}
+            <h3>
+              Doctor Referral / Prescription{' '}
+              <span className={s.optional}>optional</span>
+            </h3>
+            <p className={s.referralNote}>
+              Upload a referral note if you have one. Without an iBam
+              doctor&apos;s referral, your request will be reviewed by admin
+              first.
+            </p>
+            <div
+              className={s.fileUploadArea}
+              onClick={() => fileRef.current?.click()}
+            >
+              <input
+                ref={fileRef}
+                type='file'
+                accept='.pdf,image/*'
+                style={{ display: 'none' }}
+                onChange={e => setReferralFile(e.target.files?.[0] ?? null)}
+              />
+              {referralFile ? (
+                <p className={s.fileName}>{referralFile.name}</p>
+              ) : (
+                <p>Click to upload referral (PDF or image)</p>
+              )}
             </div>
           </div>
 
           <div className={s.section}>
-            <h3>Notes <span className={s.optional}>optional</span></h3>
-            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder='Any relevant medical history or special instructions…' />
+            <h3>
+              Notes <span className={s.optional}>optional</span>
+            </h3>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder='Any relevant medical history or special instructions…'
+            />
           </div>
 
-          <button type='submit' className={s.submitBtn} disabled={submitting || !selectedTests.length}>
-            {submitting ? <Loader inline size='sm' /> : collection === 'home_visit' && estimatedTotal > 0 && bankSettings
-              ? `Continue to Payment — ₦${estimatedTotal.toLocaleString()}`
-              : `Submit Request (${selectedTests.length} test${selectedTests.length !== 1 ? 's' : ''})`}
+          <button
+            type='submit'
+            className={s.submitBtn}
+            disabled={submitting || !selectedTests.length}
+          >
+            {submitting ? (
+              <Loader inline size='sm' />
+            ) : estimatedTotal > 0 ? (
+              `Pay ₦${estimatedTotal.toLocaleString()} & Book`
+            ) : (
+              `Submit Request (${selectedTests.length} test${
+                selectedTests.length !== 1 ? 's' : ''
+              })`
+            )}
           </button>
         </form>
       )}
@@ -355,80 +769,240 @@ export default function PatientLabs () {
       {tab === 'packages' && (
         <div className={s.pkgGrid}>
           {wellnessPackages.length === 0 ? (
-            <div className={s.empty}>No wellness packages available right now.</div>
-          ) : wellnessPackages.map(pkg => {
-            const open = expandedPkg === pkg._id
-            return (
-              <div key={pkg._id} className={s.pkgCard}>
-                <div className={s.pkgCardTop}>
-                  <div className={s.pkgMeta}>
-                    <span className={s.pkgGenderBadge}>{GENDER_LABEL[pkg.gender] ?? pkg.gender}</span>
-                    <h3 className={s.pkgName}>{pkg.name}</h3>
-                    {pkg.benefits && <p className={s.pkgBenefits}>{pkg.benefits}</p>}
-                  </div>
-                  <div className={s.pkgPrices}>
-                    <div className={s.pkgPriceRow}>
-                      <span className={s.pkgPriceLabel}>Walk-in</span>
-                      <span className={s.pkgPriceVal}>₦{pkg.walkInPrice.toLocaleString('en-NG')}</span>
+            <div className={s.empty}>
+              No wellness packages available right now.
+            </div>
+          ) : (
+            wellnessPackages.map(pkg => {
+              const open = expandedPkg === pkg._id
+              return (
+                <div key={pkg._id} className={s.pkgCard}>
+                  <div className={s.pkgCardTop}>
+                    <div className={s.pkgMeta}>
+                      <span className={s.pkgGenderBadge}>
+                        {GENDER_LABEL[pkg.gender] ?? pkg.gender}
+                      </span>
+                      <h3 className={s.pkgName}>{pkg.name}</h3>
+                      {pkg.benefits && (
+                        <p className={s.pkgBenefits}>{pkg.benefits}</p>
+                      )}
                     </div>
-                    <div className={s.pkgPriceRow}>
-                      <span className={s.pkgPriceLabel}>Home Visit</span>
-                      <span className={s.pkgPriceVal}>₦{pkg.homeVisitPrice.toLocaleString('en-NG')}</span>
+                    <div className={s.pkgPrices}>
+                      <div className={s.pkgPriceRow}>
+                        <span className={s.pkgPriceLabel}>Walk-in</span>
+                        <span className={s.pkgPriceVal}>
+                          ₦{pkg.walkInPrice.toLocaleString('en-NG')}
+                        </span>
+                      </div>
+                      <div className={s.pkgPriceRow}>
+                        <span className={s.pkgPriceLabel}>Home Visit</span>
+                        <span className={s.pkgPriceVal}>
+                          ₦{pkg.homeVisitPrice.toLocaleString('en-NG')}
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    className={s.pkgTestsToggle}
+                    onClick={() => setExpandedPkg(open ? null : pkg._id)}
+                  >
+                    {open ? '▲' : '▼'} {pkg.includedTests.length} included tests
+                  </button>
+
+                  {open && (
+                    <ul className={s.pkgTestsList}>
+                      {pkg.includedTests.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <button
+                    className={s.pkgBookBtn}
+                    onClick={() => openBookModal(pkg)}
+                  >
+                    Book This Package
+                  </button>
                 </div>
-
-                <button className={s.pkgTestsToggle} onClick={() => setExpandedPkg(open ? null : pkg._id)}>
-                  {open ? '▲' : '▼'} {pkg.includedTests.length} included tests
-                </button>
-
-                {open && (
-                  <ul className={s.pkgTestsList}>
-                    {pkg.includedTests.map((t, i) => <li key={i}>{t}</li>)}
-                  </ul>
-                )}
-
-                <button className={s.pkgBookBtn} onClick={() => openBookModal(pkg)}>
-                  Book This Package
-                </button>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       )}
 
       {/* ── Results Tab ── */}
-      {tab === 'results' && (
-        loading ? <Loader label='Loading results…' /> : requests.length === 0 ? (
-          <div className={s.empty}>No lab requests yet. Order your first test above.</div>
+      {tab === 'results' &&
+        (loading ? (
+          <Loader label='Loading results…' />
         ) : (
+          <>
+          {requests.length === 0 ? (
+            <div className={s.emptyState}>
+              <div className={s.emptyStateIcon}>🔬</div>
+              <p className={s.emptyStateTitle}>No lab requests yet</p>
+              <span className={s.emptyStateSub}>Order your first test from the Order Tests tab above.</span>
+            </div>
+          ) : (
           <div className={s.resultsList}>
             {requests.map(req => {
               const result = resultMap.get(req._id)
+              const open = expandingResult === req._id
+              const canRefund = !!(req.paymentRef?._id && req.paymentRef.status === 'success' && (req.status === 'no_show' || req.status === 'cancelled'))
+              const hasResult = !!result
               return (
                 <div key={req._id} className={s.resultCard}>
-                  <div className={s.resultTop}>
-                    <div className={s.resultInfo}>
-                      <p>{req.tests.join(', ')}</p>
-                      <span>{req.lab?.name ?? 'Lab being assigned'} · {req.collectionType.replace('_', ' ')}</span>
-                      <span>{new Date(req.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      {req.adminApprovalStatus === 'pending' && <span className={s.pendingAdmin}>Awaiting admin review</span>}
-                      {req.totalAmount > 0 && <span className={s.amountTag}>₦{req.totalAmount.toLocaleString()}</span>}
+                  {/* ── Card header (always visible, clickable) ── */}
+                  <div
+                    className={s.resultCardHeader}
+                    onClick={() => setExpandingResult(open ? null : req._id)}
+                    role='button'
+                  >
+                    <div className={`${s.resultIconWrap} ${hasResult ? s.resultIconWrapDone : ''}`}>
+                      <MicroscopeIcon size={20} />
                     </div>
-                    <span className={`${s.statusBadge} ${s[req.status]}`}>{req.status.replace(/_/g, ' ')}</span>
+                    <div className={s.resultCardInfo}>
+                      <p className={s.resultCardTitle}>
+                        {req.tests.slice(0, 2).join(', ')}
+                        {req.tests.length > 2 && (
+                          <span className={s.moreTests}> +{req.tests.length - 2}</span>
+                        )}
+                        {req.wellnessPackage && (
+                          <span className={s.pkgLabel}> · {req.wellnessPackage.name}</span>
+                        )}
+                      </p>
+                      <span className={s.resultCardSub}>
+                        {req.lab?.name ?? 'Lab being assigned'} ·{' '}
+                        {req.collectionType === 'walk_in' ? 'Walk-in' : 'Home Visit'} ·{' '}
+                        {new Date(req.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className={s.resultCardRight}>
+                      <span className={`${s.statusBadge} ${s[req.status]}`}>
+                        {req.status.replace(/_/g, ' ')}
+                      </span>
+                      <span className={s.chevronIcon}>{open ? '▲' : '▼'}</span>
+                    </div>
                   </div>
-                  {result ? (
-                    <div className={s.resultBody}>
-                      {result.notes && <p className={s.resultNotes}>{result.notes}</p>}
-                      <a href={result.fileUrl} target='_blank' rel='noreferrer' className={s.downloadBtn}>Download Report</a>
+
+                  {/* ── Expanded body ── */}
+                  {open && (
+                    <div className={s.resultCardBody}>
+                      {/* Tests chips */}
+                      <div>
+                        <p className={s.bodyLabel}>Tests Requested</p>
+                        <div className={s.testTagList}>
+                          {req.tests.map((t, i) => (
+                            <span key={i} className={s.testTag}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Detail grid */}
+                      <div className={s.detailGrid}>
+                        <div className={s.detailItem}>
+                          <span className={s.detailLabel}>Collection</span>
+                          <span className={s.detailValue}>
+                            {req.collectionType === 'walk_in' ? '🚶 Walk-in at Lab' : '🏠 Home Visit'}
+                          </span>
+                        </div>
+                        {req.totalAmount > 0 && (
+                          <div className={s.detailItem}>
+                            <span className={s.detailLabel}>Amount</span>
+                            <span className={`${s.detailValue} ${s.detailAmount}`}>
+                              ₦{req.totalAmount.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        {req.paymentRef && (
+                          <div className={s.detailItem}>
+                            <span className={s.detailLabel}>Payment</span>
+                            <span className={`${s.detailValue} ${req.paymentRef.status === 'success' ? s.detailSuccess : s.detailPending}`}>
+                              {req.paymentRef.status === 'success' ? '✓ Confirmed' : '⏳ Pending'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Admin approval chip */}
+                      {req.adminApprovalStatus === 'pending' && (
+                        <div className={s.infoChip}>
+                          Awaiting admin review before lab assignment
+                        </div>
+                      )}
+
+                      {/* Walk-in expiry */}
+                      {req.walkInExpiresAt && req.status === 'pending' && req.collectionType === 'walk_in' && (
+                        <div className={`${s.infoChip} ${s.infoChipWarn}`}>
+                          Walk-in expires: {new Date(req.walkInExpiresAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+
+                      {/* Result ready banner */}
+                      {hasResult && (
+                        <div className={s.resultReadyBanner}>
+                          <span className={s.resultReadyCheck}>✓</span>
+                          <div>
+                            <p className={s.resultReadyTitle}>Your results are ready</p>
+                            {result!.notes && <p className={s.resultReadyNotes}>{result!.notes}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pending note */}
+                      {!hasResult && req.status !== 'completed' && (
+                        <p className={s.pendingNote}>
+                          Results will appear here once your sample is processed.
+                        </p>
+                      )}
+
+                      {/* Action buttons */}
+                      {(hasResult || req.paymentRef?.status === 'success' || canRefund) && (
+                        <div className={s.actionRow}>
+                          {hasResult && result!.fileUrl && (
+                            <a
+                              href={result!.fileUrl}
+                              target='_blank'
+                              rel='noreferrer'
+                              className={s.actionBtn}
+                            >
+                              <DocumentIcon size={13} /> Download Report
+                            </a>
+                          )}
+                          {req.paymentRef?.status === 'success' && (
+                            <button
+                              className={s.actionBtn}
+                              onClick={() => downloadReceipt({
+                                bookingRef: `#${req._id.slice(-8).toUpperCase()}`,
+                                tests: req.tests,
+                                amount: req.paymentRef?.amount ?? req.totalAmount,
+                                collectionType: req.collectionType as 'walk_in' | 'home_visit',
+                                transactionRef: req.paymentRef?._id,
+                              })}
+                            >
+                              Download Receipt
+                            </button>
+                          )}
+                          {canRefund && (
+                            <button
+                              className={`${s.actionBtn} ${s.actionBtnDanger}`}
+                              disabled={refundingId === req._id}
+                              onClick={() => handleRefundRequest(req)}
+                            >
+                              {refundingId === req._id ? <Loader inline size='sm' /> : 'Request Refund'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ) : (req.status !== 'completed' && <p className={s.pendingNote}>Results will appear here once ready.</p>)}
+                  )}
                 </div>
               )
             })}
           </div>
-        )
-      )}
+          )}
+          </>
+        ))}
 
       {/* ── Bank Transfer Modal (individual tests) ── */}
       {showPayModal && (
@@ -436,20 +1010,52 @@ export default function PatientLabs () {
           <div className={s.payPanel}>
             <div className={s.payPanelHeader}>
               <h2 className={s.payPanelTitle}>Pay for Home Visit</h2>
-              <button className={s.payPanelClose} onClick={() => setShowPayModal(false)}>✕</button>
+              <button
+                className={s.payPanelClose}
+                onClick={() => setShowPayModal(false)}
+              >
+                ✕
+              </button>
             </div>
-            <p className={s.payPanelSub}>Transfer <strong>₦{estimatedTotal.toLocaleString()}</strong> to the company bank account below, then enter your reference number. Do not transfer to any personal account.</p>
+            <p className={s.payPanelSub}>
+              Transfer <strong>₦{estimatedTotal.toLocaleString()}</strong> to
+              the company bank account below, then enter your reference number.
+              Do not transfer to any personal account.
+            </p>
             {bankSettings && (
               <div className={s.bankCard}>
                 <BankRow label='Bank' value={bankSettings.companyBankName} />
-                <BankRow label='Account Number' value={bankSettings.companyAccountNumber} copyable />
-                <BankRow label='Account Name' value={bankSettings.companyAccountName} />
-                {bankSettings.directPaymentNote && <p className={s.bankNote}>{bankSettings.directPaymentNote}</p>}
+                <BankRow
+                  label='Account Number'
+                  value={bankSettings.companyAccountNumber}
+                  copyable
+                />
+                <BankRow
+                  label='Account Name'
+                  value={bankSettings.companyAccountName}
+                />
+                {bankSettings.directPaymentNote && (
+                  <p className={s.bankNote}>{bankSettings.directPaymentNote}</p>
+                )}
               </div>
             )}
-            <input className={s.refInput} placeholder='Enter your bank transfer reference…' value={transferRef} onChange={e => setTransferRef(e.target.value.toUpperCase())} autoComplete='off' />
-            <button className={s.payConfirmBtn} disabled={!transferRef.trim() || submittingRef} onClick={handleSubmitTransferRef}>
-              {submittingRef ? <Loader inline size='sm' /> : 'Submit Request & Reference'}
+            <input
+              className={s.refInput}
+              placeholder='Enter your bank transfer reference…'
+              value={transferRef}
+              onChange={e => setTransferRef(e.target.value.toUpperCase())}
+              autoComplete='off'
+            />
+            <button
+              className={s.payConfirmBtn}
+              disabled={!transferRef.trim() || submittingRef}
+              onClick={handleSubmitTransferRef}
+            >
+              {submittingRef ? (
+                <Loader inline size='sm' />
+              ) : (
+                'Submit Request & Reference'
+              )}
             </button>
           </div>
         </div>
@@ -460,24 +1066,49 @@ export default function PatientLabs () {
         <div className={s.payOverlay}>
           <div className={s.payPanel} style={{ maxWidth: 480 }}>
             <div className={s.payPanelHeader}>
-              <h2 className={s.payPanelTitle}>{bookingStep === 'payment' ? 'Pay for Package' : 'Book Package'}</h2>
-              <button className={s.payPanelClose} onClick={() => setShowBookModal(false)}>✕</button>
+              <h2 className={s.payPanelTitle}>Book Package</h2>
+              <button
+                className={s.payPanelClose}
+                onClick={() => setShowBookModal(false)}
+              >
+                ✕
+              </button>
             </div>
 
-            {bookingStep === 'details' ? (
+            {(
               <>
-                <p className={s.payPanelSub}><strong>{selectedPackage.name}</strong> — {selectedPackage.includedTests.length} tests included.</p>
+                <p className={s.payPanelSub}>
+                  <strong>{selectedPackage.name}</strong> —{' '}
+                  {selectedPackage.includedTests.length} tests included.
+                </p>
 
                 {/* Collection type */}
                 <div className={s.collectionRow}>
                   {(['walk_in', 'home_visit'] as const).map(c => (
-                    <label key={c} className={`${s.collectionOpt} ${pkgCollection === c ? s.picked : ''}`}>
-                      <input type='radio' name='pkgCollection' value={c} checked={pkgCollection === c} onChange={() => setPkgCollection(c)} />
-                      <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
+                    <label
+                      key={c}
+                      className={`${s.collectionOpt} ${
+                        pkgCollection === c ? s.picked : ''
+                      }`}
+                    >
+                      <input
+                        type='radio'
+                        name='pkgCollection'
+                        value={c}
+                        checked={pkgCollection === c}
+                        onChange={() => setPkgCollection(c)}
+                      />
+                      <span>
+                        {c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}
+                      </span>
                       <p>
                         {c === 'walk_in'
-                          ? `₦${selectedPackage.walkInPrice.toLocaleString('en-NG')} — visit lab for collection`
-                          : `₦${selectedPackage.homeVisitPrice.toLocaleString('en-NG')} — agent comes to you`}
+                          ? `₦${selectedPackage.walkInPrice.toLocaleString(
+                              'en-NG'
+                            )} — visit lab for collection`
+                          : `₦${selectedPackage.homeVisitPrice.toLocaleString(
+                              'en-NG'
+                            )} — agent comes to you`}
                       </p>
                     </label>
                   ))}
@@ -487,42 +1118,58 @@ export default function PatientLabs () {
                 {pkgCollection === 'home_visit' && (
                   <>
                     <div className={s.locationRow}>
-                      <input type='text' value={pkgAddress} onChange={e => setPkgAddress(e.target.value)} placeholder='Your full address or nearest landmark…' className={s.locationInput} />
-                      <button type='button' className={s.gpsBtn} disabled={pkgGpsLoading} onClick={usePkgGPS}>
-                        {pkgGpsLoading ? '…' : <><MapPinIcon size={13} /> GPS</>}
+                      <input
+                        type='text'
+                        value={pkgAddress}
+                        onChange={e => setPkgAddress(e.target.value)}
+                        placeholder='Your full address or nearest landmark…'
+                        className={s.locationInput}
+                      />
+                      <button
+                        type='button'
+                        className={s.gpsBtn}
+                        disabled={pkgGpsLoading}
+                        onClick={usePkgGPS}
+                      >
+                        {pkgGpsLoading ? (
+                          '…'
+                        ) : (
+                          <>
+                            <MapPinIcon size={13} /> GPS
+                          </>
+                        )}
                       </button>
                     </div>
-                    {pkgCoords && <p className={s.coordsNote}>GPS: {pkgCoords.lat.toFixed(5)}, {pkgCoords.lng.toFixed(5)}</p>}
+                    {pkgCoords && (
+                      <p className={s.coordsNote}>
+                        GPS: {pkgCoords.lat.toFixed(5)},{' '}
+                        {pkgCoords.lng.toFixed(5)}
+                      </p>
+                    )}
                   </>
                 )}
 
                 <div className={s.pkgPriceHighlight}>
                   Total: <strong>₦{pkgPrice.toLocaleString('en-NG')}</strong>
-                  {pkgCollection === 'walk_in' && <span> — visit lab for sample collection</span>}
-                  {pkgCollection === 'home_visit' && bankSettings && <span> — transfer to company account</span>}
+                  {pkgPrice > 0 && <span> — pay securely by card</span>}
                 </div>
 
-                <button className={s.payConfirmBtn} disabled={bookingSubmitting || (pkgCollection === 'home_visit' && !pkgAddress)} onClick={handleBookPackage}>
-                  {bookingSubmitting ? <Loader inline size='sm' /> : pkgCollection === 'home_visit' && pkgPrice > 0 && bankSettings ? 'Continue to Payment' : 'Confirm Booking'}
+                <button
+                  className={s.payConfirmBtn}
+                  disabled={
+                    bookingSubmitting ||
+                    (pkgCollection === 'home_visit' && !pkgAddress)
+                  }
+                  onClick={handleBookPackage}
+                >
+                  {bookingSubmitting ? (
+                    <Loader inline size='sm' />
+                  ) : pkgPrice > 0 ? (
+                    `Pay ₦${pkgPrice.toLocaleString()} & Book`
+                  ) : (
+                    'Confirm Booking'
+                  )}
                 </button>
-              </>
-            ) : (
-              /* Payment step */
-              <>
-                <p className={s.payPanelSub}>Transfer <strong>₦{pkgPrice.toLocaleString()}</strong> to the company bank account below for your <strong>{selectedPackage.name}</strong> package. Do not transfer to any personal account. Enter your reference to confirm.</p>
-                {bankSettings && (
-                  <div className={s.bankCard}>
-                    <BankRow label='Bank' value={bankSettings.companyBankName} />
-                    <BankRow label='Account Number' value={bankSettings.companyAccountNumber} copyable />
-                    <BankRow label='Account Name' value={bankSettings.companyAccountName} />
-                    {bankSettings.directPaymentNote && <p className={s.bankNote}>{bankSettings.directPaymentNote}</p>}
-                  </div>
-                )}
-                <input className={s.refInput} placeholder='Enter your bank transfer reference…' value={bookingRef} onChange={e => setBookingRef(e.target.value.toUpperCase())} autoComplete='off' />
-                <button className={s.payConfirmBtn} disabled={!bookingRef.trim() || bookingSubmitting} onClick={handleBookPackage}>
-                  {bookingSubmitting ? <Loader inline size='sm' /> : 'Confirm Booking & Reference'}
-                </button>
-                <button className={s.payPanelClose} style={{ alignSelf: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }} onClick={() => setBookingStep('details')}>← Back</button>
               </>
             )}
           </div>
@@ -532,14 +1179,33 @@ export default function PatientLabs () {
   )
 }
 
-function BankRow ({ label, value, copyable }: { label: string; value: string; copyable?: boolean }) {
-  function copy () { navigator.clipboard?.writeText(value).catch(() => {}) }
+function BankRow ({
+  label,
+  value,
+  copyable
+}: {
+  label: string
+  value: string
+  copyable?: boolean
+}) {
+  function copy () {
+    navigator.clipboard?.writeText(value).catch(() => {})
+  }
   return (
     <div className={s.bankRow}>
       <span className={s.bankRowLabel}>{label}</span>
       <span className={s.bankRowVal}>
         {value || '—'}
-        {copyable && value && <button type='button' className={s.copyBtn} onClick={copy} title='Copy'>⧉</button>}
+        {copyable && value && (
+          <button
+            type='button'
+            className={s.copyBtn}
+            onClick={copy}
+            title='Copy'
+          >
+            ⧉
+          </button>
+        )}
       </span>
     </div>
   )

@@ -107,7 +107,7 @@ function SignupInner () {
   useEffect(() => {
     fetch(
       `${
-        process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+        process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
       }/admin/public/content`
     )
       .then(r => r.json())
@@ -134,7 +134,7 @@ function SignupInner () {
   useEffect(() => {
     if (!googleToken) return
     const apiBase =
-      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
+      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
     fetch(
       `${apiBase}/auth/google/pending?token=${encodeURIComponent(googleToken)}`
     )
@@ -481,7 +481,7 @@ function SignupInner () {
                 onClick={() => {
                   const api =
                     process.env.NEXT_PUBLIC_API_URL ??
-                    'https://api.ibamhealth.com/api'
+                    'http://localhost:5000/api'
                   const cb = window.location.origin + '/auth/google/callback'
                   window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
                     cb

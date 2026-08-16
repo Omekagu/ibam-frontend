@@ -165,7 +165,17 @@
   &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 }
 
-// ─── Results list ─────────────────────────────────
+// ─── Next-gen Results Cards ────────────────────────
+
+.emptyState {
+  text-align: center;
+  padding: 3.5rem 1rem;
+  color: var(--text-faint);
+}
+.emptyStateIcon  { font-size: 3rem; line-height: 1; margin-bottom: 0.75rem; }
+.emptyStateTitle { font-size: 1rem; font-weight: 700; color: var(--text-muted); margin: 0 0 0.375rem; }
+.emptyStateSub   { font-size: 0.8125rem; }
+
 .resultsList {
   display: flex;
   flex-direction: column;
@@ -177,24 +187,243 @@
   border: 1px solid $navy-border;
   border-radius: $radius-lg;
   overflow: hidden;
+  transition: border-color 0.15s ease;
+
+  &:hover { border-color: rgba($primary, 0.25); }
 }
 
-.resultTop {
+.resultCardHeader {
   display: flex;
   align-items: center;
   gap: 0.875rem;
   padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover { background: rgba(255,255,255,0.025); }
+}
+
+.resultIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-md;
+  background: rgba(124, 58, 237, 0.12);
+  color: #7C3AED;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.resultIconWrapDone {
+  background: rgba($success, 0.12);
+  color: $success;
+}
+
+.resultCardInfo { flex: 1; min-width: 0; }
+
+.resultCardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moreTests {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $accent;
+  background: rgba($primary, 0.1);
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 2px;
+}
+
+.pkgLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.resultCardSub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.resultCardRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chevronIcon {
+  font-size: 0.5rem;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
+.resultCardBody {
+  border-top: 1px solid $navy-border;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bodyLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.5rem;
+}
+
+.testTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.testTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  color: var(--text-semi);
+}
+
+.detailGrid {
+  display: flex;
+  gap: 2rem;
   flex-wrap: wrap;
 }
 
-.labIcon { font-size: 1.5rem; flex-shrink: 0; }
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
 
-.resultInfo {
-  flex: 1;
-  min-width: 0;
+.detailLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
-  p    { font-size: 0.875rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-  span { font-size: 0.75rem; color: var(--text-muted); display: block; }
+.detailValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-semi);
+}
+
+.detailAmount { color: $success; font-size: 1rem; }
+.detailSuccess { color: $success; }
+.detailPending { color: $warning; }
+
+.infoChip {
+  font-size: 0.78rem;
+  padding: 0.5rem 0.875rem;
+  background: rgba($primary, 0.07);
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: $radius-md;
+  color: $accent;
+  font-weight: 500;
+}
+
+.infoChipWarn {
+  background: rgba($warning, 0.07);
+  border-color: rgba($warning, 0.22);
+  color: $warning;
+}
+
+.resultReadyBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgba($success, 0.07);
+  border: 1px solid rgba($success, 0.22);
+  border-radius: $radius-md;
+}
+
+.resultReadyCheck {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: $success;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.resultReadyTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: $success;
+  margin: 0 0 2px;
+}
+
+.resultReadyNotes {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pendingNote {
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.actionRow {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 0.25rem;
+  border-top: 1px solid $navy-border;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.45rem 1rem;
+  background: rgba($primary, 0.1);
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $accent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { background: rgba($primary, 0.18); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.actionBtnDanger {
+  background: rgba($danger, 0.07);
+  border-color: rgba($danger, 0.3);
+  color: $danger;
+
+  &:hover { background: rgba($danger, 0.14); }
 }
 
 .statusBadge {
@@ -205,50 +434,14 @@
   text-transform: capitalize;
   flex-shrink: 0;
 
-  &.pending         { background: rgba($warning,0.12); color: $warning; }
-  &.assigned        { background: rgba(59,130,246,0.12); color: #60A5FA; }
+  &.pending          { background: rgba($warning,0.12); color: $warning; }
+  &.assigned         { background: rgba(59,130,246,0.12); color: #60A5FA; }
   &.sample_collected { background: rgba($accent,0.1); color: $accent; }
-  &.processing      { background: rgba($accent,0.1); color: $accent; }
-  &.completed       { background: rgba($success,0.12); color: $success; }
-  &.cancelled       { background: rgba($danger,0.12); color: $danger; }
-}
-
-.resultBody {
-  border-top: 1px solid $navy-border;
-  padding: 1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.resultNotes {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-}
-
-.downloadBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba($primary,0.12);
-  border: 1px solid rgba($primary,0.3);
-  border-radius: $radius-md;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: $accent;
-  text-decoration: none;
-  transition: all 0.15s ease;
-
-  &:hover { background: rgba($primary,0.2); }
-}
-
-.pendingNote {
-  border-top: 1px solid $navy-border;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.8125rem;
-  color: var(--text-faint);
-  font-style: italic;
+  &.processing       { background: rgba($accent,0.1); color: $accent; }
+  &.completed        { background: rgba($success,0.12); color: $success; }
+  &.cancelled        { background: rgba($danger,0.12); color: $danger; }
+  &.no_show          { background: rgba($danger,0.12); color: $danger; }
+  &.expired          { background: rgba($warning,0.08); color: rgba($warning,0.7); }
 }
 
 // Pricing & new elements
@@ -286,6 +479,7 @@
 
 .resultFooter {
   border-top: 1px solid $navy-border; padding: 0.875rem 1.25rem;
+  display: flex; gap: 0.625rem; flex-wrap: wrap; align-items: center;
 }
 .payBtn {
   @include btn-primary;
@@ -311,6 +505,15 @@
 
 .optional { font-size: 0.7rem; font-weight: 500; color: var(--text-faint); margin-left: 6px; text-transform: none; letter-spacing: 0; }
 .locationRow { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+
+.scheduleRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.875rem;
+}
+.scheduleField { display: flex; flex-direction: column; gap: 4px; }
+.scheduleLabel { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
 .locationInput {
   flex: 1; background: var(--input-bg); border: 1px solid $navy-border;
   border-radius: $radius-sm; padding: 9px 12px; color: var(--text); font-size: 0.875rem;
@@ -556,6 +759,42 @@
   justify-content: center;
   padding: 0.65rem 1rem;
   font-size: 0.875rem;
+}
+
+// ─── Walk-in Paystack Banner ──────────────────────────
+.paystackBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: rgba($primary, 0.06);
+  border: 1px solid rgba($primary, 0.25);
+  border-radius: $radius-lg;
+  margin-bottom: 1rem;
+}
+.paystackBannerInfo {
+  strong { color: $accent; font-size: 0.9375rem; }
+  p { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+}
+.paystackBannerActions { display: flex; gap: 0.75rem; align-items: center; }
+
+// ─── Refund button ────────────────────────────────────
+.refundBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.875rem;
+  border: 1px solid rgba($danger, 0.5);
+  border-radius: $radius-md;
+  background: none;
+  color: $danger;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { background: rgba($danger, 0.08); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .pkgPriceHighlight {

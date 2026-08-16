@@ -8,11 +8,21 @@ import {
   CreditCardIcon, CurrencyIcon,
 } from '@/components/icons'
 
+interface RevenueBreakdown {
+  total: number
+  consultation: number
+  pharmacy: number
+  lab_test: number
+  subscription: number
+  wellness_package: number
+}
+
 interface Stats {
   totalUsers: number
   totalDoctors: number
   totalAppointments: number
   totalRevenue: number
+  revenue: RevenueBreakdown
   activeSubscriptions: number
 }
 
@@ -47,6 +57,26 @@ export default function AdminDashboard () {
         <StatCard icon={<CalendarIcon size={20} />}    color='rgba(245,158,11,0.12)' label='Total Appointments' value={stats?.totalAppointments?.toLocaleString() ?? '—'} />
         <StatCard icon={<CurrencyIcon size={20} />}    color='rgba(59,130,246,0.12)' label='Total Revenue'      value={stats ? '₦' + (stats.totalRevenue / 100).toLocaleString() : '—'} />
       </div>
+
+      {stats?.revenue && (
+        <div className={s.revenuePanel}>
+          <div className={s.panelHead}><h3>Revenue Breakdown</h3></div>
+          <div className={s.revenueRows}>
+            {([
+              { key: 'consultation',     label: 'Consultations'      },
+              { key: 'lab_test',         label: 'Lab Tests'          },
+              { key: 'pharmacy',         label: 'Pharmacy'           },
+              { key: 'wellness_package', label: 'Wellness Packages'  },
+              { key: 'subscription',     label: 'Subscriptions'      },
+            ] as { key: keyof RevenueBreakdown; label: string }[]).map(({ key, label }) => (
+              <div key={key} className={s.revenueRow}>
+                <span className={s.revenueLabel}>{label}</span>
+                <span className={s.revenueValue}>₦{((stats.revenue[key] ?? 0) / 100).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={s.grid2}>
         <div className={s.panel}>

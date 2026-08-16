@@ -50,6 +50,55 @@
   &.down { color: $danger; }
 }
 
+// ─── Revenue breakdown ───────────────────────────
+.revenuePanel {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.revenueRows {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+
+  @media (min-width: $bp-lg) { grid-template-columns: repeat(5, 1fr); }
+}
+
+.revenueRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  border-right: 1px solid $navy-border;
+  border-top: 1px solid $navy-border;
+
+  &:nth-child(-n+2) { border-top: none; }
+  &:nth-child(2n)   { border-right: none; }
+
+  @media (min-width: $bp-lg) {
+    border-top: none;
+    &:nth-child(2n)  { border-right: 1px solid $navy-border; }
+    &:nth-child(5n)  { border-right: none; }
+  }
+}
+
+.revenueLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.revenueValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
 // ─── Two-col grid ────────────────────────────────
 .grid2 {
   display: grid;

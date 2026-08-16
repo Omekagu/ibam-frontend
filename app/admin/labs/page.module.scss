@@ -30,6 +30,7 @@
 .testsBtn   { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid $navy-border; background: var(--input-bg); color: var(--text-semi); font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: var(--input-hover-bg); } }
 .approveBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($success,0.3); background: rgba($success,0.08); color: $success; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($success,0.16); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
 .suspendBtn { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($danger,0.3); background: rgba($danger,0.07); color: $danger; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($danger,0.14); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
+.portalBtn  { padding: 5px 11px; border-radius: $radius-sm; border: 1px solid rgba($accent,0.35); background: rgba($primary,0.08); color: $accent; font-size: 0.75rem; font-weight: 600; cursor: pointer; &:hover { background: rgba($primary,0.16); } &:disabled { opacity: 0.4; cursor: not-allowed; } }
 
 // ─── Test editor ─────────────────────────────────────
 .testEditor {
