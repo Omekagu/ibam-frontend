@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Nunito } from 'next/font/google'
+import Script from 'next/script'
 import './globals.scss'
 import ScrollReveal from '@/components/ScrollReveal'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -72,20 +73,7 @@ export default function RootLayout ({
         <link rel='apple-touch-icon' href='/Ibam Logo Png.png' />
         {/* Prevent theme flash before hydration.
             Public/auth routes are always dark; portals use stored preference. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-          (function(){
-            var p = window.location.pathname;
-            var roots = ['/patient','/doctor','/admin','/partner'];
-            var isPortal = roots.some(function(x){ return p === x || p.startsWith(x + '/'); });
-            var t = isPortal ? (localStorage.getItem('theme') || 'light') : 'dark';
-            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-            else document.documentElement.removeAttribute('data-theme');
-          })()
-        `
-          }}
-        />
+        <Script id='theme-init' strategy='beforeInteractive' src='/theme-init.js' />
       </head>
       <body>
         <ThemeProvider>

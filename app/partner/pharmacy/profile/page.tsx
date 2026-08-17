@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
@@ -14,6 +14,7 @@ interface Profile {
   licenseNumber: string
   status: string
   coverageAreas: string[]
+  logo?: string
   bankAccount?: { bankName?: string; accountNumber?: string; accountName?: string; bankCode?: string }
 }
 
@@ -44,6 +45,9 @@ export default function PharmacyProfilePage () {
   const [acctName,   setAcctName]   = useState('')
   const [bankCode,   setBankCode]   = useState('')
   const [bankSaving, setBankSaving] = useState(false)
+  const [logo,       setLogo]       = useState('')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -59,6 +63,7 @@ export default function PharmacyProfilePage () {
         setAddress(p.address || '')
         setPhone(p.phone || '')
         setAreas((p.coverageAreas || []).join(', '))
+        setLogo(p.logo ?? '')
         setBankName(p.bankAccount?.bankName ?? '')
         setAcctNumber(p.bankAccount?.accountNumber ?? '')
         setAcctName(p.bankAccount?.accountName ?? '')
@@ -72,6 +77,17 @@ export default function PharmacyProfilePage () {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  async function uploadLogo (file: File) {
+    setLogoUploading(true)
+    try {
+      const form = new FormData(); form.append('logo', file)
+      const r = await api.post('/pharmacy/profile/logo', form)
+      setLogo(r.data.data?.logo ?? '')
+      modal.show({ variant: 'success', title: 'Logo Updated', message: 'Your pharmacy logo has been saved.' })
+    } catch { modal.show({ variant: 'declined', title: 'Upload Failed', message: 'Could not upload logo. Try again.' }) }
+    setLogoUploading(false)
+  }
 
   async function save () {
     if (!name.trim() || !address.trim() || !phone.trim()) {
@@ -106,10 +122,18 @@ export default function PharmacyProfilePage () {
     try {
       const r = await api.post('/pharmacy/earnings/request-payout')
       const { totalRequested, count } = r.data.data ?? {}
-      alert(`Payout requested: ₦${totalRequested?.toLocaleString()} across ${count} record(s) submitted to admin.`)
+      modal.show({
+        variant: 'success',
+        title: 'Payout Requested',
+        message: `₦${totalRequested?.toLocaleString()} across ${count} record(s) submitted to admin for review.`,
+      })
       load()
     } catch (err: unknown) {
-      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Payout request failed. Please try again.')
+      modal.show({
+        variant: 'declined',
+        title: 'Payout Failed',
+        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Payout request failed. Please try again.',
+      })
     }
     setPayoutReq(false)
   }
@@ -139,6 +163,28 @@ export default function PharmacyProfilePage () {
         <div className={s.empty}><Loader label='Loading profile…' /></div>
       ) : (
         <>
+          {/* ── Logo ── */}
+          <div className={s.form}>
+            <h2 className={s.sectionTitle}>Pharmacy Logo</h2>
+            <p className={s.subtext}>Your logo appears on your pharmacy card shown to patients.</p>
+            <input ref={logoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
+            <div className={s.logoRow}>
+              <div className={s.logoPreview} onClick={() => logoInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+                {logo ? (
+                  <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ) : (
+                  <span style={{ fontSize: '1.75rem' }}>🏥</span>
+                )}
+              </div>
+              <div>
+                <button className={s.saveBtn} style={{ width: 'auto', padding: '0.5rem 1.25rem' }} onClick={() => logoInputRef.current?.click()} disabled={logoUploading}>
+                  {logoUploading ? 'Uploading…' : logo ? 'Change Logo' : 'Upload Logo'}
+                </button>
+                <p className={s.subtext} style={{ marginTop: '0.375rem' }}>PNG, JPG up to 5 MB. Square image recommended.</p>
+              </div>
+            </div>
+          </div>
+
           {/* ── Business info ── */}
           <div className={s.form}>
             <h2 className={s.sectionTitle}>Business Information</h2>

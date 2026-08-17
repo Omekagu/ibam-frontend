@@ -123,7 +123,7 @@ export default function SubscriptionsPage () {
   useEffect(() => {
     load()
 
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {

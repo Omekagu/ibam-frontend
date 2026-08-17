@@ -11,20 +11,35 @@ import { Suspense } from 'react'
 // ── Axios instance that uses either the session-storage lab token (impersonation)
 //    or the normal localStorage token (lab logs in themselves).
 function makeLabApi (token?: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
+  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
   const inst = axios.create({ baseURL: base })
   inst.interceptors.request.use(cfg => {
-    const t = token
-      ?? (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('lab_token') : null)
-      ?? (typeof localStorage  !== 'undefined' ? localStorage.getItem('token') : null)
+    const t =
+      token ??
+      (typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem('lab_token')
+        : null) ??
+      (typeof localStorage !== 'undefined'
+        ? localStorage.getItem('token')
+        : null)
     if (t) cfg.headers.Authorization = `Bearer ${t}`
     return cfg
   })
   return inst
 }
 
-interface Patient { name: string; phone?: string; email?: string; _id?: string }
-interface PaymentRef { status: string; amount: number; method?: string; reference?: string }
+interface Patient {
+  name: string
+  phone?: string
+  email?: string
+  _id?: string
+}
+interface PaymentRef {
+  status: string
+  amount: number
+  method?: string
+  reference?: string
+}
 interface LabRequest {
   _id: string
   tests: string[]
@@ -48,7 +63,7 @@ const STATUS_LABEL: Record<string, string> = {
   processing: 'Processing',
   completed: 'Completed',
   cancelled: 'Cancelled',
-  no_show: 'No Show',
+  no_show: 'No Show'
 }
 
 const STATUS_CLS: Record<string, string> = {
@@ -58,25 +73,42 @@ const STATUS_CLS: Record<string, string> = {
   processing: s.statusProcessing,
   completed: s.statusDone,
   cancelled: s.statusCancelled,
-  no_show: s.statusCancelled,
+  no_show: s.statusCancelled
 }
 
 type Tab = 'available' | 'mine' | 'completed'
 
 function fmt (iso: string) {
-  return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString('en-NG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
 }
 
 function fmtPreferred (date?: string, time?: string) {
   if (!date) return null
-  const d = new Date(date).toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  const d = new Date(date).toLocaleDateString('en-NG', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
   return time ? `${d} at ${time}` : d
 }
 
 // ── Upload result modal ───────────────────────────────────────────────────────
 function UploadModal ({
-  req, labApi, onClose, onDone,
-}: { req: LabRequest; labApi: ReturnType<typeof makeLabApi>; onClose: () => void; onDone: () => void }) {
+  req,
+  labApi,
+  onClose,
+  onDone
+}: {
+  req: LabRequest
+  labApi: ReturnType<typeof makeLabApi>
+  onClose: () => void
+  onDone: () => void
+}) {
   const [file, setFile] = useState<File | null>(null)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -84,8 +116,12 @@ function UploadModal ({
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function submit () {
-    if (!file) { setErr('Please select a result file.'); return }
-    setSaving(true); setErr('')
+    if (!file) {
+      setErr('Please select a result file.')
+      return
+    }
+    setSaving(true)
+    setErr('')
     const form = new FormData()
     form.append('result', file)
     if (notes) form.append('notes', notes)
@@ -94,7 +130,10 @@ function UploadModal ({
       onDone()
       onClose()
     } catch (e: unknown) {
-      setErr((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Upload failed. Try again.')
+      setErr(
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Upload failed. Try again.'
+      )
     }
     setSaving(false)
   }
@@ -104,19 +143,35 @@ function UploadModal ({
       <div className={s.modal}>
         <div className={s.modalHead}>
           <h3 className={s.modalTitle}>Upload Result</h3>
-          <button className={s.closeBtn} onClick={onClose}>✕</button>
+          <button className={s.closeBtn} onClick={onClose}>
+            ✕
+          </button>
         </div>
         <p className={s.modalSub}>
-          {req.tests.slice(0, 3).join(', ')}{req.tests.length > 3 ? ` +${req.tests.length - 3} more` : ''} ·{' '}
+          {req.tests.slice(0, 3).join(', ')}
+          {req.tests.length > 3 ? ` +${req.tests.length - 3} more` : ''} ·{' '}
           {req.patient?.name ?? 'Patient'}
         </p>
         {err && <p className={s.errMsg}>{err}</p>}
         <div className={s.fileArea} onClick={() => fileRef.current?.click()}>
-          <input ref={fileRef} type='file' accept='.pdf,image/*' style={{ display: 'none' }}
-            onChange={e => { setFile(e.target.files?.[0] ?? null); setErr('') }} />
-          {file
-            ? <p className={s.fileName}>{file.name}</p>
-            : <><p>Click to attach result file</p><span>PDF or image</span></>}
+          <input
+            ref={fileRef}
+            type='file'
+            accept='.pdf,image/*'
+            style={{ display: 'none' }}
+            onChange={e => {
+              setFile(e.target.files?.[0] ?? null)
+              setErr('')
+            }}
+          />
+          {file ? (
+            <p className={s.fileName}>{file.name}</p>
+          ) : (
+            <>
+              <p>Click to attach result file</p>
+              <span>PDF or image</span>
+            </>
+          )}
         </div>
         <textarea
           className={s.notesInput}
@@ -126,8 +181,14 @@ function UploadModal ({
           placeholder='Optional notes or summary for the patient…'
         />
         <div className={s.modalFooter}>
-          <button className={s.cancelBtn} onClick={onClose}>Cancel</button>
-          <button className={s.saveBtn} onClick={submit} disabled={saving || !file}>
+          <button className={s.cancelBtn} onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className={s.saveBtn}
+            onClick={submit}
+            disabled={saving || !file}
+          >
             {saving ? <Loader inline size='sm' /> : 'Upload Result'}
           </button>
         </div>
@@ -138,7 +199,10 @@ function UploadModal ({
 
 // ── Request card ─────────────────────────────────────────────────────────────
 function RequestCard ({
-  req, isAvailable, labApi, onRefresh,
+  req,
+  isAvailable,
+  labApi,
+  onRefresh
 }: {
   req: LabRequest
   isAvailable: boolean
@@ -155,10 +219,21 @@ function RequestCard ({
     setClaiming(true)
     try {
       await labApi.post(`/diagnostics/labs/requests/${req._id}/claim`)
-      modal.show({ variant: 'success', title: 'Request Claimed', message: 'This request is now in your queue. The patient has been notified.' })
+      modal.show({
+        variant: 'success',
+        title: 'Request Claimed',
+        message:
+          'This request is now in your queue. The patient has been notified.'
+      })
       onRefresh()
     } catch (e: unknown) {
-      modal.show({ variant: 'declined', title: 'Error', message: (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not claim request.' })
+      modal.show({
+        variant: 'declined',
+        title: 'Error',
+        message:
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message ?? 'Could not claim request.'
+      })
     }
     setClaiming(false)
   }
@@ -166,10 +241,18 @@ function RequestCard ({
   async function updateStatus (status: string) {
     setStatusUpdating(true)
     try {
-      await labApi.put(`/diagnostics/labs/requests/${req._id}/status`, { status })
+      await labApi.put(`/diagnostics/labs/requests/${req._id}/status`, {
+        status
+      })
       onRefresh()
     } catch (e: unknown) {
-      modal.show({ variant: 'declined', title: 'Error', message: (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not update status.' })
+      modal.show({
+        variant: 'declined',
+        title: 'Error',
+        message:
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message ?? 'Could not update status.'
+      })
     }
     setStatusUpdating(false)
   }
@@ -181,23 +264,33 @@ function RequestCard ({
   return (
     <>
       <div className={s.reqCard}>
-        <div className={s.reqCardTop} onClick={() => setExpanded(p => !p)} role='button'>
+        <div
+          className={s.reqCardTop}
+          onClick={() => setExpanded(p => !p)}
+          role='button'
+        >
           <div className={`${s.reqIcon} ${isCompleted ? s.reqIconDone : ''}`}>
             <MicroscopeIcon size={18} />
           </div>
           <div className={s.reqInfo}>
             <p className={s.reqTitle}>
               {req.tests.slice(0, 2).join(', ')}
-              {req.tests.length > 2 && <span className={s.moreTag}> +{req.tests.length - 2}</span>}
+              {req.tests.length > 2 && (
+                <span className={s.moreTag}> +{req.tests.length - 2}</span>
+              )}
             </p>
             <span className={s.reqMeta}>
               {req.patient?.name ?? 'Patient'} ·{' '}
-              {req.collectionType === 'home_visit' ? '🏠 Home Visit' : '🚶 Walk-in'} ·{' '}
-              {fmt(req.createdAt)}
+              {req.collectionType === 'home_visit'
+                ? '🏠 Home Visit'
+                : '🚶 Walk-in'}{' '}
+              · {fmt(req.createdAt)}
             </span>
           </div>
           <div className={s.reqRight}>
-            <span className={`${s.statusBadge} ${STATUS_CLS[req.status] ?? ''}`}>
+            <span
+              className={`${s.statusBadge} ${STATUS_CLS[req.status] ?? ''}`}
+            >
               {STATUS_LABEL[req.status] ?? req.status}
             </span>
             <span className={s.chevron}>{expanded ? '▲' : '▼'}</span>
@@ -210,7 +303,11 @@ function RequestCard ({
             <div>
               <p className={s.bodyLabel}>Tests</p>
               <div className={s.testTags}>
-                {req.tests.map((t, i) => <span key={i} className={s.testTag}>{t}</span>)}
+                {req.tests.map((t, i) => (
+                  <span key={i} className={s.testTag}>
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -219,29 +316,47 @@ function RequestCard ({
               <div className={s.detailItem}>
                 <span className={s.detailLabel}>Patient</span>
                 <span className={s.detailVal}>{req.patient?.name ?? '—'}</span>
-                {req.patient?.phone && <span className={s.detailSub}>{req.patient.phone}</span>}
+                {req.patient?.phone && (
+                  <span className={s.detailSub}>{req.patient.phone}</span>
+                )}
               </div>
               <div className={s.detailItem}>
                 <span className={s.detailLabel}>Booking Ref</span>
-                <span className={`${s.detailVal} ${s.detailMono}`}>#{req._id.slice(-8).toUpperCase()}</span>
+                <span className={`${s.detailVal} ${s.detailMono}`}>
+                  #{req._id.slice(-8).toUpperCase()}
+                </span>
               </div>
               <div className={s.detailItem}>
                 <span className={s.detailLabel}>Collection</span>
-                <span className={s.detailVal}>{req.collectionType === 'home_visit' ? 'Home Visit' : 'Walk-in at Lab'}</span>
+                <span className={s.detailVal}>
+                  {req.collectionType === 'home_visit'
+                    ? 'Home Visit'
+                    : 'Walk-in at Lab'}
+                </span>
               </div>
               {req.totalAmount > 0 && (
                 <div className={s.detailItem}>
                   <span className={s.detailLabel}>Amount</span>
-                  <span className={`${s.detailVal} ${s.detailGreen}`}>₦{req.totalAmount.toLocaleString()}</span>
+                  <span className={`${s.detailVal} ${s.detailGreen}`}>
+                    ₦{req.totalAmount.toLocaleString()}
+                  </span>
                 </div>
               )}
               {req.paymentRef && (
                 <div className={s.detailItem}>
                   <span className={s.detailLabel}>Payment</span>
-                  <span className={`${s.detailVal} ${isPaid ? s.detailGreen : s.detailWarn}`}>
+                  <span
+                    className={`${s.detailVal} ${
+                      isPaid ? s.detailGreen : s.detailWarn
+                    }`}
+                  >
                     {isPaid ? '✓ Confirmed' : '⏳ Pending'}
                   </span>
-                  {req.paymentRef.reference && <span className={s.detailSub}>{req.paymentRef.reference}</span>}
+                  {req.paymentRef.reference && (
+                    <span className={s.detailSub}>
+                      {req.paymentRef.reference}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -253,7 +368,9 @@ function RequestCard ({
                   <p className={s.visitAddr}>📍 {req.pickupLocation.address}</p>
                 )}
                 {preferred && (
-                  <p className={s.visitDate}>🗓 Preferred: <strong>{preferred}</strong></p>
+                  <p className={s.visitDate}>
+                    🗓 Preferred: <strong>{preferred}</strong>
+                  </p>
                 )}
               </div>
             )}
@@ -269,36 +386,59 @@ function RequestCard ({
             {/* Actions */}
             <div className={s.actionRow}>
               {isAvailable && (
-                <button className={s.claimBtn} onClick={claim} disabled={claiming}>
-                  {claiming ? <Loader inline size='sm' /> : 'Claim This Request'}
+                <button
+                  className={s.claimBtn}
+                  onClick={claim}
+                  disabled={claiming}
+                >
+                  {claiming ? (
+                    <Loader inline size='sm' />
+                  ) : (
+                    'Claim This Request'
+                  )}
                 </button>
               )}
 
               {!isAvailable && !isCompleted && (
                 <>
                   {req.status === 'assigned' && (
-                    <button className={s.actionBtn} disabled={statusUpdating}
-                      onClick={() => updateStatus('sample_collected')}>
+                    <button
+                      className={s.actionBtn}
+                      disabled={statusUpdating}
+                      onClick={() => updateStatus('sample_collected')}
+                    >
                       {statusUpdating ? '…' : 'Mark Sample Collected'}
                     </button>
                   )}
                   {req.status === 'sample_collected' && (
-                    <button className={s.actionBtn} disabled={statusUpdating}
-                      onClick={() => updateStatus('processing')}>
+                    <button
+                      className={s.actionBtn}
+                      disabled={statusUpdating}
+                      onClick={() => updateStatus('processing')}
+                    >
                       {statusUpdating ? '…' : 'Mark Processing'}
                     </button>
                   )}
-                  {(req.status === 'sample_collected' || req.status === 'processing' || req.status === 'assigned') && (
-                    <button className={s.uploadBtn} onClick={() => setShowUpload(true)}>
+                  {(req.status === 'sample_collected' ||
+                    req.status === 'processing' ||
+                    req.status === 'assigned') && (
+                    <button
+                      className={s.uploadBtn}
+                      onClick={() => setShowUpload(true)}
+                    >
                       <DocumentIcon size={13} /> Upload Result
                     </button>
                   )}
-                  {req.status === 'assigned' && req.collectionType === 'walk_in' && (
-                    <button className={s.noShowBtn} disabled={statusUpdating}
-                      onClick={() => updateStatus('no_show')}>
-                      Mark No-Show
-                    </button>
-                  )}
+                  {req.status === 'assigned' &&
+                    req.collectionType === 'walk_in' && (
+                      <button
+                        className={s.noShowBtn}
+                        disabled={statusUpdating}
+                        onClick={() => updateStatus('no_show')}
+                      >
+                        Mark No-Show
+                      </button>
+                    )}
                 </>
               )}
             </div>
@@ -307,7 +447,12 @@ function RequestCard ({
       </div>
 
       {showUpload && (
-        <UploadModal req={req} labApi={labApi} onClose={() => setShowUpload(false)} onDone={onRefresh} />
+        <UploadModal
+          req={req}
+          labApi={labApi}
+          onClose={() => setShowUpload(false)}
+          onDone={onRefresh}
+        />
       )}
     </>
   )
@@ -346,7 +491,9 @@ function LabPortalInner () {
     try {
       const [reqRes, profileRes] = await Promise.all([
         labApi.get('/diagnostics/labs/requests'),
-        labApi.get('/diagnostics/labs/profile').catch(() => ({ data: { data: {} } })),
+        labApi
+          .get('/diagnostics/labs/profile')
+          .catch(() => ({ data: { data: {} } }))
       ])
       setAvailable(reqRes.data.data?.available ?? [])
       setMine(reqRes.data.data?.mine ?? [])
@@ -354,7 +501,11 @@ function LabPortalInner () {
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number } })?.response?.status
       if (status === 401) {
-        modal.show({ variant: 'declined', title: 'Session Expired', message: 'Please log in again or ask an admin to re-open the portal.' })
+        modal.show({
+          variant: 'declined',
+          title: 'Session Expired',
+          message: 'Please log in again or ask an admin to re-open the portal.'
+        })
       }
     }
   }, [labApi, modal])
@@ -365,27 +516,32 @@ function LabPortalInner () {
     return () => clearInterval(iv)
   }, [load])
 
-  const myActive = mine.filter(r => r.status !== 'completed' && r.status !== 'cancelled')
-  const myDone   = mine.filter(r => r.status === 'completed' || r.status === 'cancelled')
+  const myActive = mine.filter(
+    r => r.status !== 'completed' && r.status !== 'cancelled'
+  )
+  const myDone = mine.filter(
+    r => r.status === 'completed' || r.status === 'cancelled'
+  )
 
   function filterRequests (list: LabRequest[]) {
     const q = search.trim().toLowerCase().replace(/^#/, '')
     if (!q) return list
-    return list.filter(r =>
-      r._id.toLowerCase().includes(q) ||
-      r._id.slice(-8).toLowerCase() === q ||
-      r.patient?.name?.toLowerCase().includes(q) ||
-      r.patient?._id?.toLowerCase().includes(q) ||
-      r.patient?.phone?.includes(q) ||
-      r.patient?.email?.toLowerCase().includes(q) ||
-      r.paymentRef?.reference?.toLowerCase().includes(q)
+    return list.filter(
+      r =>
+        r._id.toLowerCase().includes(q) ||
+        r._id.slice(-8).toLowerCase() === q ||
+        r.patient?.name?.toLowerCase().includes(q) ||
+        r.patient?._id?.toLowerCase().includes(q) ||
+        r.patient?.phone?.includes(q) ||
+        r.patient?.email?.toLowerCase().includes(q) ||
+        r.paymentRef?.reference?.toLowerCase().includes(q)
     )
   }
 
   const tabData: Record<Tab, LabRequest[]> = {
     available: filterRequests(available),
     mine: filterRequests(myActive),
-    completed: filterRequests(myDone),
+    completed: filterRequests(myDone)
   }
 
   return (
@@ -395,7 +551,9 @@ function LabPortalInner () {
           <h1 className={s.title}>Lab Portal</h1>
           {labName && <p className={s.labSubtitle}>{labName}</p>}
         </div>
-        <button className={s.refreshBtn} onClick={() => load()}>↻ Refresh</button>
+        <button className={s.refreshBtn} onClick={() => load()}>
+          ↻ Refresh
+        </button>
       </div>
 
       {/* Search bar */}
@@ -407,37 +565,60 @@ function LabPortalInner () {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        {search && <button className={s.searchClear} onClick={() => setSearch('')}>✕</button>}
+        {search && (
+          <button className={s.searchClear} onClick={() => setSearch('')}>
+            ✕
+          </button>
+        )}
       </div>
 
       {search.trim() && (
         <p className={s.searchHint}>
-          Tip: paste the patient&apos;s <strong>User ID</strong> or <strong>Transaction Ref</strong> from their receipt for an exact match.
+          Tip: paste the patient&apos;s <strong>User ID</strong> or{' '}
+          <strong>Transaction Ref</strong> from their receipt for an exact
+          match.
         </p>
       )}
 
       <div className={s.tabs}>
-        <button className={`${s.tab} ${tab === 'available' ? s.tabActive : ''}`} onClick={() => setTab('available')}>
+        <button
+          className={`${s.tab} ${tab === 'available' ? s.tabActive : ''}`}
+          onClick={() => setTab('available')}
+        >
           Available Requests
-          {tabData.available.length > 0 && <span className={s.badge}>{tabData.available.length}</span>}
+          {tabData.available.length > 0 && (
+            <span className={s.badge}>{tabData.available.length}</span>
+          )}
         </button>
-        <button className={`${s.tab} ${tab === 'mine' ? s.tabActive : ''}`} onClick={() => setTab('mine')}>
+        <button
+          className={`${s.tab} ${tab === 'mine' ? s.tabActive : ''}`}
+          onClick={() => setTab('mine')}
+        >
           In Progress
-          {tabData.mine.length > 0 && <span className={s.badge}>{tabData.mine.length}</span>}
+          {tabData.mine.length > 0 && (
+            <span className={s.badge}>{tabData.mine.length}</span>
+          )}
         </button>
-        <button className={`${s.tab} ${tab === 'completed' ? s.tabActive : ''}`} onClick={() => setTab('completed')}>
+        <button
+          className={`${s.tab} ${tab === 'completed' ? s.tabActive : ''}`}
+          onClick={() => setTab('completed')}
+        >
           Completed
         </button>
       </div>
 
       {loading ? (
-        <div className={s.empty}><Loader label='Loading requests…' /></div>
+        <div className={s.empty}>
+          <Loader label='Loading requests…' />
+        </div>
       ) : tabData[tab].length === 0 ? (
         <div className={s.empty}>
           {search.trim()
             ? 'No requests match your search.'
-            : tab === 'available' ? 'No new requests at the moment.'
-            : tab === 'mine' ? 'No active requests.'
+            : tab === 'available'
+            ? 'No new requests at the moment.'
+            : tab === 'mine'
+            ? 'No active requests.'
             : 'No completed requests yet.'}
         </div>
       ) : (
@@ -459,7 +640,13 @@ function LabPortalInner () {
 
 export default function LabPortalPage () {
   return (
-    <Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center' }}><Loader label='Loading…' /></div>}>
+    <Suspense
+      fallback={
+        <div style={{ padding: '3rem', textAlign: 'center' }}>
+          <Loader label='Loading…' />
+        </div>
+      }
+    >
       <LabPortalInner />
     </Suspense>
   )

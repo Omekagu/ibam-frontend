@@ -18,7 +18,13 @@ interface LabRequest {
   createdAt: string
   walkInExpiresAt?: string
   wellnessPackage?: { name: string }
-  paymentRef?: { _id?: string; status?: string; amount?: number; method?: string; transferReference?: string }
+  paymentRef?: {
+    _id?: string
+    status?: string
+    amount?: number
+    method?: string
+    transferReference?: string
+  }
 }
 interface LabResult {
   _id: string
@@ -108,6 +114,7 @@ export default function PatientLabs () {
 
   const [refundingId, setRefundingId] = useState<string | null>(null)
   const [expandingResult, setExpandingResult] = useState<string | null>(null)
+  const [payingLabId, setPayingLabId] = useState<string | null>(null)
 
   const estimatedTotal = selectedTests.reduce((sum, name) => {
     const t = catalogTests.find(c => c.name === name)
@@ -129,18 +136,25 @@ export default function PatientLabs () {
     script.src = 'https://js.paystack.co/v2/inline.js'
     script.async = true
     document.body.appendChild(script)
-    return () => { try { document.body.removeChild(script) } catch { /* already removed */ } }
+    return () => {
+      try {
+        document.body.removeChild(script)
+      } catch {
+        /* already removed */
+      }
+    }
   }, [])
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api'
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {
         if (body?.data?.labTests?.length) setCatalogTests(body.data.labTests)
         if (body?.data?.wellnessPackages?.length)
           setWellnessPackages(body.data.wellnessPackages)
-        if (body?.data?.paystackPublicKey) setPaystackPublicKey(body.data.paystackPublicKey)
+        if (body?.data?.paystackPublicKey)
+          setPaystackPublicKey(body.data.paystackPublicKey)
       })
       .catch(() => {})
 
@@ -202,7 +216,10 @@ export default function PatientLabs () {
     if (referralFile) form.append('referral', referralFile)
     if (collection === 'home_visit') {
       if (homeAddr || homeCoords)
-        form.append('pickupLocation', JSON.stringify({ address: homeAddr, ...homeCoords }))
+        form.append(
+          'pickupLocation',
+          JSON.stringify({ address: homeAddr, ...homeCoords })
+        )
       if (preferredDate) form.append('preferredDate', preferredDate)
       if (preferredTime) form.append('preferredTime', preferredTime)
     }
@@ -255,7 +272,7 @@ export default function PatientLabs () {
         const payRes = await api.post('/payments/initiate', {
           type: 'lab_test',
           referenceId: reqId,
-          amount: estimatedTotal,
+          amount: estimatedTotal
         })
         const { accessCode, reference } = payRes.data.data
         const testsSnap = [...selectedTests]
@@ -270,16 +287,40 @@ export default function PatientLabs () {
             try {
               const vr = await api.get(`/payments/verify/${reference}`)
               if (vr.data.data?.payment?.status === 'success') {
-                downloadReceipt({ bookingRef: `#${reqId.slice(-8).toUpperCase()}`, tests: testsSnap, amount: amountSnap, collectionType: collectionSnap, transactionRef: reference })
-                modal.show({ variant: 'success', title: 'Payment Confirmed!', message: `Booking confirmed. Reference: #${reqId.slice(-8).toUpperCase()}. Receipt is downloading.`, actionLabel: 'View My Results', onAction: () => setTab('results') })
-                api.get('/diagnostics/results/mine').then(rv => setRequests(rv.data.data?.requests ?? [])).catch(() => {})
+                downloadReceipt({
+                  bookingRef: `#${reqId.slice(-8).toUpperCase()}`,
+                  tests: testsSnap,
+                  amount: amountSnap,
+                  collectionType: collectionSnap,
+                  transactionRef: reference
+                })
+                modal.show({
+                  variant: 'success',
+                  title: 'Payment Confirmed!',
+                  message: `Booking confirmed. Reference: #${reqId
+                    .slice(-8)
+                    .toUpperCase()}. Receipt is downloading.`,
+                  actionLabel: 'View My Results',
+                  onAction: () => setTab('results')
+                })
+                api
+                  .get('/diagnostics/results/mine')
+                  .then(rv => setRequests(rv.data.data?.requests ?? []))
+                  .catch(() => {})
               }
-            } catch { /* silent */ }
+            } catch {
+              /* silent */
+            }
           },
           onCancel: () => {
-            modal.show({ variant: 'declined', title: 'Payment Cancelled', message: 'Payment was not completed. Your request is saved — retry from My Results.' })
+            modal.show({
+              variant: 'declined',
+              title: 'Payment Cancelled',
+              message:
+                'Payment was not completed. Your request is saved — retry from My Results.'
+            })
             setTab('results')
-          },
+          }
         })
       } catch (err: unknown) {
         modal.show({
@@ -289,7 +330,9 @@ export default function PatientLabs () {
             (err as { response?: { data?: { message?: string } } })?.response
               ?.data?.message ?? 'Could not initiate payment. Please try again.'
         })
-      } finally { setSubmitting(false) }
+      } finally {
+        setSubmitting(false)
+      }
       return
     }
 
@@ -340,16 +383,93 @@ export default function PatientLabs () {
     try {
       await api.post('/payments/refund-request', {
         paymentId,
-        reason: req.status === 'no_show' ? 'Lab request marked as no-show' : 'Lab request cancelled without service',
+        reason:
+          req.status === 'no_show'
+            ? 'Lab request marked as no-show'
+            : 'Lab request cancelled without service'
       })
-      modal.show({ variant: 'success', title: 'Refund Requested', message: 'Refund request submitted. Our team will review within 24–48 hours.' })
+      modal.show({
+        variant: 'success',
+        title: 'Refund Requested',
+        message:
+          'Refund request submitted. Our team will review within 24–48 hours.'
+      })
     } catch (err: unknown) {
       modal.show({
         variant: 'declined',
         title: 'Error',
-        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not submit refund request.'
+        message:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ?? 'Could not submit refund request.'
       })
-    } finally { setRefundingId(null) }
+    } finally {
+      setRefundingId(null)
+    }
+  }
+
+  async function handlePayLabRequest (req: LabRequest) {
+    if (!paystackPublicKey) {
+      modal.show({
+        variant: 'declined',
+        title: 'Not Ready',
+        message: 'Payment system is loading. Please try again.'
+      })
+      return
+    }
+    setPayingLabId(req._id)
+    try {
+      const payRes = await api.post('/payments/initiate', {
+        type: 'lab_test',
+        referenceId: req._id,
+        amount: req.totalAmount
+      })
+      const { accessCode, reference } = payRes.data.data
+      setPayingLabId(null)
+      const paystack = new (window as any).PaystackPop()
+      paystack.newTransaction({
+        key: paystackPublicKey,
+        accessCode,
+        onSuccess: async () => {
+          try {
+            await api.get(`/payments/verify/${reference}`)
+            downloadReceipt({
+              bookingRef: `#${req._id.slice(-8).toUpperCase()}`,
+              tests: req.tests,
+              amount: req.totalAmount,
+              collectionType: req.collectionType as 'walk_in' | 'home_visit',
+              transactionRef: reference
+            })
+            modal.show({
+              variant: 'success',
+              title: 'Payment Confirmed!',
+              message: `Lab test booking confirmed. Receipt is downloading.`,
+              actionLabel: 'View Results',
+              onAction: () => setTab('results')
+            })
+            api
+              .get('/diagnostics/results/mine')
+              .then(rv => setRequests(rv.data.data?.requests ?? []))
+              .catch(() => {})
+          } catch {
+            /* silent */
+          }
+        },
+        onCancel: () => {
+          modal.show({
+            variant: 'declined',
+            title: 'Payment Cancelled',
+            message: 'Payment was not completed. Try again from My Results.'
+          })
+        }
+      })
+    } catch {
+      setPayingLabId(null)
+      modal.show({
+        variant: 'declined',
+        title: 'Error',
+        message: 'Could not initiate payment. Please try again.'
+      })
+    }
   }
 
   async function handleSubmitTransferRef () {
@@ -437,18 +557,26 @@ export default function PatientLabs () {
     if (pkgPrice > 0) {
       setBookingSubmitting(true)
       try {
-        const payload: Record<string, unknown> = { collectionType: pkgCollection }
+        const payload: Record<string, unknown> = {
+          collectionType: pkgCollection
+        }
         if (pkgCollection === 'home_visit') {
           payload.address = pkgAddress
-          if (pkgCoords) { payload.lat = pkgCoords.lat; payload.lng = pkgCoords.lng }
+          if (pkgCoords) {
+            payload.lat = pkgCoords.lat
+            payload.lng = pkgCoords.lng
+          }
         }
-        const r = await api.post(`/wellness-packages/${selectedPackage._id}/book`, payload)
+        const r = await api.post(
+          `/wellness-packages/${selectedPackage._id}/book`,
+          payload
+        )
         const reqId: string = r.data.data?.request?._id
         setRequests(prev => [r.data.data?.request, ...prev])
         const payRes = await api.post('/payments/initiate', {
           type: 'lab_test',
           referenceId: reqId,
-          amount: pkgPrice,
+          amount: pkgPrice
         })
         const { accessCode, reference } = payRes.data.data
         const priceSnap = pkgPrice
@@ -464,15 +592,40 @@ export default function PatientLabs () {
             try {
               const vr = await api.get(`/payments/verify/${reference}`)
               if (vr.data.data?.payment?.status === 'success') {
-                downloadReceipt({ bookingRef: `#${reqId.slice(-8).toUpperCase()}`, tests: testsSnap, amount: priceSnap, collectionType: collectionSnap, transactionRef: reference, packageName: pkgNameSnap })
-                modal.show({ variant: 'success', title: 'Package Booked!', message: `"${pkgNameSnap}" is confirmed. Reference: #${reqId.slice(-8).toUpperCase()}. Receipt is downloading.`, actionLabel: 'View My Results', onAction: () => setTab('results') })
-                api.get('/diagnostics/results/mine').then(rv => setRequests(rv.data.data?.requests ?? [])).catch(() => {})
+                downloadReceipt({
+                  bookingRef: `#${reqId.slice(-8).toUpperCase()}`,
+                  tests: testsSnap,
+                  amount: priceSnap,
+                  collectionType: collectionSnap,
+                  transactionRef: reference,
+                  packageName: pkgNameSnap
+                })
+                modal.show({
+                  variant: 'success',
+                  title: 'Package Booked!',
+                  message: `"${pkgNameSnap}" is confirmed. Reference: #${reqId
+                    .slice(-8)
+                    .toUpperCase()}. Receipt is downloading.`,
+                  actionLabel: 'View My Results',
+                  onAction: () => setTab('results')
+                })
+                api
+                  .get('/diagnostics/results/mine')
+                  .then(rv => setRequests(rv.data.data?.requests ?? []))
+                  .catch(() => {})
               }
-            } catch { /* silent */ }
+            } catch {
+              /* silent */
+            }
           },
           onCancel: () => {
-            modal.show({ variant: 'declined', title: 'Payment Cancelled', message: 'Payment was not completed. Your booking is saved — retry from My Results.' })
-          },
+            modal.show({
+              variant: 'declined',
+              title: 'Payment Cancelled',
+              message:
+                'Payment was not completed. Your booking is saved — retry from My Results.'
+            })
+          }
         })
       } catch (err: unknown) {
         modal.show({
@@ -482,7 +635,9 @@ export default function PatientLabs () {
             (err as { response?: { data?: { message?: string } } })?.response
               ?.data?.message ?? 'Could not book the package. Please try again.'
         })
-      } finally { setBookingSubmitting(false) }
+      } finally {
+        setBookingSubmitting(false)
+      }
       return
     }
 
@@ -492,17 +647,24 @@ export default function PatientLabs () {
       const payload: Record<string, unknown> = { collectionType: pkgCollection }
       if (pkgCollection === 'home_visit') {
         payload.address = pkgAddress
-        if (pkgCoords) { payload.lat = pkgCoords.lat; payload.lng = pkgCoords.lng }
+        if (pkgCoords) {
+          payload.lat = pkgCoords.lat
+          payload.lng = pkgCoords.lng
+        }
       }
-      const r = await api.post(`/wellness-packages/${selectedPackage._id}/book`, payload)
+      const r = await api.post(
+        `/wellness-packages/${selectedPackage._id}/book`,
+        payload
+      )
       setRequests(prev => [r.data.data?.request, ...prev])
       setShowBookModal(false)
       modal.show({
         variant: 'success',
         title: 'Package Booked!',
-        message: pkgCollection === 'walk_in'
-          ? `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab for sample collection.`
-          : `Your "${selectedPackage.name}" package has been booked. Our team will contact you to schedule your home visit.`,
+        message:
+          pkgCollection === 'walk_in'
+            ? `Your "${selectedPackage.name}" package has been booked. Visit the assigned lab for sample collection.`
+            : `Your "${selectedPackage.name}" package has been booked. Our team will contact you to schedule your home visit.`,
         actionLabel: 'View My Requests',
         onAction: () => setTab('results')
       })
@@ -514,7 +676,9 @@ export default function PatientLabs () {
           (err as { response?: { data?: { message?: string } } })?.response
             ?.data?.message ?? 'Could not book the package. Please try again.'
       })
-    } finally { setBookingSubmitting(false) }
+    } finally {
+      setBookingSubmitting(false)
+    }
   }
 
   const resultMap = new Map(results.map(r => [r.request, r]))
@@ -639,7 +803,9 @@ export default function PatientLabs () {
               <span className={s.paymentNoteIcon}>💳</span>
               <p>
                 Estimated total:{' '}
-                <strong>₦{estimatedTotal.toLocaleString()}</strong>. Pay securely via card — a booking confirmation will be sent after payment.
+                <strong>₦{estimatedTotal.toLocaleString()}</strong>. Pay
+                securely via card — a booking confirmation will be sent after
+                payment.
               </p>
             </div>
           )}
@@ -648,7 +814,8 @@ export default function PatientLabs () {
             <div className={s.section}>
               <h3>Home Visit Details</h3>
               <p className={s.referralNote}>
-                Tell us where to come and when works best for you. Our team will confirm the visit.
+                Tell us where to come and when works best for you. Our team will
+                confirm the visit.
               </p>
 
               {/* Address */}
@@ -667,7 +834,13 @@ export default function PatientLabs () {
                   disabled={gpsLoading}
                   onClick={useGPS}
                 >
-                  {gpsLoading ? '…' : <><MapPinIcon size={13} /> GPS</>}
+                  {gpsLoading ? (
+                    '…'
+                  ) : (
+                    <>
+                      <MapPinIcon size={13} /> GPS
+                    </>
+                  )}
                 </button>
               </div>
               {homeCoords && (
@@ -684,21 +857,42 @@ export default function PatientLabs () {
                     type='date'
                     className={s.locationInput}
                     value={preferredDate}
-                    min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                    min={
+                      new Date(Date.now() + 86400000)
+                        .toISOString()
+                        .split('T')[0]
+                    }
                     onChange={e => setPreferredDate(e.target.value)}
                     required
                   />
                 </div>
                 <div className={s.scheduleField}>
-                  <label className={s.scheduleLabel}>Preferred Time <span className={s.optional}>optional</span></label>
+                  <label className={s.scheduleLabel}>
+                    Preferred Time <span className={s.optional}>optional</span>
+                  </label>
                   <select
                     className={s.locationInput}
                     value={preferredTime}
                     onChange={e => setPreferredTime(e.target.value)}
                   >
                     <option value=''>Any time</option>
-                    {['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(t => (
-                      <option key={t} value={t}>{t.replace(':', ':')} {Number(t.split(':')[0]) < 12 ? 'AM' : 'PM'}</option>
+                    {[
+                      '07:00',
+                      '08:00',
+                      '09:00',
+                      '10:00',
+                      '11:00',
+                      '12:00',
+                      '13:00',
+                      '14:00',
+                      '15:00',
+                      '16:00',
+                      '17:00'
+                    ].map(t => (
+                      <option key={t} value={t}>
+                        {t.replace(':', ':')}{' '}
+                        {Number(t.split(':')[0]) < 12 ? 'AM' : 'PM'}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -837,170 +1031,267 @@ export default function PatientLabs () {
           <Loader label='Loading results…' />
         ) : (
           <>
-          {requests.length === 0 ? (
-            <div className={s.emptyState}>
-              <div className={s.emptyStateIcon}>🔬</div>
-              <p className={s.emptyStateTitle}>No lab requests yet</p>
-              <span className={s.emptyStateSub}>Order your first test from the Order Tests tab above.</span>
-            </div>
-          ) : (
-          <div className={s.resultsList}>
-            {requests.map(req => {
-              const result = resultMap.get(req._id)
-              const open = expandingResult === req._id
-              const canRefund = !!(req.paymentRef?._id && req.paymentRef.status === 'success' && (req.status === 'no_show' || req.status === 'cancelled'))
-              const hasResult = !!result
-              return (
-                <div key={req._id} className={s.resultCard}>
-                  {/* ── Card header (always visible, clickable) ── */}
-                  <div
-                    className={s.resultCardHeader}
-                    onClick={() => setExpandingResult(open ? null : req._id)}
-                    role='button'
-                  >
-                    <div className={`${s.resultIconWrap} ${hasResult ? s.resultIconWrapDone : ''}`}>
-                      <MicroscopeIcon size={20} />
-                    </div>
-                    <div className={s.resultCardInfo}>
-                      <p className={s.resultCardTitle}>
-                        {req.tests.slice(0, 2).join(', ')}
-                        {req.tests.length > 2 && (
-                          <span className={s.moreTests}> +{req.tests.length - 2}</span>
-                        )}
-                        {req.wellnessPackage && (
-                          <span className={s.pkgLabel}> · {req.wellnessPackage.name}</span>
-                        )}
-                      </p>
-                      <span className={s.resultCardSub}>
-                        {req.lab?.name ?? 'Lab being assigned'} ·{' '}
-                        {req.collectionType === 'walk_in' ? 'Walk-in' : 'Home Visit'} ·{' '}
-                        {new Date(req.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    </div>
-                    <div className={s.resultCardRight}>
-                      <span className={`${s.statusBadge} ${s[req.status]}`}>
-                        {req.status.replace(/_/g, ' ')}
-                      </span>
-                      <span className={s.chevronIcon}>{open ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-
-                  {/* ── Expanded body ── */}
-                  {open && (
-                    <div className={s.resultCardBody}>
-                      {/* Tests chips */}
-                      <div>
-                        <p className={s.bodyLabel}>Tests Requested</p>
-                        <div className={s.testTagList}>
-                          {req.tests.map((t, i) => (
-                            <span key={i} className={s.testTag}>{t}</span>
-                          ))}
+            {requests.length === 0 ? (
+              <div className={s.emptyState}>
+                <div className={s.emptyStateIcon}>🔬</div>
+                <p className={s.emptyStateTitle}>No lab requests yet</p>
+                <span className={s.emptyStateSub}>
+                  Order your first test from the Order Tests tab above.
+                </span>
+              </div>
+            ) : (
+              <div className={s.resultsList}>
+                {requests.map(req => {
+                  const result = resultMap.get(req._id)
+                  const open = expandingResult === req._id
+                  const canRefund = !!(
+                    req.paymentRef?._id &&
+                    req.paymentRef.status === 'success' &&
+                    (req.status === 'no_show' || req.status === 'cancelled')
+                  )
+                  const hasResult = !!result
+                  return (
+                    <div key={req._id} className={s.resultCard}>
+                      {/* ── Card header (always visible, clickable) ── */}
+                      <div
+                        className={s.resultCardHeader}
+                        onClick={() =>
+                          setExpandingResult(open ? null : req._id)
+                        }
+                        role='button'
+                      >
+                        <div
+                          className={`${s.resultIconWrap} ${
+                            hasResult ? s.resultIconWrapDone : ''
+                          }`}
+                        >
+                          <MicroscopeIcon size={20} />
                         </div>
-                      </div>
-
-                      {/* Detail grid */}
-                      <div className={s.detailGrid}>
-                        <div className={s.detailItem}>
-                          <span className={s.detailLabel}>Collection</span>
-                          <span className={s.detailValue}>
-                            {req.collectionType === 'walk_in' ? '🚶 Walk-in at Lab' : '🏠 Home Visit'}
+                        <div className={s.resultCardInfo}>
+                          <p className={s.resultCardTitle}>
+                            {req.tests.slice(0, 2).join(', ')}
+                            {req.tests.length > 2 && (
+                              <span className={s.moreTests}>
+                                {' '}
+                                +{req.tests.length - 2}
+                              </span>
+                            )}
+                            {req.wellnessPackage && (
+                              <span className={s.pkgLabel}>
+                                {' '}
+                                · {req.wellnessPackage.name}
+                              </span>
+                            )}
+                          </p>
+                          <span className={s.resultCardSub}>
+                            {req.lab?.name ?? 'Lab being assigned'} ·{' '}
+                            {req.collectionType === 'walk_in'
+                              ? 'Walk-in'
+                              : 'Home Visit'}{' '}
+                            ·{' '}
+                            {new Date(req.createdAt).toLocaleDateString(
+                              'en-NG',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              }
+                            )}
                           </span>
                         </div>
-                        {req.totalAmount > 0 && (
-                          <div className={s.detailItem}>
-                            <span className={s.detailLabel}>Amount</span>
-                            <span className={`${s.detailValue} ${s.detailAmount}`}>
-                              ₦{req.totalAmount.toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                        {req.paymentRef && (
-                          <div className={s.detailItem}>
-                            <span className={s.detailLabel}>Payment</span>
-                            <span className={`${s.detailValue} ${req.paymentRef.status === 'success' ? s.detailSuccess : s.detailPending}`}>
-                              {req.paymentRef.status === 'success' ? '✓ Confirmed' : '⏳ Pending'}
-                            </span>
-                          </div>
-                        )}
+                        <div className={s.resultCardRight}>
+                          <span className={`${s.statusBadge} ${s[req.status]}`}>
+                            {req.status.replace(/_/g, ' ')}
+                          </span>
+                          <span className={s.chevronIcon}>
+                            {open ? '▲' : '▼'}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Admin approval chip */}
-                      {req.adminApprovalStatus === 'pending' && (
-                        <div className={s.infoChip}>
-                          Awaiting admin review before lab assignment
-                        </div>
-                      )}
-
-                      {/* Walk-in expiry */}
-                      {req.walkInExpiresAt && req.status === 'pending' && req.collectionType === 'walk_in' && (
-                        <div className={`${s.infoChip} ${s.infoChipWarn}`}>
-                          Walk-in expires: {new Date(req.walkInExpiresAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      )}
-
-                      {/* Result ready banner */}
-                      {hasResult && (
-                        <div className={s.resultReadyBanner}>
-                          <span className={s.resultReadyCheck}>✓</span>
+                      {/* ── Expanded body ── */}
+                      {open && (
+                        <div className={s.resultCardBody}>
+                          {/* Tests chips */}
                           <div>
-                            <p className={s.resultReadyTitle}>Your results are ready</p>
-                            {result!.notes && <p className={s.resultReadyNotes}>{result!.notes}</p>}
+                            <p className={s.bodyLabel}>Tests Requested</p>
+                            <div className={s.testTagList}>
+                              {req.tests.map((t, i) => (
+                                <span key={i} className={s.testTag}>
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
 
-                      {/* Pending note */}
-                      {!hasResult && req.status !== 'completed' && (
-                        <p className={s.pendingNote}>
-                          Results will appear here once your sample is processed.
-                        </p>
-                      )}
+                          {/* Detail grid */}
+                          <div className={s.detailGrid}>
+                            <div className={s.detailItem}>
+                              <span className={s.detailLabel}>Collection</span>
+                              <span className={s.detailValue}>
+                                {req.collectionType === 'walk_in'
+                                  ? '🚶 Walk-in at Lab'
+                                  : '🏠 Home Visit'}
+                              </span>
+                            </div>
+                            {req.totalAmount > 0 && (
+                              <div className={s.detailItem}>
+                                <span className={s.detailLabel}>Amount</span>
+                                <span
+                                  className={`${s.detailValue} ${s.detailAmount}`}
+                                >
+                                  ₦{req.totalAmount.toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                            {req.paymentRef && (
+                              <div className={s.detailItem}>
+                                <span className={s.detailLabel}>Payment</span>
+                                <span
+                                  className={`${s.detailValue} ${
+                                    req.paymentRef.status === 'success'
+                                      ? s.detailSuccess
+                                      : s.detailPending
+                                  }`}
+                                >
+                                  {req.paymentRef.status === 'success'
+                                    ? '✓ Confirmed'
+                                    : '⏳ Pending'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
 
-                      {/* Action buttons */}
-                      {(hasResult || req.paymentRef?.status === 'success' || canRefund) && (
-                        <div className={s.actionRow}>
-                          {hasResult && result!.fileUrl && (
-                            <a
-                              href={result!.fileUrl}
-                              target='_blank'
-                              rel='noreferrer'
-                              className={s.actionBtn}
-                            >
-                              <DocumentIcon size={13} /> Download Report
-                            </a>
+                          {/* Admin approval chip */}
+                          {req.adminApprovalStatus === 'pending' && (
+                            <div className={s.infoChip}>
+                              Awaiting admin review before lab assignment
+                            </div>
                           )}
-                          {req.paymentRef?.status === 'success' && (
-                            <button
-                              className={s.actionBtn}
-                              onClick={() => downloadReceipt({
-                                bookingRef: `#${req._id.slice(-8).toUpperCase()}`,
-                                tests: req.tests,
-                                amount: req.paymentRef?.amount ?? req.totalAmount,
-                                collectionType: req.collectionType as 'walk_in' | 'home_visit',
-                                transactionRef: req.paymentRef?._id,
-                              })}
-                            >
-                              Download Receipt
-                            </button>
+
+                          {/* Walk-in expiry */}
+                          {req.walkInExpiresAt &&
+                            req.status === 'pending' &&
+                            req.collectionType === 'walk_in' && (
+                              <div
+                                className={`${s.infoChip} ${s.infoChipWarn}`}
+                              >
+                                Walk-in expires:{' '}
+                                {new Date(
+                                  req.walkInExpiresAt
+                                ).toLocaleDateString('en-NG', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
+
+                          {/* Result ready banner */}
+                          {hasResult && (
+                            <div className={s.resultReadyBanner}>
+                              <span className={s.resultReadyCheck}>✓</span>
+                              <div>
+                                <p className={s.resultReadyTitle}>
+                                  Your results are ready
+                                </p>
+                                {result!.notes && (
+                                  <p className={s.resultReadyNotes}>
+                                    {result!.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                           )}
-                          {canRefund && (
-                            <button
-                              className={`${s.actionBtn} ${s.actionBtnDanger}`}
-                              disabled={refundingId === req._id}
-                              onClick={() => handleRefundRequest(req)}
-                            >
-                              {refundingId === req._id ? <Loader inline size='sm' /> : 'Request Refund'}
-                            </button>
+
+                          {/* Pending note */}
+                          {!hasResult && req.status !== 'completed' && (
+                            <p className={s.pendingNote}>
+                              Results will appear here once your sample is
+                              processed.
+                            </p>
+                          )}
+
+                          {/* Pay Now — for requests awaiting payment */}
+                          {req.status === 'pending' &&
+                            req.totalAmount > 0 &&
+                            (!req.paymentRef ||
+                              req.paymentRef.status !== 'success') && (
+                              <div className={s.actionRow}>
+                                <button
+                                  className={`${s.actionBtn} ${s.actionBtnPay}`}
+                                  disabled={payingLabId === req._id}
+                                  onClick={() => handlePayLabRequest(req)}
+                                >
+                                  {payingLabId === req._id ? (
+                                    <Loader inline size='sm' />
+                                  ) : (
+                                    '💳 Pay Now'
+                                  )}
+                                </button>
+                              </div>
+                            )}
+
+                          {/* Action buttons */}
+                          {(hasResult ||
+                            req.paymentRef?.status === 'success' ||
+                            canRefund) && (
+                            <div className={s.actionRow}>
+                              {hasResult && result!.fileUrl && (
+                                <a
+                                  href={result!.fileUrl}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className={s.actionBtn}
+                                >
+                                  <DocumentIcon size={13} /> Download Report
+                                </a>
+                              )}
+                              {req.paymentRef?.status === 'success' && (
+                                <button
+                                  className={s.actionBtn}
+                                  onClick={() =>
+                                    downloadReceipt({
+                                      bookingRef: `#${req._id
+                                        .slice(-8)
+                                        .toUpperCase()}`,
+                                      tests: req.tests,
+                                      amount:
+                                        req.paymentRef?.amount ??
+                                        req.totalAmount,
+                                      collectionType: req.collectionType as
+                                        | 'walk_in'
+                                        | 'home_visit',
+                                      transactionRef: req.paymentRef?._id
+                                    })
+                                  }
+                                >
+                                  Download Receipt
+                                </button>
+                              )}
+                              {canRefund && (
+                                <button
+                                  className={`${s.actionBtn} ${s.actionBtnDanger}`}
+                                  disabled={refundingId === req._id}
+                                  onClick={() => handleRefundRequest(req)}
+                                >
+                                  {refundingId === req._id ? (
+                                    <Loader inline size='sm' />
+                                  ) : (
+                                    'Request Refund'
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
           </>
         ))}
 
@@ -1075,7 +1366,7 @@ export default function PatientLabs () {
               </button>
             </div>
 
-            {(
+            {
               <>
                 <p className={s.payPanelSub}>
                   <strong>{selectedPackage.name}</strong> —{' '}
@@ -1171,7 +1462,7 @@ export default function PatientLabs () {
                   )}
                 </button>
               </>
-            )}
+            }
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
@@ -23,6 +24,7 @@ interface LabRequest {
   lab?: { name: string }
   collectionType: string
   status: string
+  paymentRef?: { _id: string }
   createdAt: string
 }
 
@@ -36,14 +38,20 @@ interface LabResult {
 
 type Tab = 'prescriptions' | 'labs'
 
+function labStatusLabel (req: LabRequest): string {
+  if (!req.paymentRef) return 'Payment required'
+  if (!req.lab) return 'Finding a lab...'
+  return req.lab.name
+}
+
 export default function HealthRecords () {
+  const router = useRouter()
   const [tab,           setTab]           = useState<Tab>('prescriptions')
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
   const [requests,      setRequests]      = useState<LabRequest[]>([])
   const [results,       setResults]       = useState<LabResult[]>([])
   const [loading,       setLoading]       = useState(true)
   const [expanding,     setExpanding]     = useState<string | null>(null)
-  const [forwarding,    setForwarding]    = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -55,15 +63,6 @@ export default function HealthRecords () {
       setResults(labRes.data.data?.results ?? [])
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
-
-  async function forwardToPharmacy (id: string) {
-    setForwarding(id)
-    try {
-      await api.put(`/prescriptions/${id}/forward-pharmacy`)
-      setPrescriptions(prev => prev.map(p => p._id === id ? { ...p, forwardedToPharmacy: true } : p))
-    } catch { }
-    setForwarding(null)
-  }
 
   const resultMap = new Map(results.map(r => [r.request, r]))
 
@@ -117,10 +116,9 @@ export default function HealthRecords () {
                     {!p.forwardedToPharmacy && p.status === 'active' && (
                       <button
                         className={s.fwdBtn}
-                        disabled={forwarding === p._id}
-                        onClick={() => forwardToPharmacy(p._id)}
+                        onClick={() => router.push(`/patient/pharmacy?prescriptionId=${p._id}&tab=prescriptions`)}
                       >
-                        {forwarding === p._id ? 'Forwarding…' : 'Send to Pharmacy'}
+                        Order from Pharmacy
                       </button>
                     )}
                   </div>
@@ -143,13 +141,20 @@ export default function HealthRecords () {
                       <div className={s.rxIcon}><MicroscopeIcon size={18} /></div>
                       <div>
                         <p className={s.cardTitle}>{req.tests.join(', ')}</p>
-                        <span>{req.lab?.name ?? 'Lab not assigned'} · {req.collectionType.replace('_', ' ')} · {new Date(req.createdAt).toLocaleDateString("en-NG")}</span>
+                        <span>{labStatusLabel(req)} · {req.collectionType.replace('_', ' ')} · {new Date(req.createdAt).toLocaleDateString("en-NG")}</span>
                       </div>
                     </div>
                     <div className={s.cardRight}>
                       <span className={`${s.statusBadge} ${s[req.status]}`}>{req.status}</span>
                     </div>
                   </div>
+                  {!req.paymentRef && (
+                    <div className={s.cardBody}>
+                      <button className={s.fwdBtn} onClick={() => router.push('/patient/labs')}>
+                        Pay Now to Proceed
+                      </button>
+                    </div>
+                  )}
                   {result && (
                     <div className={s.cardBody}>
                       <p className={s.resultReady}>Your results are ready.</p>

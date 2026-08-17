@@ -100,10 +100,18 @@ export default function LabProfilePage () {
     try {
       const r = await api.post('/diagnostics/labs/earnings/request-payout')
       const { totalRequested, count } = r.data.data ?? {}
-      alert(`Payout requested: ₦${totalRequested?.toLocaleString()} across ${count} record(s) submitted to admin.`)
+      modal.show({
+        variant: 'success',
+        title: 'Payout Requested',
+        message: `₦${totalRequested?.toLocaleString()} across ${count} record(s) submitted to admin for review.`,
+      })
       load()
     } catch (err: unknown) {
-      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Payout request failed. Please try again.')
+      modal.show({
+        variant: 'declined',
+        title: 'Payout Failed',
+        message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Payout request failed. Please try again.',
+      })
     }
     setPayoutReq(false)
   }

@@ -1,20 +1,23 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string }
 interface Prescription { _id: string; medications: Medication[]; diagnosis?: string }
+interface PaymentRef { _id: string; status: string; amount: number; reference?: string; method?: string }
 interface Order {
   _id: string
   prescription: Prescription | null
-  patient: { name: string; phone?: string }
+  patient: { _id?: string; name: string; phone?: string }
   fulfillmentType: 'delivery' | 'pickup'
   deliveryAddress?: string
   status: string
   totalAmount: number
   notes?: string
   createdAt: string
+  paymentRef?: PaymentRef | null
 }
 
 const STATUSES = ['pending', 'processing', 'ready', 'dispatched', 'delivered', 'cancelled']
@@ -23,12 +26,28 @@ const STATUS_LABEL: Record<string, string> = {
   dispatched: 'Dispatched', delivered: 'Delivered', cancelled: 'Cancelled',
 }
 
+function matchesSearch (order: Order, q: string) {
+  const lower = q.toLowerCase()
+  if (!lower) return true
+  const ref = order._id.slice(-8).toUpperCase()
+  if (order._id.toLowerCase().includes(lower)) return true
+  if (ref.toLowerCase().includes(lower)) return true
+  if (order.patient?.name?.toLowerCase().includes(lower)) return true
+  if (order.patient?._id?.toLowerCase().includes(lower)) return true
+  if (order.patient?.phone?.includes(lower)) return true
+  if (order.paymentRef?.reference?.toLowerCase().includes(lower)) return true
+  if (order.status.toLowerCase().includes(lower)) return true
+  return false
+}
+
 export default function PharmacyPartnerDashboard () {
+  const modal = useStatusModal()
   const [orders,    setOrders]    = useState<Order[]>([])
   const [loading,   setLoading]   = useState(true)
   const [expanded,  setExpanded]  = useState<string | null>(null)
   const [updating,  setUpdating]  = useState<string | null>(null)
   const [amounts,   setAmounts]   = useState<Record<string, string>>({})
+  const [search,    setSearch]    = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -53,10 +72,13 @@ export default function PharmacyPartnerDashboard () {
           ? { ...o, status, ...(totalAmount !== undefined ? { totalAmount } : {}) }
           : o
       ))
-    } catch { alert('Update failed. Please try again.') }
+    } catch {
+      modal.show({ variant: 'declined', title: 'Update Failed', message: 'Could not update order. Please try again.' })
+    }
     setUpdating(null)
   }
 
+  const filtered  = orders.filter(o => matchesSearch(o, search))
   const pending   = orders.filter(o => o.status === 'pending')
   const active    = orders.filter(o => ['processing', 'ready', 'dispatched'].includes(o.status))
   const completed = orders.filter(o => ['delivered', 'cancelled'].includes(o.status))
@@ -75,15 +97,39 @@ export default function PharmacyPartnerDashboard () {
         <div className={s.stat}><span className={s.statNum}>{orders.length}</span><span>Total</span></div>
       </div>
 
+      {/* Search */}
+      <div className={s.searchWrap}>
+        <span className={s.searchIcon}>🔍</span>
+        <input
+          className={s.searchInput}
+          placeholder="Search by patient name, booking ref, receipt ref, or payment status…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button className={s.searchClear} onClick={() => setSearch('')}>✕</button>
+        )}
+      </div>
+      {search && (
+        <p className={s.searchHint}>
+          Tip: paste the last 8 characters of an order ID or the transaction reference from the patient&apos;s receipt for an exact match.
+        </p>
+      )}
+
       {loading ? (
         <div className={s.empty}>Loading orders…</div>
       ) : orders.length === 0 ? (
-        <div className={s.empty}>No orders yet. Orders from patients will appear here once assigned.</div>
+        <div className={s.empty}>No orders yet. Orders from patients will appear here once placed.</div>
+      ) : filtered.length === 0 ? (
+        <div className={s.empty}>No orders match &quot;{search}&quot;</div>
       ) : (
         <div className={s.list}>
-          {orders.map(order => {
+          {filtered.map(order => {
             const rx = order.prescription
             const isExpanded = expanded === order._id
+            const isPaid = !!(order.paymentRef && order.paymentRef.status === 'success')
+            const bookingRef = `#${order._id.slice(-8).toUpperCase()}`
+
             return (
               <div key={order._id} className={`${s.card} ${s[order.status]}`}>
                 <div className={s.cardHead} onClick={() => setExpanded(isExpanded ? null : order._id)}>
@@ -97,6 +143,10 @@ export default function PharmacyPartnerDashboard () {
                         {rx ? rx.medications.map(m => m.name).join(', ') : 'Prescription order'}
                         {' · '}
                         {order.fulfillmentType === 'delivery' ? 'Delivery' : 'Pickup'}
+                        {' · '}
+                        <span className={isPaid ? s.paidTag : s.unpaidTag}>
+                          {isPaid ? 'Paid' : 'Unpaid'}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -113,6 +163,34 @@ export default function PharmacyPartnerDashboard () {
 
                 {isExpanded && (
                   <div className={s.cardBody}>
+                    {/* Booking ref + payment info */}
+                    <div className={s.receiptBox}>
+                      <div className={s.receiptRow}>
+                        <span className={s.receiptLabel}>Booking Ref</span>
+                        <span className={s.receiptMono}>{bookingRef}</span>
+                      </div>
+                      {order.paymentRef?.reference && (
+                        <div className={s.receiptRow}>
+                          <span className={s.receiptLabel}>Transaction Ref</span>
+                          <span className={s.receiptMono}>{order.paymentRef.reference}</span>
+                        </div>
+                      )}
+                      <div className={s.receiptRow}>
+                        <span className={s.receiptLabel}>Payment</span>
+                        <span className={isPaid ? s.paidBadge : s.unpaidBadge}>
+                          {isPaid
+                            ? `Paid via ${order.paymentRef?.method === 'walk_in_cash' ? 'Cash' : 'App'}`
+                            : 'Not yet paid'}
+                        </span>
+                      </div>
+                      {order.patient?._id && (
+                        <div className={s.receiptRow}>
+                          <span className={s.receiptLabel}>Patient ID</span>
+                          <span className={s.receiptMono}>{order.patient._id}</span>
+                        </div>
+                      )}
+                    </div>
+
                     {rx && (
                       <div className={s.rxSection}>
                         {rx.diagnosis && <p className={s.diagnosis}>{rx.diagnosis}</p>}
@@ -131,8 +209,8 @@ export default function PharmacyPartnerDashboard () {
                     {order.notes && <p className={s.notes}>Patient note: {order.notes}</p>}
                     {order.patient?.phone && <p className={s.phone}>Phone: {order.patient.phone}</p>}
 
-                    {/* Set total amount */}
-                    {!['delivered', 'cancelled'].includes(order.status) && (
+                    {/* Set total amount — only if order not yet paid */}
+                    {!['delivered', 'cancelled'].includes(order.status) && !isPaid && (
                       <div className={s.priceRow}>
                         <label>Total Amount (₦)</label>
                         <input
@@ -150,6 +228,9 @@ export default function PharmacyPartnerDashboard () {
                           Set Amount
                         </button>
                       </div>
+                    )}
+                    {isPaid && !['delivered', 'cancelled'].includes(order.status) && (
+                      <p className={s.paidNote}>Amount locked — patient has already paid via the app.</p>
                     )}
 
                     {/* Status actions */}

@@ -53,6 +53,15 @@
 }
 
 .sectionTitle { font-size: 0.875rem; font-weight: 700; color: var(--text); margin: 0 0 -0.25rem; }
+
+.logoRow { display: flex; align-items: center; gap: 1.25rem; }
+.logoPreview {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(255,255,255,0.06); border: 2px dashed $navy-border;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; transition: border-color 0.15s;
+  &:hover { border-color: rgba($primary,0.4); }
+}
 .subtext { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: -0.5rem 0 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; @media (max-width: 480px) { grid-template-columns: 1fr; } }
 

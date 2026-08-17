@@ -19,9 +19,10 @@ interface Props {
   isAudioOnly: boolean
   otherName: string
   myName: string
+  onFallback?: () => void  // called when video/audio is unavailable — parent opens chat
 }
 
-export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly, otherName, myName }: Props) {
+export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly, otherName, myName, onFallback }: Props) {
   const clientRef      = useRef<IAgoraRTCClient | null>(null)
   const localVideoRef  = useRef<HTMLDivElement>(null)
   const remoteVideoRef = useRef<HTMLDivElement>(null)
@@ -36,6 +37,15 @@ export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly
   useEffect(() => {
     if (!APP_ID || !token || !channel) {
       setError('Missing Agora credentials — video unavailable in demo mode.')
+      setJoining(false)
+      return
+    }
+
+    // getUserMedia is blocked on non-secure origins (HTTP on a LAN IP, etc.)
+    if (typeof window !== 'undefined' && !window.isSecureContext && !navigator.mediaDevices?.getUserMedia) {
+      setError(
+        'Camera/microphone access requires HTTPS. The server is running on HTTP — please enable TLS or use localhost. Chat is still available below.'
+      )
       setJoining(false)
       return
     }
@@ -120,12 +130,27 @@ export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly
         if (!aborted) setJoining(false)
       } catch (err: unknown) {
         if (aborted) return
-        // WS_ABORT / OPERATION_ABORTED happen when React Strict Mode fires cleanup
-        // mid-join — the timer below prevents this in practice, but guard here too
         const code = (err as { code?: string })?.code ?? ''
+        // Cleanup codes from React Strict Mode double-mount — not real errors
         if (code === 'OPERATION_ABORTED' || code === 'WS_ABORT') return
         console.error('Agora join error:', err)
-        setError('Could not access camera/microphone. Check browser permissions.')
+        if (code === 'NOT_SUPPORTED') {
+          setError(
+            'Video/audio is unavailable. This usually means the page is served over HTTP instead of HTTPS. Ask your admin to enable TLS, or use Chat below.'
+          )
+        } else if (code === 'PERMISSION_DENIED') {
+          setError(
+            'Camera/microphone access was denied. Open your browser settings, allow access for this site, then refresh.'
+          )
+        } else if (code === 'DEVICE_NOT_FOUND') {
+          setError(
+            'No camera or microphone detected. Connect a device and refresh, or switch to Audio-only / Chat mode.'
+          )
+        } else if (code === 'UID_CONFLICT') {
+          setError('Session conflict — please refresh the page and rejoin.')
+        } else {
+          setError('Could not connect to the call. Check your connection and try refreshing.')
+        }
         setJoining(false)
       }
     }
@@ -152,6 +177,11 @@ export default function AgoraClient ({ token, channel, micOn, camOn, isAudioOnly
       <div className={s.agoraError}>
         <AlertTriangleIcon size={24} />
         <p>{error}</p>
+        {onFallback && (
+          <button className={s.agoraFallbackBtn} onClick={onFallback}>
+            Open Chat instead
+          </button>
+        )}
       </div>
     )
   }

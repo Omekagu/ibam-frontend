@@ -426,6 +426,15 @@
   &:hover { background: rgba($danger, 0.14); }
 }
 
+.actionBtnPay {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+
+  &:hover { opacity: 0.88; }
+}
+
 .statusBadge {
   font-size: 0.6875rem;
   font-weight: 700;
