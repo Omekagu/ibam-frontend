@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Drug {
@@ -113,7 +114,7 @@ export default function PharmacyCatalogPage () {
                 <span className={drug.inStock ? s.approvedBadge : s.pendingBadge}>
                   {drug.inStock ? 'In Stock' : 'Out of Stock'}
                 </span>
-                <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'>✕</button>
+                <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'><XIcon size={14} /></button>
               </div>
             ))}
           </div>

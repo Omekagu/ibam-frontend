@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { logout } from '@/lib/auth'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import { StatusModalProvider } from '@/components/StatusModal'
 import s from './layout.module.scss'
 
 const NAV = [
@@ -123,31 +124,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return (
-    <div className={s.shell}>
-      <aside className={s.sidebar}>{sidebarInner}</aside>
+    <StatusModalProvider>
+      <div className={s.shell}>
+        <aside className={s.sidebar}>{sidebarInner}</aside>
 
-      {drawerOpen && <div className={s.drawerOverlay} onClick={() => setDrawerOpen(false)} />}
-      <aside className={`${s.drawer} ${drawerOpen ? s.drawerOpen : ''}`}>
-        <button className={s.drawerClose} onClick={() => setDrawerOpen(false)} aria-label='Close'>
-          <CloseIcon />
-        </button>
-        {sidebarInner}
-      </aside>
-
-      <div className={s.main}>
-        <header className={s.topbar}>
-          <button className={s.hamburger} onClick={() => setDrawerOpen(true)} aria-label='Menu'>
-            <HamburgerIcon />
+        {drawerOpen && <div className={s.drawerOverlay} onClick={() => setDrawerOpen(false)} />}
+        <aside className={`${s.drawer} ${drawerOpen ? s.drawerOpen : ''}`}>
+          <button className={s.drawerClose} onClick={() => setDrawerOpen(false)} aria-label='Close'>
+            <CloseIcon />
           </button>
-          <span className={s.topbarTitle}>{currentLabel}</span>
-          <div className={s.topbarRight}>
-            <NotificationBell />
-            <ThemeToggle />
-          </div>
-        </header>
-        <main className={s.content}>{children}</main>
+          {sidebarInner}
+        </aside>
+
+        <div className={s.main}>
+          <header className={s.topbar}>
+            <button className={s.hamburger} onClick={() => setDrawerOpen(true)} aria-label='Menu'>
+              <HamburgerIcon />
+            </button>
+            <span className={s.topbarTitle}>{currentLabel}</span>
+            <div className={s.topbarRight}>
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className={s.content}>{children}</main>
+        </div>
       </div>
-    </div>
+    </StatusModalProvider>
   )
 }
 

@@ -73,26 +73,3 @@
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-// ─── Earnings ─────────────────────────────────────────────
-.earningCard {
-  background: rgba(255,255,255,0.04); border: 1px solid $navy-border;
-  border-radius: $radius-sm; padding: 0.875rem 1rem;
-}
-.earningLabel { font-size: 0.72rem; color: rgba(255,255,255,0.38); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px; }
-.earningValue { font-size: 1.25rem; font-weight: 800; color: $success; margin: 0; }
-
-.earningTable {
-  display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid $navy-border; padding-top: 1rem; margin-top: 0.25rem;
-}
-.earningRow {
-  display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-radius: $radius-sm;
-}
-.earningDate  { flex: 1; color: rgba(255,255,255,0.5); }
-.earningNet   { font-weight: 700; color: $success; }
-.earningStatus {
-  font-size: 0.625rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: capitalize;
-  &.es_pending   { background: rgba($warning,0.12); color: $warning; }
-  &.es_requested { background: rgba(59,130,246,0.12); color: #60A5FA; }
-  &.es_paid      { background: rgba($success,0.12); color: $success; }
-}

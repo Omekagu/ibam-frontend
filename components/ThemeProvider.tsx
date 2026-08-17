@@ -21,7 +21,6 @@ export function ThemeProvider ({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isPortal) {
-      // Public / auth / marketing pages are always dark
       document.documentElement.setAttribute('data-theme', 'dark')
       return
     }
@@ -29,6 +28,7 @@ export function ThemeProvider ({ children }: { children: React.ReactNode }) {
     const initial = stored ?? 'dark'
     setTheme(initial)
     applyTheme(initial)
+    setCookie(initial)
   }, [isPortal])
 
   function toggle () {
@@ -36,6 +36,7 @@ export function ThemeProvider ({ children }: { children: React.ReactNode }) {
       const next = prev === 'light' ? 'dark' : 'light'
       applyTheme(next)
       localStorage.setItem('theme', next)
+      setCookie(next)
       return next
     })
   }
@@ -54,4 +55,8 @@ export function useTheme () {
 function applyTheme (t: Theme) {
   if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
   else document.documentElement.removeAttribute('data-theme')
+}
+
+function setCookie (t: Theme) {
+  document.cookie = `theme=${t}; path=/; max-age=31536000; SameSite=Lax`
 }

@@ -2,11 +2,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
+import { XIcon, SearchIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ClockIcon, HomeIcon, WalkingIcon, MapPinIcon, DownloadIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Patient { name: string; email: string; phone?: string }
 interface Lab     { _id: string; name: string }
 interface PaymentRef { status: string; amount: number; reference?: string }
+interface LabResult { fileUrl: string; notes?: string; createdAt: string }
 interface Request {
   _id: string
   tests: string[]
@@ -21,6 +23,7 @@ interface Request {
   patient?: Patient
   lab?: Lab
   paymentRef?: PaymentRef
+  result?: LabResult
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -69,7 +72,7 @@ export default function AdminDiagnosticsPage () {
         </div>
         <div className={s.controls}>
           <div className={s.searchWrap}>
-            <span className={s.searchIcon}>🔍</span>
+            <span className={s.searchIcon}><SearchIcon size={14} /></span>
             <input
               className={s.searchInput}
               placeholder='Patient ID, transaction ref, or name…'
@@ -77,7 +80,7 @@ export default function AdminDiagnosticsPage () {
               onChange={e => handleSearch(e.target.value)}
             />
             {search && (
-              <button className={s.searchClear} onClick={() => handleSearch('')}>✕</button>
+              <button className={s.searchClear} onClick={() => handleSearch('')}><XIcon size={14} /></button>
             )}
           </div>
           <select className={s.filter} value={filter} onChange={e => { setFilter(e.target.value); setPage(1) }}>
@@ -115,13 +118,13 @@ export default function AdminDiagnosticsPage () {
                         {r.tests.length > 2 && <span className={s.moreTag}> +{r.tests.length - 2}</span>}
                       </p>
                       <p className={s.sub}>
-                        {r.patient?.name ?? '—'} · {r.collectionType === 'home_visit' ? '🏠 Home Visit' : '🚶 Walk-in'} · {new Date(r.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {r.patient?.name ?? '—'} · {r.collectionType === 'home_visit' ? <><HomeIcon size={14} /> Home Visit</> : <><WalkingIcon size={14} /> Walk-in</>} · {new Date(r.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </div>
                     <div className={s.cardRight}>
                       <span className={`${s.statusBadge} ${s[r.status]}`}>{STATUS_LABELS[r.status] ?? r.status}</span>
                       {r.lab && <span className={s.labTag}>{r.lab.name}</span>}
-                      <span className={s.chevron}>{open ? '▲' : '▼'}</span>
+                      <span className={s.chevron}>{open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                     </div>
                   </div>
 
@@ -143,7 +146,7 @@ export default function AdminDiagnosticsPage () {
                           <div className={s.detailItem}>
                             <span className={s.dLabel}>Payment</span>
                             <span className={`${s.dVal} ${r.paymentRef.status === 'success' ? s.dGreen : ''}`}>
-                              {r.paymentRef.status === 'success' ? '✓ Confirmed' : '⏳ ' + r.paymentRef.status}
+                              {r.paymentRef.status === 'success' ? <><CheckIcon size={14} /> Confirmed</> : <><ClockIcon size={14} /> {r.paymentRef.status}</>}
                             </span>
                             {r.paymentRef.reference && <span className={s.dSub}>{r.paymentRef.reference}</span>}
                           </div>
@@ -164,12 +167,24 @@ export default function AdminDiagnosticsPage () {
 
                       {r.collectionType === 'home_visit' && (preferred || r.pickupLocation?.address) && (
                         <div className={s.visitBox}>
-                          {r.pickupLocation?.address && <p>📍 {r.pickupLocation.address}</p>}
-                          {preferred && <p>🗓 Preferred: <strong>{preferred}</strong></p>}
+                          {r.pickupLocation?.address && <p><MapPinIcon size={14} /> {r.pickupLocation.address}</p>}
+                          {preferred && <p>Preferred: <strong>{preferred}</strong></p>}
                         </div>
                       )}
 
                       {r.notes && <p className={s.notes}>{r.notes}</p>}
+
+                      {r.result ? (
+                        <div className={s.resultBox}>
+                          <p className={s.resultReady}><CheckIcon size={14} /> Lab result uploaded</p>
+                          {r.result.notes && <p className={s.resultNotes}>{r.result.notes}</p>}
+                          <a href={r.result.fileUrl} target='_blank' rel='noreferrer' className={s.downloadBtn}>
+                            <DownloadIcon size={14} /> Download Report
+                          </a>
+                        </div>
+                      ) : r.status === 'completed' ? (
+                        <p className={s.resultMissing}>Result file not yet uploaded.</p>
+                      ) : null}
                     </div>
                   )}
                 </div>

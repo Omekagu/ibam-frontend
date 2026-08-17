@@ -1,5 +1,5 @@
 'use client'
-import {
+import React, {
   Suspense,
   useCallback,
   useEffect,
@@ -12,6 +12,7 @@ import api from '@/lib/api'
 import { downloadReceipt } from '@/lib/receipt'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { PillIcon, SearchIcon, StoreIcon, TruckIcon, MapPinIcon, ClipboardIcon, BuildingIcon, LockIcon, CartIcon, CheckIcon, XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -514,6 +515,7 @@ function PharmacyContent () {
         setShopNotes('')
         setRxFile(null)
         setShopSub(false)
+        const capturedOrderId = orderId
         const paystack = new (window as any).PaystackPop()
         paystack.newTransaction({
           key: paystackPublicKey,
@@ -522,7 +524,7 @@ function PharmacyContent () {
             try {
               await api.get(`/payments/verify/${reference}`)
               downloadReceipt({
-                bookingRef: `#${orderId.slice(-8).toUpperCase()}`,
+                bookingRef: `#${capturedOrderId.slice(-8).toUpperCase()}`,
                 tests: cartSnap,
                 amount: amountSnap,
                 collectionType:
@@ -547,14 +549,15 @@ function PharmacyContent () {
               /* silent */
             }
           },
-          onCancel: () =>
+          onCancel: async () => {
+            try { await api.patch(`/pharmacy/orders/${capturedOrderId}/cancel`) } catch { /* silent */ }
+            setOrders(prev => prev.filter(o => o._id !== capturedOrderId))
             modal.show({
               variant: 'declined',
               title: 'Payment Cancelled',
-              message: 'Your order is saved — retry from My Orders.',
-              actionLabel: 'View Orders',
-              onAction: () => setTab('orders')
+              message: 'No order was placed. Your cart items are still available.'
             })
+          }
         })
       } catch (err: unknown) {
         modal.show({
@@ -633,6 +636,7 @@ function PharmacyContent () {
       if (totalAmount > 0) {
         const payRes = await api.post('/payments/initiate', { type: 'pharmacy', referenceId: order._id, amount: totalAmount })
         const { accessCode, reference } = payRes.data.data
+        const rxOrderId = order._id
         setSelected(null); setPharmacyId(''); setRxAddress(''); setRxNotes('')
         setRxSub(false)
         const paystack = new (window as any).PaystackPop()
@@ -643,7 +647,7 @@ function PharmacyContent () {
             try {
               await api.get(`/payments/verify/${reference}`)
               downloadReceipt({
-                bookingRef: `#${order._id.slice(-8).toUpperCase()}`,
+                bookingRef: `#${rxOrderId.slice(-8).toUpperCase()}`,
                 tests: medNames,
                 amount: totalAmount,
                 collectionType: fulfillment === 'pickup' ? 'walk_in' : 'home_visit',
@@ -661,13 +665,15 @@ function PharmacyContent () {
               api.get('/pharmacy/orders/mine').then(rv => setOrders(rv.data.data?.orders ?? [])).catch(() => {})
             } catch { /* silent */ }
           },
-          onCancel: () => modal.show({
-            variant: 'declined',
-            title: 'Payment Cancelled',
-            message: 'Your order is saved — retry from My Orders.',
-            actionLabel: 'View Orders',
-            onAction: () => setTab('orders')
-          })
+          onCancel: async () => {
+            try { await api.patch(`/pharmacy/orders/${rxOrderId}/cancel`) } catch { /* silent */ }
+            setOrders(prev => prev.filter(o => o._id !== rxOrderId))
+            modal.show({
+              variant: 'declined',
+              title: 'Payment Cancelled',
+              message: 'No order was placed. Your prescription is still available to re-order.'
+            })
+          }
         })
       } else {
         // Drugs not in pharmacy catalog — pharmacy will confirm price
@@ -752,9 +758,9 @@ function PharmacyContent () {
   }
 
   const orderedRxIds = new Set(
-    orders.map(o =>
-      typeof o.prescription === 'object' ? o.prescription?._id : o.prescription
-    )
+    orders
+      .filter(o => o.status !== 'cancelled' && (o.paymentRef || o.totalAmount === 0))
+      .map(o => typeof o.prescription === 'object' ? o.prescription?._id : o.prescription)
   )
 
   const isPendingPayment = (o: PharmacyOrder) =>
@@ -778,7 +784,7 @@ function PharmacyContent () {
             at any pharmacy.
           </h1>
           <div className={s.heroSearch}>
-            <span className={s.heroSearchIcon}>💊</span>
+            <span className={s.heroSearchIcon}><PillIcon size={14} /></span>
             <input
               className={s.heroSearchInput}
               placeholder='Search paracetamol, amoxicillin, insulin… across all pharmacies'
@@ -794,7 +800,7 @@ function PharmacyContent () {
                   setDrugResults([])
                 }}
               >
-                ✕
+                <XIcon size={14} />
               </button>
             )}
           </div>
@@ -857,15 +863,15 @@ function PharmacyContent () {
       <div className={s.tabBar}>
         {(
           [
-            ['shop', '🏪', 'Shop Drugs'],
-            ['prescription', '📋', 'Prescriptions'],
-            ['orders', '📦', 'My Orders']
-          ] as const
+            ['shop', <StoreIcon size={14} />, 'Shop Drugs'],
+            ['prescription', <ClipboardIcon size={14} />, 'Prescriptions'],
+            ['orders', <ClipboardIcon size={14} />, 'My Orders']
+          ] as [string, React.ReactNode, string][]
         ).map(([t, icon, label]) => (
           <button
-            key={t}
+            key={t as string}
             className={`${s.tab} ${tab === t ? s.tabActive : ''}`}
-            onClick={() => setTab(t)}
+            onClick={() => setTab(t as 'shop' | 'prescription' | 'orders')}
           >
             <span className={s.tabIcon}>{icon}</span>
             <span>{label}</span>
@@ -888,7 +894,7 @@ function PharmacyContent () {
               <p className={s.sectionLabel}>Select a pharmacy to shop</p>
               {partners.length === 0 ? (
                 <div className={s.emptyState}>
-                  <span>🏥</span>
+                  <span><BuildingIcon size={32} /></span>
                   <p>No pharmacy partners available right now.</p>
                 </div>
               ) : (
@@ -906,7 +912,7 @@ function PharmacyContent () {
                       >
                         <div className={s.pharmacyCardTop}>
                           <span className={open ? s.openBadge : s.closedBadge}>
-                            {open ? '🟢 Open' : '🔴 Closed'}
+                            {open ? 'Open' : 'Closed'}
                           </span>
                           {ph.operatingHours?.close && (
                             <span className={s.hoursText}>
@@ -922,10 +928,10 @@ function PharmacyContent () {
                           />
                           <div className={s.pharmacyCardInfo}>
                             <p className={s.pharmacyName}>{ph.name}</p>
-                            <p className={s.pharmacyAddr}>📍 {ph.address}</p>
+                            <p className={s.pharmacyAddr}><MapPinIcon size={14} /> {ph.address}</p>
                             {ph.drugCount != null && (
                               <p className={s.pharmacyDrugCount}>
-                                💊 {ph.drugCount} drug
+                                <PillIcon size={14} /> {ph.drugCount} drug
                                 {ph.drugCount !== 1 ? 's' : ''} available
                               </p>
                             )}
@@ -982,7 +988,7 @@ function PharmacyContent () {
                 </div>
                 {cart.length > 0 && (
                   <div className={s.cartPill}>
-                    🛒 {cart.reduce((s, c) => s + c.qty, 0)} · ₦
+                    <CartIcon size={14} /> {cart.reduce((s, c) => s + c.qty, 0)} · ₦
                     {cartTotal.toLocaleString()}
                   </div>
                 )}
@@ -990,7 +996,7 @@ function PharmacyContent () {
 
               {/* Catalog search */}
               <div className={s.catalogSearch}>
-                <span className={s.catalogSearchIcon}>🔍</span>
+                <span className={s.catalogSearchIcon}><SearchIcon size={14} /></span>
                 <input
                   className={s.catalogSearchInput}
                   placeholder='Search drugs in this pharmacy…'
@@ -1006,7 +1012,7 @@ function PharmacyContent () {
                 </div>
               ) : filteredCatalog.length === 0 ? (
                 <div className={s.emptyState}>
-                  <span>🔍</span>
+                  <span><SearchIcon size={14} /></span>
                   <p>
                     No drugs found
                     {catalogDrugSearch ? ` for "${catalogDrugSearch}"` : ''}.
@@ -1019,7 +1025,7 @@ function PharmacyContent () {
                     return (
                       <div key={drug._id} className={s.drugCard}>
                         <div className={s.drugCardLeft}>
-                          <div className={s.drugIconCircle}>💊</div>
+                          <div className={s.drugIconCircle}><PillIcon size={14} /></div>
                           <div className={s.drugCardInfo}>
                             <p className={s.drugName}>{drug.name}</p>
                             <p className={s.drugUnit}>{drug.unit}</p>
@@ -1106,7 +1112,7 @@ function PharmacyContent () {
                           onChange={() => setShopFulfill(f)}
                         />
                         <span className={s.fulfillIcon}>
-                          {f === 'pickup' ? '🏪' : '🚚'}
+                          {f === 'pickup' ? <StoreIcon size={14} /> : <TruckIcon size={14} />}
                         </span>
                         <span className={s.fulfillLabel}>
                           {f === 'pickup' ? 'Pickup' : 'Home Delivery'}
@@ -1128,7 +1134,7 @@ function PharmacyContent () {
                         onClick={useGPS}
                         disabled={gpsLoading}
                       >
-                        📍 GPS
+                        <MapPinIcon size={14} /> GPS
                       </button>
                     </div>
                   )}
@@ -1146,9 +1152,9 @@ function PharmacyContent () {
                         onChange={e => setRxFile(e.target.files?.[0] ?? null)}
                       />
                       {rxFile ? (
-                        <p className={s.rxFileName}>📎 {rxFile.name}</p>
+                        <p className={s.rxFileName}><ClipboardIcon size={14} /> {rxFile.name}</p>
                       ) : (
-                        <p>📋 Prescription required — tap to upload</p>
+                        <p><ClipboardIcon size={14} /> Prescription required — tap to upload</p>
                       )}
                     </div>
                   )}
@@ -1164,7 +1170,7 @@ function PharmacyContent () {
                   )}
 
                   <div className={s.paymentBanner}>
-                    <span>🔒</span>
+                    <span><LockIcon size={14} /></span>
                     <p>
                       {cartTotal > 0
                         ? `Pay ₦${cartTotal.toLocaleString()} securely via Paystack. ${
@@ -1218,7 +1224,7 @@ function PharmacyContent () {
                     <p className={s.partnerOptAddr}>{ph.address}</p>
                   </div>
                   {pharmacyId === ph._id && (
-                    <span className={s.checkMark}>✓</span>
+                    <span className={s.checkMark}><CheckIcon size={14} /></span>
                   )}
                 </label>
               ))}
@@ -1227,7 +1233,7 @@ function PharmacyContent () {
             <p className={s.sectionLabel}>Select Prescription</p>
             {prescriptions.length === 0 ? (
               <div className={s.emptyState}>
-                <span>📋</span>
+                <ClipboardIcon size={32} />
                 <p>
                   No active prescriptions. Doctor prescriptions forwarded to
                   pharmacies appear here.
@@ -1249,7 +1255,7 @@ function PharmacyContent () {
                       disabled={orderedRxIds.has(rx._id)}
                       onChange={() => setSelected(rx._id)}
                     />
-                    <div className={s.rxCardIcon}>📋</div>
+                    <div className={s.rxCardIcon}><ClipboardIcon size={18} /></div>
                     <div className={s.rxCardInfo}>
                       <p className={s.rxCardMeds}>
                         {rx.medications.map(m => m.name).join(', ')}
@@ -1290,7 +1296,7 @@ function PharmacyContent () {
                     onChange={() => setFulfillment(f)}
                   />
                   <span className={s.fulfillIcon}>
-                    {f === 'pickup' ? '🏪' : '🚚'}
+                    {f === 'pickup' ? <StoreIcon size={14} /> : <TruckIcon size={14} />}
                   </span>
                   <span className={s.fulfillLabel}>
                     {f === 'pickup' ? 'Pickup' : 'Home Delivery'}
@@ -1322,7 +1328,7 @@ function PharmacyContent () {
                 background: 'rgba(59,130,246,0.06)'
               }}
             >
-              <span>🔒</span>
+              <LockIcon size={14} />
               <p>
                 If your medications are in the pharmacy catalog, payment is
                 completed immediately and a receipt is generated. Otherwise the
@@ -1339,7 +1345,7 @@ function PharmacyContent () {
           <div className={s.ordersList}>
             {orders.length === 0 ? (
               <div className={s.emptyState}>
-                <span>📦</span>
+                <ClipboardIcon size={32} />
                 <p>
                   No orders yet. Shop for drugs or send a prescription above.
                 </p>
@@ -1355,7 +1361,7 @@ function PharmacyContent () {
                   <div key={order._id} className={s.orderCard}>
                     <div className={s.orderCardTop}>
                       <div className={s.orderCardLeft}>
-                        <div className={s.orderPharmacyAvatar}>🏥</div>
+                        <div className={s.orderPharmacyAvatar}><BuildingIcon size={20} /></div>
                         <div className={s.orderCardInfo}>
                           <p className={s.orderPharmacyName}>
                             {order.pharmacy?.name}
@@ -1371,8 +1377,8 @@ function PharmacyContent () {
                             )}
                             {' · '}
                             {order.fulfillmentType === 'pickup'
-                              ? '🏪 Pickup'
-                              : '🚚 Delivery'}
+                              ? <><StoreIcon size={12} /> Pickup</>
+                              : <><TruckIcon size={12} /> Delivery</>}
                           </p>
                           {rx && (
                             <p className={s.orderRxMeds}>
@@ -1429,7 +1435,7 @@ function PharmacyContent () {
                       order.fulfillmentType === 'pickup' && (
                         <div className={s.orderCardFooter}>
                           <p className={s.readyNote}>
-                            ✅ Ready for pickup! Show your booking ref{' '}
+                            <CheckIcon size={14} /> Ready for pickup! Show your booking ref{' '}
                             <strong>
                               #{order._id.slice(-8).toUpperCase()}
                             </strong>{' '}

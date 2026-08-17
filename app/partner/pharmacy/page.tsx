@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
+import { SearchIcon, XIcon, ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string }
@@ -99,7 +100,7 @@ export default function PharmacyPartnerDashboard () {
 
       {/* Search */}
       <div className={s.searchWrap}>
-        <span className={s.searchIcon}>🔍</span>
+        <span className={s.searchIcon}><SearchIcon size={14} /></span>
         <input
           className={s.searchInput}
           placeholder="Search by patient name, booking ref, receipt ref, or payment status…"
@@ -107,7 +108,7 @@ export default function PharmacyPartnerDashboard () {
           onChange={e => setSearch(e.target.value)}
         />
         {search && (
-          <button className={s.searchClear} onClick={() => setSearch('')}>✕</button>
+          <button className={s.searchClear} onClick={() => setSearch('')}><XIcon size={14} /></button>
         )}
       </div>
       {search && (
@@ -157,7 +158,7 @@ export default function PharmacyPartnerDashboard () {
                     <span className={s.date}>
                       {new Date(order.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
                     </span>
-                    <span className={s.chevron}>{isExpanded ? '▲' : '▼'}</span>
+                    <span className={s.chevron}>{isExpanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                   </div>
                 </div>
 

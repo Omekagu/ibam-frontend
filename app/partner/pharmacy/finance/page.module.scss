@@ -1,0 +1,344 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 860px;
+}
+
+// ─── Header ────────────────────────────────────────────────────────────────
+.pageHeader {
+  @include flex-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.title    { font-size: 1.375rem; font-weight: 800; color: $white; margin: 0; }
+.subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: 4px 0 0; }
+
+.refreshBtn {
+  padding: 8px 18px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+  font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  &:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: $white; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.loaderWrap { padding: 3rem 0; display: flex; justify-content: center; }
+
+// ─── Stats Grid ────────────────────────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  @media (max-width: 700px) { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 420px) { grid-template-columns: 1fr; }
+}
+
+.statCard {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.125rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.15s;
+  &:hover { border-color: rgba($primary, 0.3); }
+}
+
+.highlightCard {
+  border-color: rgba($success, 0.3);
+  background: rgba($success, 0.04);
+}
+
+.statLabel {
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.35);
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: $white;
+  line-height: 1.15;
+  margin-top: 4px;
+}
+
+.statSub {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.38);
+  margin-top: 2px;
+}
+
+// ─── Section ───────────────────────────────────────────────────────────────
+.section {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: $white;
+  margin: 0;
+}
+
+// ─── Mini Bar Chart ────────────────────────────────────────────────────────
+.chartWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.625rem;
+  height: 140px;
+  padding-top: 1.5rem;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.barVal {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.barTrack {
+  flex: 1;
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(180deg, $primary 0%, $accent 100%);
+  border-radius: 4px 4px 0 0;
+  min-height: 0;
+  transition: height 0.4s ease;
+}
+
+.barLabel {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.38);
+  text-align: center;
+  white-space: nowrap;
+}
+
+// ─── Payout panel ──────────────────────────────────────────────────────────
+.payoutPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba($success, 0.06);
+  border: 1px solid rgba($success, 0.2);
+  border-radius: $radius-md;
+  padding: 1.125rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.payoutInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.payoutAmount {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: $success;
+}
+
+.payoutDesc {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.payoutBtn {
+  padding: 11px 28px;
+  border-radius: $radius-sm;
+  border: none;
+  background: linear-gradient(135deg, $primary, $accent);
+  color: $white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.noBankWarn {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.profileLink {
+  color: $accent;
+  text-decoration: none;
+  font-weight: 600;
+  &:hover { text-decoration: underline; }
+}
+
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  background: rgba(96,165,250,0.06);
+  border: 1px solid rgba(96,165,250,0.18);
+  border-radius: $radius-md;
+  padding: 1rem 1.25rem;
+}
+
+.infoIcon { font-size: 1.25rem; flex-shrink: 0; }
+.infoTitle { font-size: 0.875rem; font-weight: 700; color: #60A5FA; margin: 0 0 4px; }
+.infoDesc  { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0; }
+
+.emptyText { font-size: 0.875rem; color: rgba(255,255,255,0.32); }
+
+// ─── Earnings table ────────────────────────────────────────────────────────
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 3px;
+}
+
+.tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  &:hover { color: $white; }
+}
+
+.activeTab {
+  background: rgba($primary, 0.18);
+  color: $accent;
+}
+
+.tabCount {
+  font-size: 0.65rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-weight: 700;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  align-items: center;
+  border-bottom: 1px solid rgba($navy-border, 0.5);
+  &:last-child { border-bottom: none; }
+  @media (max-width: 600px) { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.tableHeadRow {
+  background: rgba(255,255,255,0.03);
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.35);
+  border-bottom: 1px solid $navy-border;
+}
+
+.dateCell { color: rgba(255,255,255,0.55); }
+.numCell  { font-variant-numeric: tabular-nums; font-weight: 600; color: rgba(255,255,255,0.75); }
+.cutCell  { color: rgba(255,255,255,0.4) !important; font-weight: 400 !important; }
+.netCell  { color: $success !important; }
+
+.statusPill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+// ─── Payout history ────────────────────────────────────────────────────────
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.historyCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  flex-wrap: wrap;
+}
+
+.historyLeft { display: flex; flex-direction: column; gap: 3px; }
+.historyAmount { font-size: 1rem; font-weight: 800; color: $white; }
+.historyBank   { font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+.historyDate   { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+
+.historyStatus {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: capitalize;
+  flex-shrink: 0;
+}

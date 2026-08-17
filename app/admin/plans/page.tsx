@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Feature { text: string }
@@ -163,7 +164,7 @@ export default function AdminPlansPage () {
           <div className={s.modal} onClick={e => e.stopPropagation()}>
             <div className={s.modalHead}>
               <h2>{isNew ? 'New Plan' : 'Edit Plan'}</h2>
-              <button className={s.closeBtn} onClick={closeEdit}>✕</button>
+              <button className={s.closeBtn} onClick={closeEdit}><XIcon size={14} /></button>
             </div>
 
             <div className={s.modalBody}>

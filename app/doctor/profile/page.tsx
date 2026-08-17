@@ -7,6 +7,7 @@ import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
+import { CheckIcon } from '@/components/icons'
 
 type QualItem = string | { degree: string; institution?: string; year?: number | string }
 
@@ -563,7 +564,7 @@ export default function DoctorProfile () {
             </div>
 
             <button type='submit' className={s.saveBtn} disabled={saving}>
-              {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
+              {saving ? 'Saving…' : saved ? <><CheckIcon size={14} /> Saved</> : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -636,7 +637,7 @@ export default function DoctorProfile () {
               className={s.saveBtn}
               disabled={avSaving || !avDays.some(Boolean)}
             >
-              {avSaving ? 'Saving…' : avSaved ? '✓ Saved' : 'Save Availability'}
+              {avSaving ? 'Saving…' : avSaved ? <><CheckIcon size={14} /> Saved</> : 'Save Availability'}
             </button>
           </div>
         </form>
@@ -671,7 +672,7 @@ export default function DoctorProfile () {
               </div>
             </div>
             <button type='button' className={s.saveBtn} disabled={bankSaving || !bankName || !acctNumber || !acctName} onClick={saveBankAccount}>
-              {bankSaving ? 'Saving…' : bankSaved ? '✓ Saved' : 'Save Payout Account'}
+              {bankSaving ? 'Saving…' : bankSaved ? <><CheckIcon size={14} /> Saved</> : 'Save Payout Account'}
             </button>
           </div>
         </div>

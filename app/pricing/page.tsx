@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PageShell from '@/components/PageShell'
 import FAQ from '@/components/sections/FAQ'
+import { CheckIcon as CheckIconSvg } from '@/components/icons'
 import s from './page.module.scss'
 
 export const metadata: Metadata = {
@@ -76,20 +77,21 @@ function CheckIcon ({ yes }: { yes: boolean }) {
   )
 }
 
-const TABLE_ROWS = [
+type CellVal = string | true | false
+const TABLE_ROWS: { label: string; vals: CellVal[] }[] = [
   { label: 'Monthly price', vals: ['₦0', '₦2,500', '₦5,000', 'Custom'] },
   {
     label: 'Consultations',
     vals: ['1/mo', 'Unlimited', 'Unlimited', 'Unlimited']
   },
-  { label: 'Family members', vals: ['–', '1', 'Up to 6', 'Unlimited'] },
-  { label: 'E-prescriptions', vals: ['–', '✓', '✓', '✓'] },
-  { label: 'Lab test ordering', vals: ['–', '✓', '✓', '✓'] },
-  { label: 'Pharmacy delivery', vals: ['–', '✓', '✓', '✓'] },
-  { label: 'Priority booking', vals: ['–', '–', '✓', '✓'] },
-  { label: '24/7 on-call support', vals: ['–', '–', '✓', '✓'] },
-  { label: 'Dedicated care manager', vals: ['–', '–', '–', '✓'] },
-  { label: 'NHIS/HMO billing', vals: ['–', '–', '–', '✓'] }
+  { label: 'Family members', vals: [false, '1', 'Up to 6', 'Unlimited'] },
+  { label: 'E-prescriptions', vals: [false, true, true, true] },
+  { label: 'Lab test ordering', vals: [false, true, true, true] },
+  { label: 'Pharmacy delivery', vals: [false, true, true, true] },
+  { label: 'Priority booking', vals: [false, false, true, true] },
+  { label: '24/7 on-call support', vals: [false, false, true, true] },
+  { label: 'Dedicated care manager', vals: [false, false, false, true] },
+  { label: 'NHIS/HMO billing', vals: [false, false, false, true] }
 ]
 
 export default async function PricingPage () {
@@ -173,9 +175,9 @@ export default async function PricingPage () {
                     {row.vals.map((v, i) => (
                       <td
                         key={i}
-                        className={v === '✓' ? s.yes : v === '–' ? s.no : ''}
+                        className={v === true ? s.yes : v === false ? s.no : ''}
                       >
-                        {v}
+                        {v === true ? <CheckIconSvg size={14} /> : v === false ? <span>—</span> : v}
                       </td>
                     ))}
                   </tr>

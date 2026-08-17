@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 interface Appt {
@@ -16,6 +17,7 @@ interface Appt {
 const STATUS_OPTS = ['', 'pending', 'confirmed', 'completed', 'cancelled', 'no_show']
 
 export default function AdminAppointments () {
+  const modal  = useStatusModal()
   const [appts,   setAppts]   = useState<Appt[]>([])
   const [total,   setTotal]   = useState(0)
   const [loading, setLoading] = useState(true)
@@ -39,14 +41,22 @@ export default function AdminAppointments () {
     setStatus(st); setPage(1); load(1, st)
   }
 
-  async function cancel (id: string) {
-    if (!window.confirm('Cancel this appointment?')) return
-    setActing(id)
-    try {
-      await api.put(`/appointments/${id}/cancel`, { reason: 'Cancelled by admin' })
-      setAppts(prev => prev.map(a => a._id === id ? { ...a, status: 'cancelled' } : a))
-    } catch { }
-    setActing(null)
+  function cancel (appt: Appt) {
+    modal.show({
+      variant: 'pending',
+      title: 'Cancel Appointment?',
+      message: `Cancel ${appt.type} appointment between ${appt.patient?.name ?? 'patient'} and ${appt.doctor?.name ?? 'doctor'}? This cannot be undone.`,
+      actionLabel: 'Yes, Cancel',
+      dismissLabel: 'Keep',
+      onAction: async () => {
+        setActing(appt._id)
+        try {
+          await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by admin' })
+          setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
+        } catch {}
+        setActing(null)
+      }
+    })
   }
 
   const pages = Math.ceil(total / 20)
@@ -100,7 +110,7 @@ export default function AdminAppointments () {
                       <button
                         className={s.cancelBtn}
                         disabled={acting === a._id}
-                        onClick={() => cancel(a._id)}
+                        onClick={() => cancel(a)}
                       >
                         Cancel
                       </button>

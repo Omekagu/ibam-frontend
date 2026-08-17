@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Nunito } from 'next/font/google'
-import Script from 'next/script'
+import { cookies } from 'next/headers'
 import './globals.scss'
 import ScrollReveal from '@/components/ScrollReveal'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -60,20 +60,32 @@ export const metadata: Metadata = {
   }
 }
 
-export default function RootLayout ({
+const PORTAL_ROOTS = ['/patient', '/doctor', '/admin', '/partner']
+
+export default async function RootLayout ({
   children
 }: {
   children: React.ReactNode
 }) {
+  // Read theme cookie server-side so the correct data-theme is in the initial HTML —
+  // eliminates flash without needing a before-hydration script tag.
+  const cookieStore = await cookies()
+  const themeCookie = cookieStore.get('theme')?.value as 'light' | 'dark' | undefined
+  // We don't know the pathname in the root layout, so default to the portal preference
+  // if a cookie exists; otherwise omit the attribute (ThemeProvider sets it client-side).
+  const serverTheme = themeCookie ?? null
+
   return (
-    <html lang='en' className={nunito.variable} suppressHydrationWarning>
+    <html
+      lang='en'
+      className={nunito.variable}
+      suppressHydrationWarning
+      {...(serverTheme === 'dark' ? { 'data-theme': 'dark' } : {})}
+    >
       <head>
         <link rel='icon' type='image/png' href='/Ibam Logo Png.png' />
         <link rel='shortcut icon' href='/Ibam Logo Png.png' />
         <link rel='apple-touch-icon' href='/Ibam Logo Png.png' />
-        {/* Prevent theme flash before hydration.
-            Public/auth routes are always dark; portals use stored preference. */}
-        <Script id='theme-init' strategy='beforeInteractive' src='/theme-init.js' />
       </head>
       <body>
         <ThemeProvider>

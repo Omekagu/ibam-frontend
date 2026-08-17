@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
 import { PillIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
+import { ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string; instructions?: string }
 interface Prescription {
@@ -97,7 +98,7 @@ export default function HealthRecords () {
                   <div className={s.cardRight}>
                     <span className={`${s.statusBadge} ${s[p.status]}`}>{p.status}</span>
                     {p.forwardedToPharmacy && <span className={s.fwdBadge}>Sent to Pharmacy</span>}
-                    <span className={s.chevron}>{expanding === p._id ? '▲' : '▼'}</span>
+                    <span className={s.chevron}>{expanding === p._id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                   </div>
                 </div>
                 {expanding === p._id && (
@@ -150,8 +151,11 @@ export default function HealthRecords () {
                   </div>
                   {!req.paymentRef && (
                     <div className={s.cardBody}>
-                      <button className={s.fwdBtn} onClick={() => router.push('/patient/labs')}>
-                        Pay Now to Proceed
+                      <button
+                        className={s.fwdBtn}
+                        onClick={() => router.push(`/patient/labs?tests=${encodeURIComponent(req.tests.join(','))}&tab=order`)}
+                      >
+                        Order & Pay
                       </button>
                     </div>
                   )}

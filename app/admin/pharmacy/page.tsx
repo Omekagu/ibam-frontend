@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Pharmacy {
@@ -210,7 +211,7 @@ export default function AdminPharmacyPage () {
           <div className={s.modal}>
             <div className={s.modalHead}>
               <h3>Register Pharmacy Partner</h3>
-              <button className={s.closeBtn} onClick={() => setShowRegister(false)}>✕</button>
+              <button className={s.closeBtn} onClick={() => setShowRegister(false)}><XIcon size={14} /></button>
             </div>
             <form className={s.modalBody} onSubmit={submitRegister}>
               {formErr && <p className={s.formErr}>{formErr}</p>}

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface TestRow { name: string; price: number | ''; turnaroundHours: number | '' }
@@ -307,7 +308,7 @@ export default function AdminLabsPage () {
                           onChange={e => updateRow(i, 'price', e.target.value)} />
                         <input className={s.input} type='number' min={1} placeholder='24' value={row.turnaroundHours}
                           onChange={e => updateRow(i, 'turnaroundHours', e.target.value)} />
-                        <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'>✕</button>
+                        <button className={s.removeBtn} onClick={() => removeRow(i)} title='Remove'><XIcon size={14} /></button>
                       </div>
                     ))}
                   </div>
@@ -331,7 +332,7 @@ export default function AdminLabsPage () {
           <div className={s.modal}>
             <div className={s.modalHead}>
               <h3>Register Diagnostic Lab</h3>
-              <button className={s.closeBtn} onClick={() => setShowRegister(false)}>✕</button>
+              <button className={s.closeBtn} onClick={() => setShowRegister(false)}><XIcon size={14} /></button>
             </div>
             <form className={s.modalBody} onSubmit={submitRegister}>
               {formErr && <p className={s.editorErr}>{formErr}</p>}

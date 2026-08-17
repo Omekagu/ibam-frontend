@@ -255,6 +255,23 @@ const IcTrash = () => (
   </svg>
 )
 
+const IcMinimize = () => (
+  <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round'>
+    <polyline points='4 14 10 14 10 20' />
+    <polyline points='20 10 14 10 14 4' />
+    <line x1='10' y1='14' x2='3' y2='21' />
+    <line x1='21' y1='3' x2='14' y2='10' />
+  </svg>
+)
+const IcExpand = () => (
+  <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round'>
+    <polyline points='15 3 21 3 21 9' />
+    <polyline points='9 21 3 21 3 15' />
+    <line x1='21' y1='3' x2='14' y2='10' />
+    <line x1='3' y1='21' x2='10' y2='14' />
+  </svg>
+)
+
 // ─── Main component ────────────────────────────────────
 function ConsultationInner () {
   const params = useSearchParams()
@@ -282,6 +299,7 @@ function ConsultationInner () {
   const [camOn, setCamOn] = useState(true)
   const [chatOpen, setChatOpen] = useState(false)
   const [rxOpen, setRxOpen] = useState(false)
+  const [callMinimized, setCallMinimized] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [ending, setEnding] = useState(false)
   const [sessionEnded, setSessionEnded] = useState(false)
@@ -495,6 +513,29 @@ function ConsultationInner () {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, chatOpen])
 
+  // Best-effort: tell the server the doctor left if the tab is closed before End is clicked
+  useEffect(() => {
+    if (!isDoctor || !cid) return
+    function onUnload () {
+      if (!sessionEnded) {
+        const url = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') ?? ''}/api/consultations/${cid}/end`
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+        if (token) {
+          // sendBeacon cannot set Authorization headers, so fall back to a sync XHR
+          try {
+            const xhr = new XMLHttpRequest()
+            xhr.open('PUT', url, false) // false = synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json')
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+            xhr.send(JSON.stringify({}))
+          } catch { /* best-effort */ }
+        }
+      }
+    }
+    window.addEventListener('beforeunload', onUnload)
+    return () => window.removeEventListener('beforeunload', onUnload)
+  }, [isDoctor, cid, sessionEnded])
+
   useEffect(() => {
     if (!cid) return
     const load = async () => {
@@ -510,11 +551,14 @@ function ConsultationInner () {
 
   useEffect(() => {
     if (!isDoctor) return
-    api.get('/diagnostics/labs').then(r => {
-      const labs: Array<{ testsOffered?: string[] }> = r.data.data?.labs ?? []
-      const all = Array.from(new Set(labs.flatMap(l => l.testsOffered ?? [])))
-      setLabCatalog(all)
-    }).catch(() => {})
+    Promise.all([
+      api.get('/diagnostics/lab-tests').catch(() => ({ data: { data: { tests: [] } } })),
+      api.get('/diagnostics/labs').catch(() => ({ data: { data: { labs: [] } } })),
+    ]).then(([catalogRes, labsRes]) => {
+      const catalogNames: string[] = (catalogRes.data.data?.tests ?? []).map((t: { name: string }) => t.name)
+      const partnerNames: string[] = (labsRes.data.data?.labs ?? []).flatMap((l: { testsOffered?: string[] }) => l.testsOffered ?? [])
+      setLabCatalog(Array.from(new Set([...catalogNames, ...partnerNames])))
+    })
   }, [isDoctor])
 
   const totalSeconds = sessionDurationMinutes * 60
@@ -691,7 +735,7 @@ function ConsultationInner () {
 
       {/* ── Video / audio area ──────────────────────── */}
       {consultType !== 'chat' && (
-        <div className={s.callArea}>
+        <div className={`${s.callArea} ${callMinimized ? s.callAreaHidden : ''}`}>
           {showAvCall ? (
             <AgoraClient
               token={agoraToken!}
@@ -719,6 +763,18 @@ function ConsultationInner () {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Minimized pip ───────────────────────────── */}
+      {consultType !== 'chat' && callMinimized && !sessionEnded && (
+        <div className={s.pip} onClick={() => setCallMinimized(false)} title='Expand call'>
+          <div className={s.pipAvatar}>{otherName[0]?.toUpperCase()}</div>
+          <div className={s.pipInfo}>
+            <span className={s.pipName}>{otherName}</span>
+            <span className={s.pipTimer}>{fmt(elapsed)}</span>
+          </div>
+          <span className={s.pipExpand}><IcExpand /></span>
         </div>
       )}
 
@@ -799,6 +855,18 @@ function ConsultationInner () {
                   </span>
                 </button>
               )}
+              <button
+                className={s.ctrlBtn}
+                onClick={() => setCallMinimized(v => !v)}
+                title={callMinimized ? 'Expand call' : 'Minimize call'}
+              >
+                <span className={s.ctrlIcon}>
+                  {callMinimized ? <IcExpand /> : <IcMinimize />}
+                </span>
+                <span className={s.ctrlLabel}>
+                  {callMinimized ? 'Expand' : 'Minimize'}
+                </span>
+              </button>
               <div className={s.ctrlDivider} />
             </>
           )}
@@ -856,12 +924,14 @@ function ConsultationInner () {
             className={`${s.ctrlBtn} ${s.ctrlEnd}`}
             onClick={endCall}
             disabled={ending || sessionEnded}
-            title={sessionEnded ? 'Session ended' : isDoctor ? 'End consultation' : 'Leave call'}
+            title={sessionEnded ? 'Call Ended' : isDoctor ? 'End Call' : 'Leave Call'}
           >
             <span className={s.ctrlIcon}>
               {isDoctor ? <IcPhoneOff /> : <IcLeave />}
             </span>
-            <span className={s.ctrlLabel}>{sessionEnded ? 'Ended' : isDoctor ? 'End' : 'Leave'}</span>
+            <span className={s.ctrlLabel}>
+              {sessionEnded ? 'Call Ended' : isDoctor ? 'End Call' : 'Leave'}
+            </span>
           </button>
         </div>
       </div>

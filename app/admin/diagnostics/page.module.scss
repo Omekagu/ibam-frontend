@@ -102,6 +102,13 @@
 
 .notes { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin: 0; }
 
+// ─── Lab result ───────────────────────────────────────────────
+.resultBox { margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: var(--success-bg, rgba(16,185,129,.08)); border: 1px solid var(--success-border, rgba(16,185,129,.25)); display: flex; flex-direction: column; gap: 6px; }
+.resultReady { font-size: 0.8125rem; font-weight: 600; color: var(--success, #10b981); margin: 0; }
+.resultNotes { font-size: 0.8rem; color: var(--text-semi); margin: 0; }
+.resultMissing { font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 10px; }
+.downloadBtn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; background: $accent; color: #fff; font-size: 0.8rem; font-weight: 600; text-decoration: none; width: fit-content; &:hover { opacity: 0.88; } }
+
 // ─── Pagination ───────────────────────────────────────────────
 .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
 .pgBtn { padding: 6px 14px; border-radius: $radius-sm; border: 1px solid $navy-border; background: var(--input-bg); color: var(--text-semi); font-size: 0.8rem; cursor: pointer; &:hover:not(:disabled) { background: var(--input-hover-bg); } &:disabled { opacity: 0.3; cursor: not-allowed; } }

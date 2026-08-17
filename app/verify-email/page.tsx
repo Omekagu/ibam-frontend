@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { sendEmailOTP, verifyEmailOTP, getStoredUser, updateStoredUser } from '@/lib/auth'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { useStatusModal } from '@/components/StatusModal'
+import { CheckIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 const BOXES = 6
@@ -102,7 +103,7 @@ function VerifyEmailForm () {
   if (done) {
     return (
       <div className={s.success}>
-        <div className={s.successIcon}>✓</div>
+        <div className={s.successIcon}><CheckIcon size={14} /></div>
         <h2>Email verified!</h2>
         <p>Your email address has been confirmed.<br />Taking you to your dashboard…</p>
       </div>

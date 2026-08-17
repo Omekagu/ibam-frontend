@@ -4,7 +4,7 @@ import api from '@/lib/api'
 import s from './page.module.scss'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
-import { MapPinIcon } from '@/components/icons'
+import { MapPinIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, XIcon } from '@/components/icons'
 
 interface SubscriptionPlan {
   _id: string
@@ -368,7 +368,7 @@ export default function SubscriptionsPage () {
                   className={s.pkgTestsToggle}
                   onClick={() => setExpandedPkg(open ? null : pkg._id)}
                 >
-                  {open ? '▲' : '▼'} {pkg.includedTests.length} included tests
+                  {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />} {pkg.includedTests.length} included tests
                 </button>
 
                 {open && (
@@ -409,7 +409,7 @@ export default function SubscriptionsPage () {
         {current && (
           <div className={s.activeBanner} style={{ marginBottom: '1rem' }}>
             <div className={s.activeBannerLeft}>
-              <span className={s.activeBadge}>✓ Active</span>
+              <span className={s.activeBadge}><CheckIcon size={14} /> Active</span>
               <p className={s.activePlanName}>{current.plan?.name}</p>
               <p className={s.activeMeta}>
                 Next billing: {formatDate(current.nextBillingDate)}
@@ -466,14 +466,14 @@ export default function SubscriptionsPage () {
                     <ul className={s.featureList}>
                       {plan.features.map((f, i) => (
                         <li key={i} className={s.featureItem}>
-                          <span className={s.checkmark}>✓</span>
+                          <span className={s.checkmark}><CheckIcon size={14} /></span>
                           {f}
                         </li>
                       ))}
                     </ul>
                   )}
                   {isActive ? (
-                    <div className={s.currentTag}>✓ Your current plan</div>
+                    <div className={s.currentTag}><CheckIcon size={14} /> Your current plan</div>
                   ) : (
                     <button
                       className={`${s.subscribeBtn} ${
@@ -509,7 +509,7 @@ export default function SubscriptionsPage () {
                 className={s.bookPanelClose}
                 onClick={() => setShowBookModal(false)}
               >
-                ✕
+                <XIcon size={14} />
               </button>
             </div>
 

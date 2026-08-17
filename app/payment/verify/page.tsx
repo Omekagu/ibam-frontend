@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
 import { downloadReceipt } from '@/lib/receipt'
+import { DownloadIcon } from '@/components/icons'
 import styles from './page.module.scss'
 
 type Stage = 'loading' | 'success' | 'failed' | 'error'
@@ -205,7 +206,7 @@ function VerifyContent () {
 
         <div className={styles.actions}>
           <button className={styles.primaryBtn} onClick={handleDownload} disabled={downloading}>
-            {downloading ? 'Opening…' : '↓ Download Receipt (PDF)'}
+            {downloading ? 'Opening…' : <><DownloadIcon size={14} /> Download Receipt (PDF)</>}
           </button>
           <Link href='/patient/labs?tab=results' className={styles.secondaryBtn}>
             Go to My Results

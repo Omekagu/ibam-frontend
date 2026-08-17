@@ -3,6 +3,7 @@ import { useEffect, useState, FormEvent } from 'react'
 import api from '@/lib/api'
 import { getStoredUser } from '@/lib/auth'
 import { useStatusModal } from '@/components/StatusModal'
+import { CheckIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Profile {
@@ -97,7 +98,7 @@ export default function PatientProfile () {
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder='+234 800 000 0000' />
           </div>
           <button type='submit' className={s.saveBtn} disabled={saving}>
-            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
+            {saving ? 'Saving…' : saved ? <><CheckIcon size={14} /> Saved</> : 'Save Changes'}
           </button>
         </div>
       </form>

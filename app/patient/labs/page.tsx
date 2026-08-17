@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useState, useRef, FormEvent } from 'react'
+import { useEffect, useState, useRef, FormEvent, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
-import { MapPinIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
+import { MapPinIcon, MicroscopeIcon, DocumentIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ClockIcon, HomeIcon, WalkingIcon, CreditCardIcon, XIcon } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import { downloadReceipt } from '@/lib/receipt'
@@ -62,8 +63,9 @@ interface BankSettings {
 
 type Tab = 'order' | 'results' | 'packages'
 
-export default function PatientLabs () {
+function PatientLabsInner () {
   const modal = useStatusModal()
+  const params = useSearchParams()
   const [tab, setTab] = useState<Tab>('order')
   const [requests, setRequests] = useState<LabRequest[]>([])
   const [results, setResults] = useState<LabResult[]>([])
@@ -73,7 +75,7 @@ export default function PatientLabs () {
     WellnessPackageItem[]
   >([])
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null)
-  const [paystackPublicKey, setPaystackPublicKey] = useState('')
+  const [paystackPublicKey, setPaystackPublicKey] = useState(process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '')
 
   // Individual test order
   const [selectedTests, setSelectedTests] = useState<string[]>([])
@@ -130,6 +132,16 @@ export default function PatientLabs () {
       ? selectedPackage.walkInPrice
       : selectedPackage.homeVisitPrice
     : 0
+
+  useEffect(() => {
+    const testsParam = params.get('tests')
+    const tabParam = params.get('tab')
+    if (tabParam === 'order') setTab('order')
+    if (testsParam) {
+      const names = testsParam.split(',').map(t => t.trim()).filter(Boolean)
+      if (names.length) setSelectedTests(names)
+    }
+  }, [params])
 
   useEffect(() => {
     const script = document.createElement('script')
@@ -312,14 +324,14 @@ export default function PatientLabs () {
               /* silent */
             }
           },
-          onCancel: () => {
+          onCancel: async () => {
+            try { await api.delete(`/diagnostics/request/${reqId}`) } catch { /* silent */ }
+            setRequests(prev => prev.filter(r => r._id !== reqId))
             modal.show({
               variant: 'declined',
               title: 'Payment Cancelled',
-              message:
-                'Payment was not completed. Your request is saved — retry from My Results.'
+              message: 'No booking was made. Your selected tests are still available.'
             })
-            setTab('results')
           }
         })
       } catch (err: unknown) {
@@ -618,12 +630,13 @@ export default function PatientLabs () {
               /* silent */
             }
           },
-          onCancel: () => {
+          onCancel: async () => {
+            try { await api.delete(`/diagnostics/request/${reqId}`) } catch { /* silent */ }
+            setRequests(prev => prev.filter(r => r._id !== reqId))
             modal.show({
               variant: 'declined',
               title: 'Payment Cancelled',
-              message:
-                'Payment was not completed. Your booking is saved — retry from My Results.'
+              message: `No booking was made. You can book "${pkgNameSnap}" again anytime.`
             })
           }
         })
@@ -800,7 +813,7 @@ export default function PatientLabs () {
 
           {collection === 'home_visit' && estimatedTotal > 0 && (
             <div className={s.paymentNote} data-variant='transfer'>
-              <span className={s.paymentNoteIcon}>💳</span>
+              <span className={s.paymentNoteIcon}><CreditCardIcon size={14} /></span>
               <p>
                 Estimated total:{' '}
                 <strong>₦{estimatedTotal.toLocaleString()}</strong>. Pay
@@ -1001,7 +1014,7 @@ export default function PatientLabs () {
                     className={s.pkgTestsToggle}
                     onClick={() => setExpandedPkg(open ? null : pkg._id)}
                   >
-                    {open ? '▲' : '▼'} {pkg.includedTests.length} included tests
+                    {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />} {pkg.includedTests.length} included tests
                   </button>
 
                   {open && (
@@ -1104,7 +1117,7 @@ export default function PatientLabs () {
                             {req.status.replace(/_/g, ' ')}
                           </span>
                           <span className={s.chevronIcon}>
-                            {open ? '▲' : '▼'}
+                            {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
                           </span>
                         </div>
                       </div>
@@ -1130,8 +1143,8 @@ export default function PatientLabs () {
                               <span className={s.detailLabel}>Collection</span>
                               <span className={s.detailValue}>
                                 {req.collectionType === 'walk_in'
-                                  ? '🚶 Walk-in at Lab'
-                                  : '🏠 Home Visit'}
+                                  ? <><WalkingIcon size={14} /> Walk-in at Lab</>
+                                  : <><HomeIcon size={14} /> Home Visit</>}
                               </span>
                             </div>
                             {req.totalAmount > 0 && (
@@ -1155,8 +1168,8 @@ export default function PatientLabs () {
                                   }`}
                                 >
                                   {req.paymentRef.status === 'success'
-                                    ? '✓ Confirmed'
-                                    : '⏳ Pending'}
+                                    ? <><CheckIcon size={14} /> Confirmed</>
+                                    : <><ClockIcon size={14} /> Pending</>}
                                 </span>
                               </div>
                             )}
@@ -1191,7 +1204,7 @@ export default function PatientLabs () {
                           {/* Result ready banner */}
                           {hasResult && (
                             <div className={s.resultReadyBanner}>
-                              <span className={s.resultReadyCheck}>✓</span>
+                              <span className={s.resultReadyCheck}><CheckIcon size={14} /></span>
                               <div>
                                 <p className={s.resultReadyTitle}>
                                   Your results are ready
@@ -1227,7 +1240,8 @@ export default function PatientLabs () {
                                   {payingLabId === req._id ? (
                                     <Loader inline size='sm' />
                                   ) : (
-                                    '💳 Pay Now'
+                                    <><CreditCardIcon size={14} /> Pay Now</>
+
                                   )}
                                 </button>
                               </div>
@@ -1305,7 +1319,7 @@ export default function PatientLabs () {
                 className={s.payPanelClose}
                 onClick={() => setShowPayModal(false)}
               >
-                ✕
+                <XIcon size={14} />
               </button>
             </div>
             <p className={s.payPanelSub}>
@@ -1362,7 +1376,7 @@ export default function PatientLabs () {
                 className={s.payPanelClose}
                 onClick={() => setShowBookModal(false)}
               >
-                ✕
+                <XIcon size={14} />
               </button>
             </div>
 
@@ -1467,6 +1481,14 @@ export default function PatientLabs () {
         </div>
       )}
     </>
+  )
+}
+
+export default function PatientLabs () {
+  return (
+    <Suspense fallback={<Loader label='Loading lab tests…' />}>
+      <PatientLabsInner />
+    </Suspense>
   )
 }
 

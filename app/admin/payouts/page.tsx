@@ -64,21 +64,29 @@ export default function AdminPayouts () {
     setStatus(st); setType(ty); load(st, ty)
   }
 
-  async function approvePayout (row: PayoutRow) {
+  function approvePayout (row: PayoutRow) {
     const bank = row.bankAccount
     const bankLine = bank?.accountNumber
-      ? `\nAccount: ${bank.accountNumber} (${bank.bankName ?? ''})`
-      : '\n⚠ No bank account on file'
-    if (!window.confirm(`Approve ₦${row.totalNet.toLocaleString()} payout to ${row.partnerName}?${bankLine}`)) return
-    setActing(row._id)
-    try {
-      await api.put(`/admin/payouts/${row._id}/approve`)
-      setRows(prev => prev.map(r => r._id === row._id ? { ...r, payoutStatus: 'paid', paidAt: new Date().toISOString() } : r))
-      modal.show({ variant: 'success', title: 'Payout Approved', message: `Payout approved for ${row.partnerName}.` })
-    } catch (err: unknown) {
-      modal.show({ variant: 'declined', title: 'Approval Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Approval failed.' })
-    }
-    setActing(null)
+      ? `Account: ${bank.accountNumber} (${bank.bankName ?? ''})`
+      : 'No bank account on file'
+    modal.show({
+      variant: 'pending',
+      title: 'Approve Payout?',
+      message: `Pay ₦${row.totalNet.toLocaleString()} to ${row.partnerName}.\n${bankLine}`,
+      actionLabel: 'Yes, Approve',
+      dismissLabel: 'Cancel',
+      onAction: async () => {
+        setActing(row._id)
+        try {
+          await api.put(`/admin/payouts/${row._id}/approve`)
+          setRows(prev => prev.map(r => r._id === row._id ? { ...r, payoutStatus: 'paid', paidAt: new Date().toISOString() } : r))
+          modal.show({ variant: 'success', title: 'Payout Approved', message: `Payout approved for ${row.partnerName}.` })
+        } catch (err: unknown) {
+          modal.show({ variant: 'declined', title: 'Approval Failed', message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Approval failed.' })
+        }
+        setActing(null)
+      }
+    })
   }
 
   const requestedTotal = rows.filter(r => r.payoutStatus === 'requested').reduce((s, r) => s + r.totalNet, 0)

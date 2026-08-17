@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface AdminUser { name: string; email: string }
@@ -107,7 +108,7 @@ export default function AuditPage () {
                         hour: '2-digit', minute: '2-digit',
                       })}
                     </span>
-                    <span className={s.chevron}>{exp === log._id ? '▲' : '▼'}</span>
+                    <span className={s.chevron}>{exp === log._id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                   </div>
                 </div>
 

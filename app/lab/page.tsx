@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import axios from 'axios'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
-import { MicroscopeIcon, DocumentIcon } from '@/components/icons'
+import { MicroscopeIcon, DocumentIcon, XIcon, SearchIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ClockIcon, HomeIcon, WalkingIcon, MapPinIcon, ClipboardIcon } from '@/components/icons'
 import s from './page.module.scss'
 import { Suspense } from 'react'
 
@@ -144,7 +144,7 @@ function UploadModal ({
         <div className={s.modalHead}>
           <h3 className={s.modalTitle}>Upload Result</h3>
           <button className={s.closeBtn} onClick={onClose}>
-            ✕
+            <XIcon size={14} />
           </button>
         </div>
         <p className={s.modalSub}>
@@ -282,8 +282,8 @@ function RequestCard ({
             <span className={s.reqMeta}>
               {req.patient?.name ?? 'Patient'} ·{' '}
               {req.collectionType === 'home_visit'
-                ? '🏠 Home Visit'
-                : '🚶 Walk-in'}{' '}
+                ? <><HomeIcon size={14} /> Home Visit</>
+                : <><WalkingIcon size={14} /> Walk-in</>}{' '}
               · {fmt(req.createdAt)}
             </span>
           </div>
@@ -293,7 +293,7 @@ function RequestCard ({
             >
               {STATUS_LABEL[req.status] ?? req.status}
             </span>
-            <span className={s.chevron}>{expanded ? '▲' : '▼'}</span>
+            <span className={s.chevron}>{expanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
           </div>
         </div>
 
@@ -350,7 +350,7 @@ function RequestCard ({
                       isPaid ? s.detailGreen : s.detailWarn
                     }`}
                   >
-                    {isPaid ? '✓ Confirmed' : '⏳ Pending'}
+                    {isPaid ? <><CheckIcon size={14} /> Confirmed</> : <><ClockIcon size={14} /> Pending</>}
                   </span>
                   {req.paymentRef.reference && (
                     <span className={s.detailSub}>
@@ -365,11 +365,11 @@ function RequestCard ({
             {req.collectionType === 'home_visit' && (
               <div className={s.visitBox}>
                 {req.pickupLocation?.address && (
-                  <p className={s.visitAddr}>📍 {req.pickupLocation.address}</p>
+                  <p className={s.visitAddr}><MapPinIcon size={14} /> {req.pickupLocation.address}</p>
                 )}
                 {preferred && (
                   <p className={s.visitDate}>
-                    🗓 Preferred: <strong>{preferred}</strong>
+                    Preferred: <strong>{preferred}</strong>
                   </p>
                 )}
               </div>
@@ -380,7 +380,7 @@ function RequestCard ({
 
             {/* Wellness package */}
             {req.wellnessPackage && (
-              <p className={s.pkgTag}>📦 Package: {req.wellnessPackage.name}</p>
+              <p className={s.pkgTag}><ClipboardIcon size={14} /> Package: {req.wellnessPackage.name}</p>
             )}
 
             {/* Actions */}
@@ -558,7 +558,7 @@ function LabPortalInner () {
 
       {/* Search bar */}
       <div className={s.searchWrap}>
-        <span className={s.searchIcon}>🔍</span>
+        <span className={s.searchIcon}><SearchIcon size={14} /></span>
         <input
           className={s.searchInput}
           placeholder='Search by patient ID, name, or transaction ref…'
@@ -567,7 +567,7 @@ function LabPortalInner () {
         />
         {search && (
           <button className={s.searchClear} onClick={() => setSearch('')}>
-            ✕
+            <XIcon size={14} />
           </button>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
+import { ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Patient { name: string; email: string; phone?: string }
@@ -106,7 +107,7 @@ export default function ApprovalsPage () {
                       <div className={s.cardRight}>
                         <span className={s.amount}>₦{o.totalAmount.toLocaleString()}</span>
                         <span className={s.date}>{new Date(o.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}</span>
-                        <span className={s.chevron}>{expanded === o._id ? '▲' : '▼'}</span>
+                        <span className={s.chevron}>{expanded === o._id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                       </div>
                     </div>
                     {expanded === o._id && (
@@ -154,7 +155,7 @@ export default function ApprovalsPage () {
                       <div className={s.cardRight}>
                         {t.totalAmount > 0 && <span className={s.amount}>₦{t.totalAmount.toLocaleString()}</span>}
                         <span className={s.date}>{new Date(t.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}</span>
-                        <span className={s.chevron}>{expanded === t._id ? '▲' : '▼'}</span>
+                        <span className={s.chevron}>{expanded === t._id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                       </div>
                     </div>
                     {expanded === t._id && (

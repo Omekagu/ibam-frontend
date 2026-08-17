@@ -7,6 +7,7 @@ import { logout, getStoredUser } from '@/lib/auth'
 import api from '@/lib/api'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import { StatusModalProvider } from '@/components/StatusModal'
 import s from './layout.module.scss'
 
 const NAV = [
@@ -91,6 +92,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
   )
 
   return (
+    <StatusModalProvider>
     <div className={s.shell}>
       <aside className={s.sidebar}>{sidebarInner}</aside>
 
@@ -171,6 +173,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         )}
       </div>
     </div>
+    </StatusModalProvider>
   )
 }
 

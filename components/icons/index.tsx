@@ -194,6 +194,36 @@ export function CheckIcon ({ size, ...p }: P) {
 export function XIcon ({ size, ...p }: P) {
   return <svg {...base(size)} {...p}><line x1='18' y1='6' x2='6' y2='18' /><line x1='6' y1='6' x2='18' y2='18' /></svg>
 }
+export function ChevronUpIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><polyline points='18 15 12 9 6 15' /></svg>
+}
+export function ChevronDownIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><polyline points='6 9 12 15 18 9' /></svg>
+}
+export function HomeIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><path d='M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' /><polyline points='9 22 9 12 15 12 15 22' /></svg>
+}
+export function StoreIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><path d='M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' /><polyline points='9 22 9 12 15 12 15 22' /></svg>
+}
+export function CartIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><circle cx='9' cy='21' r='1' /><circle cx='20' cy='21' r='1' /><path d='M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6' /></svg>
+}
+export function WalkingIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><circle cx='13' cy='4' r='2' /><path d='m14.5 10.5-2 3.5H9l1.5-4' /><path d='m9.5 16.5 1-3h4l2 4' /><path d='M7 22h3l1-3' /><path d='M14 22h3l-1.5-5.5' /></svg>
+}
+export function DownloadIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4' /><polyline points='7 10 12 15 17 10' /><line x1='12' y1='15' x2='12' y2='3' /></svg>
+}
+export function ArrowUpIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><line x1='12' y1='19' x2='12' y2='5' /><polyline points='5 12 12 5 19 12' /></svg>
+}
+export function ArrowDownIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><line x1='12' y1='5' x2='12' y2='19' /><polyline points='19 12 12 19 5 12' /></svg>
+}
+export function PinIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><path d='M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0Z' /><circle cx='12' cy='10' r='3' /></svg>
+}
 export function PlayIcon ({ size, ...p }: P) {
   return <svg {...base(size)} {...p}><polygon points='5 3 19 12 5 21 5 3' /></svg>
 }

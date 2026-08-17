@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { logout, getStoredUser } from '@/lib/auth'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import { StatusModalProvider } from '@/components/StatusModal'
 import s from './layout.module.scss'
 
 const NAV = [
@@ -136,6 +137,7 @@ export default function PatientLayout ({
   )
 
   return (
+    <StatusModalProvider>
     <div className={s.shell}>
       {/* ── Desktop sidebar ── */}
       <aside className={s.sidebar}>{sidebarInner}</aside>
@@ -207,6 +209,7 @@ export default function PatientLayout ({
         </nav>
       </div>
     </div>
+    </StatusModalProvider>
   )
 }
 

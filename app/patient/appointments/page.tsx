@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { ReactNode } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import { downloadReceipt } from '@/lib/receipt'
+import { CalendarIcon, PhoneIcon, ChatIcon, CreditCardIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Appointment {
@@ -42,10 +44,10 @@ function getTimingInfo (scheduledAt: string, now: number) {
   return { label: null, variant: 'muted' }
 }
 
-const TYPE_ICON: Record<string, string> = {
-  video: '🎥',
-  audio: '📞',
-  chat: '💬'
+const TYPE_ICON: Record<string, ReactNode> = {
+  video: <PhoneIcon size={14} />,
+  audio: <PhoneIcon size={14} />,
+  chat: <ChatIcon size={14} />
 }
 const TYPE_LABEL: Record<string, string> = {
   video: 'Video Call',
@@ -75,7 +77,8 @@ export default function PatientAppointments () {
   const [tab, setTab] = useState<Tab>('upcoming')
   const [acting, setActing] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
-  const [paystackKey, setPaystackKey] = useState('')
+  const [paystackKey, setPaystackKey] = useState(process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '')
+  const [scriptLoaded, setScriptLoaded] = useState(false)
 
   useEffect(() => {
     api
@@ -91,10 +94,16 @@ export default function PatientAppointments () {
   }, [])
 
   useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://js.paystack.co/v2/inline.js'
-    script.async = true
-    document.body.appendChild(script)
+    const existing = document.querySelector('script[src="https://js.paystack.co/v2/inline.js"]')
+    if (existing) {
+      setScriptLoaded(true)
+    } else {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v2/inline.js'
+      script.async = true
+      script.onload = () => setScriptLoaded(true)
+      document.body.appendChild(script)
+    }
     const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
@@ -102,13 +111,6 @@ export default function PatientAppointments () {
         if (b?.data?.paystackPublicKey) setPaystackKey(b.data.paystackPublicKey)
       })
       .catch(() => {})
-    return () => {
-      try {
-        document.body.removeChild(script)
-      } catch {
-        /* removed */
-      }
-    }
   }, [])
 
   const nowIso = new Date(now).toISOString()
@@ -152,26 +154,49 @@ export default function PatientAppointments () {
     setActing(null)
   }
 
-  async function cancelAppt (id: string) {
-    if (!window.confirm('Cancel this appointment?')) return
-    setActing(id)
-    try {
-      await api.put(`/appointments/${id}/cancel`, {
-        reason: 'Cancelled by patient'
-      })
-      setAppts(prev =>
-        prev.map(a => (a._id === id ? { ...a, status: 'cancelled' } : a))
-      )
-    } catch {}
-    setActing(null)
+  async function cancelAppt (appt: Appointment) {
+    if (appt.status !== 'confirmed') {
+      // Unpaid — no policy applies, just cancel
+      setActing(appt._id)
+      try {
+        await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by patient' })
+        setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
+      } catch {}
+      setActing(null)
+      return
+    }
+
+    // Paid — show cancellation policy before proceeding
+    const hoursUntil = (new Date(appt.scheduledAt).getTime() - Date.now()) / 3_600_000
+    const refundNote = hoursUntil > 24
+      ? 'You are eligible for a full refund (more than 24 hrs away).'
+      : hoursUntil > 2
+      ? 'You are eligible for a 50% refund (2–24 hrs before appointment).'
+      : 'No refund applies for cancellations under 2 hours before the appointment.'
+
+    modal.show({
+      variant: 'pending',
+      title: 'Cancellation Policy',
+      message: `${refundNote} Refunds take 3–5 business days. See ibamhealth.com/legal/refund for the full policy. Do you still want to cancel?`,
+      actionLabel: 'Yes, Cancel Appointment',
+      dismissLabel: 'Keep Appointment',
+      onAction: async () => {
+        setActing(appt._id)
+        try {
+          await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by patient' })
+          setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
+        } catch {}
+        setActing(null)
+      }
+    })
   }
 
   async function payForAppointment (appt: Appointment) {
-    if (!paystackKey) {
+    if (!paystackKey || !scriptLoaded) {
       modal.show({
-        variant: 'declined',
-        title: 'Not Ready',
-        message: 'Payment system is loading. Please try again in a moment.'
+        variant: 'pending',
+        title: 'Payment Loading',
+        message: 'Payment system is still initialising. Please wait a moment and try again.'
       })
       return
     }
@@ -214,11 +239,13 @@ export default function PatientAppointments () {
             /* silent */
           }
         },
-        onCancel: () => {
+        onCancel: async () => {
+          await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Payment not completed' }).catch(() => {})
+          setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
           modal.show({
             variant: 'declined',
             title: 'Payment Cancelled',
-            message: 'Your slot is still held. You can pay again anytime.'
+            message: 'No appointment was made. The slot is now available for others to book.'
           })
         }
       })
@@ -264,7 +291,7 @@ export default function PatientAppointments () {
         </div>
       ) : filtered.length === 0 ? (
         <div className={s.empty}>
-          <span className={s.emptyIcon}>📅</span>
+          <span className={s.emptyIcon}><CalendarIcon size={32} /></span>
           <p>No {tab} appointments.</p>
           {tab === 'upcoming' && (
             <button
@@ -380,10 +407,10 @@ export default function PatientAppointments () {
                         {acting === a._id
                           ? '…'
                           : a.type === 'video'
-                          ? '🎥 Join Call'
+                          ? <><PhoneIcon size={14} /> Join Call</>
                           : a.type === 'audio'
-                          ? '📞 Join Call'
-                          : '💬 Open Chat'}
+                          ? <><PhoneIcon size={14} /> Join Call</>
+                          : <><ChatIcon size={14} /> Open Chat</>}
                       </button>
                     )}
                     {isLive && isElapsed && (
@@ -392,17 +419,21 @@ export default function PatientAppointments () {
                     {a.status === 'pending' && a.consultationFee > 0 && (
                       <button
                         className={s.payBtn}
-                        disabled={acting === a._id}
+                        disabled={acting === a._id || !paystackKey || !scriptLoaded}
                         onClick={() => payForAppointment(a)}
                       >
-                        {acting === a._id ? '…' : '💳 Pay Now'}
+                        {acting === a._id
+                          ? '…'
+                          : !paystackKey || !scriptLoaded
+                          ? 'Loading…'
+                          : <><CreditCardIcon size={14} /> Pay Now</>}
                       </button>
                     )}
                     {isUpcoming && (
                       <button
                         className={s.cancelBtn}
                         disabled={acting === a._id}
-                        onClick={() => cancelAppt(a._id)}
+                        onClick={() => cancelAppt(a)}
                       >
                         Cancel
                       </button>

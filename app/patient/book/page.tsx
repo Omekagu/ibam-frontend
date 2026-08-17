@@ -6,6 +6,7 @@ import api from '@/lib/api'
 import { downloadReceipt } from '@/lib/receipt'
 import s from './page.module.scss'
 import { VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
+import { CheckIcon } from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 
@@ -65,7 +66,14 @@ export default function BookDoctor () {
   const [isUrgent, setIsUrgent] = useState(false)
   const [duration, setDuration] = useState(30)
   const [booking, setBooking] = useState(false)
-  const [paystackPublicKey, setPaystackPublicKey] = useState('')
+  const [paystackPublicKey, setPaystackPublicKey] = useState(process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '')
+  const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  function getSlotDuration (sl: Slot): number {
+    const [sh, sm] = sl.startTime.split(':').map(Number)
+    const [eh, em] = sl.endTime.split(':').map(Number)
+    return (eh * 60 + em) - (sh * 60 + sm)
+  }
 
   function typeFeeFor (doctor: Doctor, t: typeof TYPES[number]): number {
     return doctor.fees?.[t] ?? doctor.consultationFee ?? 0
@@ -98,10 +106,16 @@ export default function BookDoctor () {
 
   useEffect(() => {
     loadDoctors()
-    const script = document.createElement('script')
-    script.src = 'https://js.paystack.co/v2/inline.js'
-    script.async = true
-    document.body.appendChild(script)
+    const existing = document.querySelector('script[src="https://js.paystack.co/v2/inline.js"]')
+    if (existing) {
+      setScriptLoaded(true)
+    } else {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v2/inline.js'
+      script.async = true
+      script.onload = () => setScriptLoaded(true)
+      document.body.appendChild(script)
+    }
     const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
@@ -110,13 +124,6 @@ export default function BookDoctor () {
           setPaystackPublicKey(b.data.paystackPublicKey)
       })
       .catch(() => {})
-    return () => {
-      try {
-        document.body.removeChild(script)
-      } catch {
-        /* removed */
-      }
-    }
   }, [])
 
   useEffect(() => {
@@ -140,6 +147,10 @@ export default function BookDoctor () {
   async function book (e: FormEvent) {
     e.preventDefault()
     if (!selected || !date || !slot) return
+
+    const fee = selected ? computeFee(selected, type, duration, isUrgent) : 0
+    if (fee > 0 && (!paystackPublicKey || !scriptLoaded)) return
+
     setBooking(true)
     try {
       const scheduledAt = new Date(`${date}T${slot.startTime}`).toISOString()
@@ -155,11 +166,18 @@ export default function BookDoctor () {
       const appt = apptRes.data.data?.appointment
 
       if (appt?.consultationFee > 0) {
-        const payRes = await api.post('/payments/initiate', {
-          type: 'consultation',
-          serviceId: appt._id,
-          amount: appt.consultationFee
-        })
+        let payRes
+        try {
+          payRes = await api.post('/payments/initiate', {
+            type: 'consultation',
+            serviceId: appt._id,
+            amount: appt.consultationFee
+          })
+        } catch {
+          // Payment initiation failed — cancel the appointment so slot is freed
+          await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Payment initiation failed' }).catch(() => {})
+          throw new Error('Could not initiate payment. Please try again.')
+        }
         const { accessCode, reference } = payRes.data.data
         const doctorName = selected.displayName || selected.user?.name
         const feeSnap = appt.consultationFee as number
@@ -180,7 +198,7 @@ export default function BookDoctor () {
               })
               modal.show({
                 variant: 'success',
-                title: 'Payment Confirmed!',
+                title: 'Booking Confirmed!',
                 message: `Your ${type} consultation with Dr. ${doctorName} on ${date} at ${
                   slot!.startTime
                 } is confirmed. Receipt is downloading.`,
@@ -191,14 +209,13 @@ export default function BookDoctor () {
               /* silent */
             }
           },
-          onCancel: () => {
+          onCancel: async () => {
+            // Cancel the appointment so the slot is freed for other patients
+            await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Payment not completed' }).catch(() => {})
             modal.show({
               variant: 'declined',
               title: 'Payment Cancelled',
-              message:
-                'Payment not completed. Your appointment slot is held — complete payment from My Appointments.',
-              actionLabel: 'View Appointments',
-              onAction: () => router.push('/patient/appointments')
+              message: 'No appointment was made. The slot is now available for others to book.'
             })
           }
         })
@@ -302,7 +319,7 @@ export default function BookDoctor () {
                     </span>
                   </div>
                 </div>
-                {selected?._id === d._id && <span className={s.tick}>✓</span>}
+                {selected?._id === d._id && <span className={s.tick}><CheckIcon size={14} /></span>}
               </div>
             ))
           )}
@@ -443,7 +460,13 @@ export default function BookDoctor () {
                       className={`${s.slotBtn} ${
                         slot?._id === sl._id ? s.slotActive : ''
                       }`}
-                      onClick={() => setSlot(sl)}
+                      onClick={() => {
+                        setSlot(sl)
+                        const slotMins = getSlotDuration(sl)
+                        if (duration > slotMins) {
+                          setDuration(DURATION_OPTS.filter(d => d <= slotMins).at(-1) ?? slotMins)
+                        }
+                      }}
                     >
                       {sl.startTime} – {sl.endTime}
                     </button>
@@ -489,18 +512,24 @@ export default function BookDoctor () {
             <div className={s.field}>
               <label>Session Duration</label>
               <div className={s.durationRow}>
-                {DURATION_OPTS.map(d => (
-                  <button
-                    key={d}
-                    type='button'
-                    className={`${s.durationBtn} ${
-                      duration === d ? s.durationActive : ''
-                    }`}
-                    onClick={() => setDuration(d)}
-                  >
-                    {d < 60 ? `${d}m` : `${d / 60}h`}
-                  </button>
-                ))}
+                {DURATION_OPTS.map(d => {
+                  const slotMins = slot ? getSlotDuration(slot) : Infinity
+                  const unavailable = d > slotMins
+                  return (
+                    <button
+                      key={d}
+                      type='button'
+                      disabled={unavailable}
+                      title={unavailable ? 'Exceeds slot duration' : undefined}
+                      className={`${s.durationBtn} ${
+                        duration === d ? s.durationActive : ''
+                      } ${unavailable ? s.durationDisabled : ''}`}
+                      onClick={() => !unavailable && setDuration(d)}
+                    >
+                      {d < 60 ? `${d}m` : `${d / 60}h`}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -541,9 +570,19 @@ export default function BookDoctor () {
           <button
             type='submit'
             className={s.bookBtn}
-            disabled={booking || !slot || !date}
+            disabled={
+              booking ||
+              !slot ||
+              !date ||
+              (computeFee(selected, type, duration, isUrgent) > 0 &&
+                (!paystackPublicKey || !scriptLoaded))
+            }
           >
-            {booking ? 'Booking…' : 'Confirm Booking'}
+            {booking
+              ? 'Booking…'
+              : computeFee(selected, type, duration, isUrgent) > 0 && (!paystackPublicKey || !scriptLoaded)
+              ? 'Loading payment…'
+              : 'Confirm Booking'}
           </button>
         </form>
       ) : (

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
+import { LockIcon, XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -40,6 +41,7 @@ export default function DoctorAvailabilityPage () {
   const [oneSlots,  setOneSlots]  = useState<Slot[]>([{ startTime: '09:00', endTime: '10:00' }])
 
   const [activeTab, setActiveTab] = useState<'view' | 'recurring' | 'oneoff'>('view')
+  const [deleting,  setDeleting]  = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -49,6 +51,41 @@ export default function DoctorAvailabilityPage () {
     } catch { }
     setLoading(false)
   }, [])
+
+  function deleteRecord (rec: AvailabilityRecord) {
+    const hasBooked = rec.slots.some(s => s.isBooked)
+    if (hasBooked) {
+      modal.show({
+        variant: 'declined',
+        title: 'Cannot Delete',
+        message: 'This schedule has booked appointments. Cancel the appointments first before removing this availability.'
+      })
+      return
+    }
+    modal.show({
+      variant: 'pending',
+      title: 'Delete Schedule?',
+      message: rec.type === 'one_off'
+        ? `Remove availability for ${rec.date ? new Date(rec.date).toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' }) : 'this date'}?`
+        : `Remove all ${DAYS[rec.dayOfWeek ?? 0]} recurring slots?`,
+      actionLabel: 'Yes, Delete',
+      dismissLabel: 'Keep',
+      onAction: async () => {
+        setDeleting(rec._id)
+        try {
+          await api.delete(`/doctors/availability/${rec._id}`)
+          setRecords(prev => prev.filter(r => r._id !== rec._id))
+        } catch (err: unknown) {
+          modal.show({
+            variant: 'declined',
+            title: 'Delete Failed',
+            message: (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Could not delete.'
+          })
+        }
+        setDeleting(null)
+      }
+    })
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -97,10 +134,10 @@ export default function DoctorAvailabilityPage () {
     setList(DEFAULT_SLOTS.map(s => ({ ...s })))
   }
 
+  const today     = new Date(); today.setHours(0, 0, 0, 0)
+  const todayStr  = today.toISOString().split('T')[0]
   const recurring = records.filter(r => r.type === 'recurring')
-  const oneOff    = records.filter(r => r.type === 'one_off')
-
-  const today = new Date().toISOString().split('T')[0]
+  const oneOff    = records.filter(r => r.type === 'one_off' && new Date(r.date ?? 0) >= today)
 
   return (
     <div className={s.wrap}>
@@ -132,19 +169,33 @@ export default function DoctorAvailabilityPage () {
               <div className={s.scheduleGroup}>
                 <h3 className={s.groupLabel}>Weekly Recurring</h3>
                 <div className={s.recordList}>
-                  {recurring.sort((a, b) => (a.dayOfWeek ?? 0) - (b.dayOfWeek ?? 0)).map(rec => (
-                    <div key={rec._id} className={s.recordCard}>
-                      <span className={s.recordDay}>{DAYS[rec.dayOfWeek ?? 0]}</span>
-                      <div className={s.slotPills}>
-                        {rec.slots.map((sl, i) => (
-                          <span key={i} className={`${s.slotPill} ${sl.isBooked ? s.booked : ''}`}>
-                            {sl.startTime} – {sl.endTime}
-                            {sl.isBooked && <em>booked</em>}
-                          </span>
-                        ))}
+                  {recurring.sort((a, b) => (a.dayOfWeek ?? 0) - (b.dayOfWeek ?? 0)).map(rec => {
+                    const hasBooked = rec.slots.some(sl => sl.isBooked)
+                    return (
+                      <div key={rec._id} className={s.recordCard}>
+                        <div className={s.recordHead}>
+                          <span className={s.recordDay}>{DAYS[rec.dayOfWeek ?? 0]}</span>
+                          <button
+                            className={`${s.deleteBtn} ${hasBooked ? s.deleteLocked : ''}`}
+                            disabled={deleting === rec._id}
+                            onClick={() => deleteRecord(rec)}
+                            title={hasBooked ? 'Has booked appointments — cannot delete' : 'Delete schedule'}
+                          >
+                            {hasBooked ? <LockIcon size={14} /> : deleting === rec._id ? '…' : 'Delete'}
+                          </button>
+                        </div>
+                        <div className={s.slotPills}>
+                          {rec.slots.map((sl, i) => (
+                            <span key={i} className={`${s.slotPill} ${sl.isBooked ? s.booked : ''}`}>
+                              {sl.isBooked && <span className={s.lockIcon}><LockIcon size={12} /></span>}
+                              {sl.startTime} – {sl.endTime}
+                              {sl.isBooked && <em>booked</em>}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -152,19 +203,33 @@ export default function DoctorAvailabilityPage () {
               <div className={s.scheduleGroup}>
                 <h3 className={s.groupLabel}>Specific Dates</h3>
                 <div className={s.recordList}>
-                  {oneOff.map(rec => (
-                    <div key={rec._id} className={s.recordCard}>
-                      <span className={s.recordDay}>{rec.date ? new Date(rec.date).toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' }) : '—'}</span>
-                      <div className={s.slotPills}>
-                        {rec.slots.map((sl, i) => (
-                          <span key={i} className={`${s.slotPill} ${sl.isBooked ? s.booked : ''}`}>
-                            {sl.startTime} – {sl.endTime}
-                            {sl.isBooked && <em>booked</em>}
-                          </span>
-                        ))}
+                  {oneOff.map(rec => {
+                    const hasBooked = rec.slots.some(sl => sl.isBooked)
+                    return (
+                      <div key={rec._id} className={s.recordCard}>
+                        <div className={s.recordHead}>
+                          <span className={s.recordDay}>{rec.date ? new Date(rec.date).toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' }) : '—'}</span>
+                          <button
+                            className={`${s.deleteBtn} ${hasBooked ? s.deleteLocked : ''}`}
+                            disabled={deleting === rec._id}
+                            onClick={() => deleteRecord(rec)}
+                            title={hasBooked ? 'Has booked appointments — cannot delete' : 'Delete schedule'}
+                          >
+                            {hasBooked ? <LockIcon size={14} /> : deleting === rec._id ? '…' : 'Delete'}
+                          </button>
+                        </div>
+                        <div className={s.slotPills}>
+                          {rec.slots.map((sl, i) => (
+                            <span key={i} className={`${s.slotPill} ${sl.isBooked ? s.booked : ''}`}>
+                              {sl.isBooked && <span className={s.lockIcon}><LockIcon size={12} /></span>}
+                              {sl.startTime} – {sl.endTime}
+                              {sl.isBooked && <em>booked</em>}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -200,7 +265,7 @@ export default function DoctorAvailabilityPage () {
                   <input type='time' className={s.timeInput} value={sl.startTime} onChange={e => updateSlot(recSlots, setRecSlots, i, 'startTime', e.target.value)} />
                   <span className={s.slotDash}>—</span>
                   <input type='time' className={s.timeInput} value={sl.endTime} onChange={e => updateSlot(recSlots, setRecSlots, i, 'endTime', e.target.value)} />
-                  <button type='button' className={s.removeSlotBtn} onClick={() => removeSlot(recSlots, setRecSlots, i)} disabled={recSlots.length === 1}>✕</button>
+                  <button type='button' className={s.removeSlotBtn} onClick={() => removeSlot(recSlots, setRecSlots, i)} disabled={recSlots.length === 1}><XIcon size={14} /></button>
                 </div>
               ))}
               <button type='button' className={s.addSlotBtn} onClick={() => addSlot(recSlots, setRecSlots)}>+ Add slot</button>
@@ -218,7 +283,7 @@ export default function DoctorAvailabilityPage () {
         <div className={s.form}>
           <div className={s.formRow}>
             <label className={s.label}>Date</label>
-            <input type='date' className={s.dateInput} min={today} value={oneDate} onChange={e => setOneDate(e.target.value)} />
+            <input type='date' className={s.dateInput} min={todayStr} value={oneDate} onChange={e => setOneDate(e.target.value)} />
           </div>
 
           <div className={s.formRow}>
@@ -232,7 +297,7 @@ export default function DoctorAvailabilityPage () {
                   <input type='time' className={s.timeInput} value={sl.startTime} onChange={e => updateSlot(oneSlots, setOneSlots, i, 'startTime', e.target.value)} />
                   <span className={s.slotDash}>—</span>
                   <input type='time' className={s.timeInput} value={sl.endTime} onChange={e => updateSlot(oneSlots, setOneSlots, i, 'endTime', e.target.value)} />
-                  <button type='button' className={s.removeSlotBtn} onClick={() => removeSlot(oneSlots, setOneSlots, i)} disabled={oneSlots.length === 1}>✕</button>
+                  <button type='button' className={s.removeSlotBtn} onClick={() => removeSlot(oneSlots, setOneSlots, i)} disabled={oneSlots.length === 1}><XIcon size={14} /></button>
                 </div>
               ))}
               <button type='button' className={s.addSlotBtn} onClick={() => addSlot(oneSlots, setOneSlots)}>+ Add slot</button>

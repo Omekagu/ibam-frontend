@@ -9,6 +9,7 @@ import {
   CheckCircleIcon, HourglassIcon, SearchIcon, MailIcon,
   FolderIcon, DocumentIcon, CameraIcon,
 } from '@/components/icons'
+import { CheckIcon } from '@/components/icons'
 
 // Step 0: NIN  |  Step 1: Face  |  Step 2: Upload  |  Step 3: Done
 const STEPS = ['NIN Verify', 'Face Match', 'Upload Document']
@@ -229,7 +230,7 @@ export default function DoctorKYCPage () {
                 key={label}
                 className={`${s.step} ${i < step ? s.done : ''} ${i === step ? s.current : ''}`}
               >
-                <div className={s.stepCircle}>{i < step ? '✓' : i + 1}</div>
+                <div className={s.stepCircle}>{i < step ? <CheckIcon size={14} /> : i + 1}</div>
                 <span className={s.stepLabel}>{label}</span>
                 <div className={s.stepLine} />
               </div>
@@ -325,7 +326,7 @@ export default function DoctorKYCPage () {
               onClick={verifyFace}
               disabled={!selfiePreview || faceLoading || faceDone}
             >
-              {faceLoading ? 'Matching…' : faceDone ? 'Verified ✓' : 'Verify Face →'}
+              {faceLoading ? 'Matching…' : faceDone ? <>Verified <CheckIcon size={13} /></> : 'Verify Face →'}
             </button>
           </>
         )}
@@ -369,7 +370,7 @@ export default function DoctorKYCPage () {
               onClick={submitDocument}
               disabled={!file || uploading || submitted}
             >
-              {uploading ? 'Uploading…' : submitted ? 'Submitted ✓' : 'Submit for Review →'}
+              {uploading ? 'Uploading…' : submitted ? <>Submitted <CheckIcon size={13} /></> : 'Submit for Review →'}
             </button>
           </>
         )}

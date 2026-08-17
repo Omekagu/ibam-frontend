@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
+import { ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Patient  { name: string; email: string; phone?: string }
@@ -116,7 +117,7 @@ export default function AdminOrdersPage () {
                     <span className={s.date}>
                       {new Date(o.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
-                    <span className={s.chevron}>{exp === o._id ? '▲' : '▼'}</span>
+                    <span className={s.chevron}>{exp === o._id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import { XIcon } from '@/components/icons'
 import s from './page.module.scss'
 
 interface Payment {
@@ -150,7 +151,7 @@ export default function AdminPayments () {
                           >
                             {confirming === p._id ? '…' : 'Confirm'}
                           </button>
-                          <button className={s.cancelBtn} onClick={() => setNoteFor(null)}>✕</button>
+                          <button className={s.cancelBtn} onClick={() => setNoteFor(null)}><XIcon size={14} /></button>
                         </div>
                       ) : (
                         <button className={s.confirmBtn} onClick={() => setNoteFor(p._id)}>

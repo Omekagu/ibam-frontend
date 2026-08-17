@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
+import { useStatusModal } from '@/components/StatusModal'
 import s from './page.module.scss'
 
 interface Appointment {
@@ -34,6 +35,7 @@ function getTimingInfo (scheduledAt: string, now: number): TimingInfo {
 
 export default function DoctorAppointments () {
   const router = useRouter()
+  const modal  = useStatusModal()
   const [appts,   setAppts]   = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState<Tab>('today')
@@ -57,9 +59,10 @@ export default function DoctorAppointments () {
   const nowIso   = new Date(now).toISOString()
 
   const filtered = appts.filter(a => {
+    if (a.status === 'pending') return false // unpaid — doctor doesn't see it until payment confirms
     if (tab === 'today')    return a.scheduledAt.startsWith(todayStr)
     if (tab === 'upcoming') return a.scheduledAt > nowIso && !a.scheduledAt.startsWith(todayStr) && a.status !== 'cancelled'
-    return a.status === 'completed' || a.status === 'cancelled' || a.status === 'no_show' || (a.scheduledAt < nowIso && a.status === 'pending')
+    return a.status === 'completed' || a.status === 'cancelled' || a.status === 'no_show'
   })
 
   async function startConsultation (apptId: string) {
@@ -85,14 +88,34 @@ export default function DoctorAppointments () {
     setActing(null)
   }
 
-  async function cancelAppt (id: string) {
-    if (!window.confirm('Cancel this appointment?')) return
-    setActing(id)
-    try {
-      await api.put(`/appointments/${id}/cancel`)
-      setAppts(prev => prev.map(a => a._id === id ? { ...a, status: 'cancelled' } : a))
-    } catch { }
-    setActing(null)
+  async function cancelAppt (appt: Appointment) {
+    if (appt.status !== 'confirmed') {
+      // Patient hasn't paid — just cancel, no refund involved
+      setActing(appt._id)
+      try {
+        await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by doctor' })
+        setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
+      } catch {}
+      setActing(null)
+      return
+    }
+
+    // Patient has paid — per policy, doctor cancellation = 100% refund to patient
+    modal.show({
+      variant: 'pending',
+      title: 'Cancellation Policy',
+      message: 'Per iBam Health policy, cancelling a confirmed appointment will trigger a 100% refund to the patient. This action cannot be undone. See ibamhealth.com/legal/refund for the full policy.',
+      actionLabel: 'Yes, Cancel Appointment',
+      dismissLabel: 'Keep Appointment',
+      onAction: async () => {
+        setActing(appt._id)
+        try {
+          await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by doctor' })
+          setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
+        } catch {}
+        setActing(null)
+      }
+    })
   }
 
   const TABS: { key: Tab; label: string }[] = [
@@ -120,12 +143,10 @@ export default function DoctorAppointments () {
           {filtered.map(a => {
             const timing = getTimingInfo(a.scheduledAt, now)
             const isConfirmed = a.status === 'confirmed'
-            const isPending   = a.status === 'pending'
-            const diffMin = (new Date(a.scheduledAt).getTime() - now) / 60_000
-            const canStart = isPending && diffMin < 30 // allow starting up to 30 min early
+            const isActive = isConfirmed && !isSessionExpired(a.scheduledAt)
 
             return (
-              <div key={a._id} className={`${s.card} ${timing.urgent && isPending ? s.urgent : ''}`}>
+              <div key={a._id} className={`${s.card} ${timing.urgent && isActive ? s.urgent : ''}`}>
                 <div className={s.cardLeft}>
                   <div className={s.avatar}>{a.patient?.name?.[0] ?? '?'}</div>
                   <div className={s.info}>
@@ -137,8 +158,7 @@ export default function DoctorAppointments () {
                       })}
                     </span>
                     <span className={s.meta}>₦{a.consultationFee.toLocaleString()}</span>
-                    {/* Timing badge */}
-                    {(isPending || isConfirmed) && timing.label && (
+                    {isActive && timing.label && (
                       <span className={`${s.timingLabel} ${timing.urgent ? s.timingUrgent : s.timingMuted}`}>
                         {timing.label}
                       </span>
@@ -150,29 +170,20 @@ export default function DoctorAppointments () {
                   <span className={`${s.typeBadge} ${s[a.type]}`}>{a.type}</span>
                   <span className={`${s.statusBadge} ${s[a.status]}`}>{statusLabel(a.status)}</span>
 
-                  {isConfirmed && !isSessionExpired(a.scheduledAt) && (
+                  {isActive && (
                     <button
-                      className={`${s.startBtn} ${s.live}`}
-                      disabled={acting === a._id}
-                      onClick={() => rejoinConsultation(a._id)}
-                    >
-                      {acting === a._id ? '…' : 'Rejoin'}
-                    </button>
-                  )}
-                  {isPending && !isSessionExpired(a.scheduledAt) && (
-                    <button
-                      className={`${s.startBtn} ${canStart || timing.urgent ? s.startNow : ''}`}
+                      className={`${s.startBtn} ${timing.urgent ? s.startNow : s.live}`}
                       disabled={acting === a._id}
                       onClick={() => startConsultation(a._id)}
                     >
-                      {acting === a._id ? '…' : canStart ? 'Start Now' : 'Start'}
+                      {acting === a._id ? '…' : 'Start'}
                     </button>
                   )}
-                  {(isPending || isConfirmed) && (
+                  {isConfirmed && (
                     <button
                       className={s.cancelBtn}
                       disabled={acting === a._id}
-                      onClick={() => cancelAppt(a._id)}
+                      onClick={() => cancelAppt(a)}
                     >
                       Cancel
                     </button>

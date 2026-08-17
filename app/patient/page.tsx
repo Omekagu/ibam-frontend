@@ -95,7 +95,6 @@ const QUICK_ACTIONS = [
 
 export default function PatientDashboard () {
   const router = useRouter()
-  const user = typeof window !== 'undefined' ? getStoredUser() : null
   const [appts, setAppts] = useState<Appointment[]>([])
   const [profile, setProfile] = useState<PatientProfile | null>(null)
   const [joining, setJoining] = useState<string | null>(null)
@@ -140,7 +139,12 @@ export default function PatientDashboard () {
   return (
     <>
       <div className={s.greeting}>
-        <h1>Hello, {(user?.name ?? 'there').split(' ')[0]}</h1>
+        <h1 suppressHydrationWarning>
+          Hello,{' '}
+          {typeof window === 'undefined'
+            ? 'there'
+            : (getStoredUser()?.name?.split(' ')[0] ?? 'there')}
+        </h1>
         <p>How are you feeling today? Your health is our priority.</p>
       </div>
 
