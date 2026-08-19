@@ -416,3 +416,51 @@
   border-color: $primary;
   color: $accent;
 }
+
+// ─── Payout bank account ──────────────────────────
+.verifiedBadge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba($success,0.12); border: 1px solid rgba($success,0.28);
+  border-radius: 999px; padding: 3px 10px;
+  font-size: 0.72rem; font-weight: 700; color: $success; text-transform: uppercase;
+}
+
+.bankReadOnly {
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.bankRow {
+  display: flex; justify-content: space-between; align-items: center;
+  label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.35); }
+  span { font-size: 0.875rem; color: rgba(255,255,255,0.75); }
+}
+
+.resolvedBox {
+  background: rgba($success,0.07); border: 1px solid rgba($success,0.2);
+  border-radius: $radius-sm; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  small { font-size: 0.72rem; color: rgba(255,255,255,0.38); font-weight: 600; text-transform: uppercase; }
+  strong { font-size: 0.9rem; color: $success; font-weight: 700; }
+}
+
+.otpRow { display: flex; gap: 0.75rem; align-items: flex-end; }
+.otpInput {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba($accent,0.35);
+  border-radius: $radius-sm; padding: 9px 12px; font-size: 1rem; color: $white;
+  letter-spacing: 0.2em; text-align: center; outline: none; font-family: inherit;
+  &::placeholder { color: rgba(255,255,255,0.22); letter-spacing: normal; }
+  &:focus { border-color: rgba($accent,0.7); }
+}
+
+.confirmBtn {
+  flex-shrink: 0; padding: 10px 18px; border-radius: $radius-sm; border: none;
+  background: $success; color: $white;
+  font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  &:hover { opacity: 0.88; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.backLink {
+  background: none; border: none; color: rgba(255,255,255,0.4); font-size: 0.8rem;
+  cursor: pointer; padding: 0; text-decoration: underline;
+  &:hover { color: rgba(255,255,255,0.7); }
+}

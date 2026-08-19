@@ -159,3 +159,62 @@
 }
 .bankName { font-size: 0.72rem; color: var(--text-faint); }
 .noBank   { font-size: 0.75rem; color: rgba($danger,0.6); font-style: italic; }
+
+// ─── Tab bar ────────────────────────────────────
+.tabBar {
+  display: flex; gap: 0.25rem;
+  background: rgba(255,255,255,0.03); border: 1px solid $navy-border;
+  border-radius: $radius-md; padding: 4px;
+  width: fit-content; margin-bottom: 1.25rem;
+}
+.tab {
+  padding: 0.4rem 1.125rem; border-radius: calc(#{$radius-md} - 2px);
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  &:hover { color: var(--text); }
+}
+.tabActive {
+  background: $navy-dark; color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+// ─── Earning history extras ──────────────────────
+.revenueCard {
+  border-color: rgba($accent, 0.25);
+  .summaryValue { color: $accent; }
+}
+
+.summaryMeta {
+  font-size: 0.7rem; color: var(--text-faint); margin-top: 2px;
+}
+
+.pendingVal   { color: $warning !important; }
+.requestedVal { color: #60A5FA !important; }
+.paidVal      { color: $success !important; }
+
+.dateCell { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+
+.serviceTag {
+  font-size: 0.72rem; font-weight: 600;
+  padding: 2px 8px; border-radius: $radius-sm;
+  background: rgba(255,255,255,0.05); color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.commCell { display: flex; flex-direction: column; gap: 1px; }
+.commPct  { font-size: 0.7rem; color: rgba($danger,0.55); }
+
+// ─── Pagination ──────────────────────────────────
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem; margin-top: 1rem;
+}
+.pageBtn {
+  padding: 0.35rem 0.875rem; border-radius: $radius-sm;
+  border: 1px solid $navy-border; background: transparent;
+  color: var(--text-muted); font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+  &:hover:not(:disabled) { border-color: rgba($primary,0.4); color: var(--text); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+.pageInfo { font-size: 0.8125rem; color: var(--text-faint); }

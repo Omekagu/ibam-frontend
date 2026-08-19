@@ -63,6 +63,18 @@ interface BankSettings {
 
 type Tab = 'order' | 'results' | 'packages'
 
+const RESULT_STEPS = ['Submitted', 'Lab Assigned', 'Processing', 'Ready'] as const
+
+function stepIndex (status: string): number {
+  const map: Record<string, number> = {
+    pending: 0, assigned: 1, sample_collected: 2, processing: 2, completed: 3
+  }
+  return map[status] ?? 0
+}
+
+const BAND_CLS: Record<string, string> = { male: 'pkgCardBandMale', female: 'pkgCardBandFemale', all: 'pkgCardBandAll' }
+const BADGE_CLS: Record<string, string> = { male: 'pkgGenderBadgeMale', female: 'pkgGenderBadgeFemale' }
+
 function PatientLabsInner () {
   const modal = useStatusModal()
   const params = useSearchParams()
@@ -93,6 +105,7 @@ function PatientLabsInner () {
   const [gpsLoading, setGpsLoading] = useState(false)
   const [preferredDate, setPreferredDate] = useState('')
   const [preferredTime, setPreferredTime] = useState('')
+  const [testSearch, setTestSearch] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPayModal, setShowPayModal] = useState(false)
   const [transferRef, setTransferRef] = useState('')
@@ -741,17 +754,28 @@ function PatientLabsInner () {
           </div>
 
           <div className={s.section}>
-            <h3>
-              Select Tests{' '}
-              <span className={s.selectedCount}>
-                {selectedTests.length} selected
-              </span>
-            </h3>
+            <div className={s.testSectionHead}>
+              <h3>
+                Select Tests{' '}
+                <span className={s.selectedCount}>
+                  {selectedTests.length} selected
+                </span>
+              </h3>
+              <input
+                type='search'
+                className={s.testSearch}
+                placeholder='Search tests…'
+                value={testSearch}
+                onChange={e => setTestSearch(e.target.value)}
+              />
+            </div>
             {catalogTests.length === 0 ? (
               <Loader inline variant='dots' size='sm' label='Loading tests…' />
             ) : (
               <div className={s.testGrid}>
-                {catalogTests.map(t => {
+                {catalogTests.filter(t =>
+                  !testSearch || t.name.toLowerCase().includes(testSearch.toLowerCase())
+                ).map(t => {
                   const price =
                     collection === 'home_visit'
                       ? t.homeVisitPrice ?? t.estimatedPrice
@@ -800,6 +824,9 @@ function PatientLabsInner () {
                     checked={collection === c}
                     onChange={() => setCollection(c)}
                   />
+                  <div className={s.collectionIcon}>
+                    {c === 'walk_in' ? <WalkingIcon size={24} /> : <HomeIcon size={24} />}
+                  </div>
                   <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
                   <p>
                     {c === 'walk_in'
@@ -984,53 +1011,56 @@ function PatientLabsInner () {
               const open = expandedPkg === pkg._id
               return (
                 <div key={pkg._id} className={s.pkgCard}>
-                  <div className={s.pkgCardTop}>
-                    <div className={s.pkgMeta}>
-                      <span className={s.pkgGenderBadge}>
-                        {GENDER_LABEL[pkg.gender] ?? pkg.gender}
-                      </span>
-                      <h3 className={s.pkgName}>{pkg.name}</h3>
-                      {pkg.benefits && (
-                        <p className={s.pkgBenefits}>{pkg.benefits}</p>
-                      )}
-                    </div>
-                    <div className={s.pkgPrices}>
-                      <div className={s.pkgPriceRow}>
-                        <span className={s.pkgPriceLabel}>Walk-in</span>
-                        <span className={s.pkgPriceVal}>
-                          ₦{pkg.walkInPrice.toLocaleString('en-NG')}
+                  <div className={`${s.pkgCardBand} ${s[BAND_CLS[pkg.gender] ?? 'pkgCardBandAll']}`} />
+                  <div className={s.pkgCardInner}>
+                    <div className={s.pkgCardTop}>
+                      <div className={s.pkgMeta}>
+                        <span className={`${s.pkgGenderBadge} ${BADGE_CLS[pkg.gender] ? s[BADGE_CLS[pkg.gender]] : ''}`}>
+                          {GENDER_LABEL[pkg.gender] ?? pkg.gender}
                         </span>
+                        <h3 className={s.pkgName}>{pkg.name}</h3>
+                        {pkg.benefits && (
+                          <p className={s.pkgBenefits}>{pkg.benefits}</p>
+                        )}
                       </div>
-                      <div className={s.pkgPriceRow}>
-                        <span className={s.pkgPriceLabel}>Home Visit</span>
-                        <span className={s.pkgPriceVal}>
-                          ₦{pkg.homeVisitPrice.toLocaleString('en-NG')}
-                        </span>
+                      <div className={s.pkgPrices}>
+                        <div className={s.pkgPriceRow}>
+                          <span className={s.pkgPriceLabel}>Walk-in</span>
+                          <span className={s.pkgPriceVal}>
+                            ₦{pkg.walkInPrice.toLocaleString('en-NG')}
+                          </span>
+                        </div>
+                        <div className={s.pkgPriceRow}>
+                          <span className={s.pkgPriceLabel}>Home Visit</span>
+                          <span className={s.pkgPriceVal}>
+                            ₦{pkg.homeVisitPrice.toLocaleString('en-NG')}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    <button
+                      className={s.pkgTestsToggle}
+                      onClick={() => setExpandedPkg(open ? null : pkg._id)}
+                    >
+                      {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />} {pkg.includedTests.length} included tests
+                    </button>
+
+                    {open && (
+                      <ul className={s.pkgTestsList}>
+                        {pkg.includedTests.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <button
+                      className={s.pkgBookBtn}
+                      onClick={() => openBookModal(pkg)}
+                    >
+                      Book This Package
+                    </button>
                   </div>
-
-                  <button
-                    className={s.pkgTestsToggle}
-                    onClick={() => setExpandedPkg(open ? null : pkg._id)}
-                  >
-                    {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />} {pkg.includedTests.length} included tests
-                  </button>
-
-                  {open && (
-                    <ul className={s.pkgTestsList}>
-                      {pkg.includedTests.map((t, i) => (
-                        <li key={i}>{t}</li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <button
-                    className={s.pkgBookBtn}
-                    onClick={() => openBookModal(pkg)}
-                  >
-                    Book This Package
-                  </button>
                 </div>
               )
             })
@@ -1063,8 +1093,24 @@ function PatientLabsInner () {
                     (req.status === 'no_show' || req.status === 'cancelled')
                   )
                   const hasResult = !!result
+                  const showSteps = req.status !== 'cancelled' && req.status !== 'no_show'
                   return (
-                    <div key={req._id} className={s.resultCard}>
+                    <div key={req._id} className={`${s.resultCard} ${hasResult ? s.resultCardDone : ''}`}>
+                      {showSteps && (
+                        <div className={s.statusSteps}>
+                          {RESULT_STEPS.map((label, i) => {
+                            const idx = stepIndex(req.status)
+                            const done = idx > i
+                            const active = idx === i
+                            return (
+                              <div key={label} className={`${s.statusStep} ${done ? s.stepDone : ''} ${active ? s.stepActive : ''}`}>
+                                <div className={s.stepDot}>{done ? '✓' : ''}</div>
+                                <span className={s.stepLabel}>{label}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                       {/* ── Card header (always visible, clickable) ── */}
                       <div
                         className={s.resultCardHeader}
@@ -1257,9 +1303,9 @@ function PatientLabsInner () {
                                   href={result!.fileUrl}
                                   target='_blank'
                                   rel='noreferrer'
-                                  className={s.actionBtn}
+                                  className={s.downloadResultBtn}
                                 >
-                                  <DocumentIcon size={13} /> Download Report
+                                  <DocumentIcon size={15} /> Download Report
                                 </a>
                               )}
                               {req.paymentRef?.status === 'success' && (

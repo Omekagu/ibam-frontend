@@ -101,17 +101,18 @@ export default function PatientDashboard () {
 
   useEffect(() => {
     api
-      .get('/appointments/mine?limit=3')
-      .then(r =>
-        setAppts(
-          (r.data.data?.appointments ?? [])
-            .filter(
-              (a: Appointment) =>
-                a.status !== 'cancelled' && a.status !== 'completed'
-            )
-            .slice(0, 3)
-        )
-      )
+      .get('/appointments/mine?limit=10')
+      .then(r => {
+        const now = Date.now()
+        const upcoming = (r.data.data?.appointments ?? [])
+          .filter((a: Appointment) =>
+            a.status !== 'cancelled' &&
+            a.status !== 'completed' &&
+            new Date(a.scheduledAt).getTime() >= now - 30 * 60_000
+          )
+          .slice(0, 3)
+        setAppts(upcoming)
+      })
       .catch(() => {})
 
     api
@@ -199,9 +200,12 @@ export default function PatientDashboard () {
                     </span>
                   </div>
                   <span className={`${s.statusBadge} ${s[a.status]}`}>
-                    {a.status}
+                    {a.status === 'confirmed' ? 'Confirmed' : a.status}
                   </span>
-                  {a.status === 'confirmed' && (
+                  {a.status === 'confirmed' && (() => {
+                    const sessionEnd = new Date(a.scheduledAt).getTime() + 30 * 60_000
+                    return sessionEnd > Date.now()
+                  })() && (
                     <button
                       className={s.joinBtn}
                       disabled={joining === a._id}

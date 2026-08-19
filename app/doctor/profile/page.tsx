@@ -6,16 +6,24 @@ import { getStoredUser } from '@/lib/auth'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
-import { CameraIcon, VideoCameraIcon, PhoneIcon, ChatIcon } from '@/components/icons'
-import { CheckIcon } from '@/components/icons'
+import {
+  CameraIcon,
+  VideoCameraIcon,
+  PhoneIcon,
+  ChatIcon,
+  CheckIcon
+} from '@/components/icons'
+import { BankSelect } from '@/components/BankSelect'
 
-type QualItem = string | { degree: string; institution?: string; year?: number | string }
+type QualItem =
+  | string
+  | { degree: string; institution?: string; year?: number | string }
 
 function qualToString (q: QualItem): string {
   if (typeof q === 'string') return q
   let s = q.degree
   if (q.institution) s += `, ${q.institution}`
-  if (q.year)        s += ` (${q.year})`
+  if (q.year) s += ` (${q.year})`
   return s
 }
 
@@ -32,7 +40,13 @@ interface Doctor {
   urgentAvailable: boolean
   urgentSurcharge: number
   fees?: { video?: number; audio?: number; chat?: number }
-  bankAccount?: { bankName?: string; accountNumber?: string; accountName?: string; bankCode?: string }
+  bankAccount?: {
+    bankName?: string
+    accountNumber?: string
+    accountName?: string
+    bankCode?: string
+    verified?: boolean
+  }
   displayName?: string
   socialLinks?: { twitter?: string; linkedin?: string; website?: string }
   user: { name: string; email: string; phone?: string; avatar?: string }
@@ -56,7 +70,9 @@ const DURATIONS = [15, 20, 30, 45, 60, 90]
 
 export default function DoctorProfile () {
   const [cached, setCached] = useState<ReturnType<typeof getStoredUser>>(null)
-  useEffect(() => { setCached(getStoredUser()) }, [])
+  useEffect(() => {
+    setCached(getStoredUser())
+  }, [])
   const modal = useStatusModal()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
@@ -80,22 +96,25 @@ export default function DoctorProfile () {
 
   // Avatar upload
   const avatarRef = useRef<HTMLInputElement>(null)
-  const [avatarUrl,     setAvatarUrl]     = useState(cached?.avatar ?? '')
+  const [avatarUrl, setAvatarUrl] = useState(cached?.avatar ?? '')
   const [avatarUploading, setAvatarUploading] = useState(false)
 
   // Display name + social
   const [displayName, setDisplayName] = useState('')
-  const [socialTwitter,  setSocialTwitter]  = useState('')
+  const [socialTwitter, setSocialTwitter] = useState('')
   const [socialLinkedin, setSocialLinkedin] = useState('')
-  const [socialWebsite,  setSocialWebsite]  = useState('')
+  const [socialWebsite, setSocialWebsite] = useState('')
 
-  // Bank account
-  const [bankName,   setBankName]   = useState('')
+  // Bank account two-step
+  type BankStep = 'view' | 'form' | 'otp'
+  const [bankStep, setBankStep] = useState<BankStep>('form')
+  const [bankName, setBankName] = useState('')
+  const [bankCode, setBankCode] = useState('')
   const [acctNumber, setAcctNumber] = useState('')
-  const [acctName,   setAcctName]   = useState('')
-  const [bankCode,   setBankCode]   = useState('')
-  const [bankSaving, setBankSaving] = useState(false)
-  const [bankSaved,  setBankSaved]  = useState(false)
+  const [resolvedName, setResolvedName] = useState('')
+  const [otp, setOtp] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   // Availability: multiple days
   const [avDays, setAvDays] = useState<boolean[]>(Array(7).fill(false))
@@ -108,7 +127,9 @@ export default function DoctorProfile () {
   useEffect(() => {
     Promise.all([
       api.get('/doctors/my/profile'),
-      api.get('/doctors/my/availability').catch(() => ({ data: { data: { availabilities: [] } } }))
+      api
+        .get('/doctors/my/availability')
+        .catch(() => ({ data: { data: { availabilities: [] } } }))
     ])
       .then(([profileRes, availRes]) => {
         const d: Doctor = profileRes.data.data?.doctor
@@ -125,26 +146,35 @@ export default function DoctorProfile () {
         setVideoFee(d.fees?.video ?? '')
         setAudioFee(d.fees?.audio ?? '')
         setChatFee(d.fees?.chat ?? '')
-        setBankName(d.bankAccount?.bankName ?? '')
-        setAcctNumber(d.bankAccount?.accountNumber ?? '')
-        setAcctName(d.bankAccount?.accountName ?? '')
-        setBankCode(d.bankAccount?.bankCode ?? '')
+        setBankStep(d.bankAccount?.verified ? 'view' : 'form')
         setAvatarUrl(d.user?.avatar ?? '')
         setDisplayName(d.displayName ?? '')
         setSocialTwitter(d.socialLinks?.twitter ?? '')
         setSocialLinkedin(d.socialLinks?.linkedin ?? '')
         setSocialWebsite(d.socialLinks?.website ?? '')
 
-        const entries: Array<{ type: string; dayOfWeek?: number; slots: Slot[] }> =
-          availRes.data.data?.availabilities ?? []
-        const recurring = entries.filter(e => e.type === 'recurring' && e.dayOfWeek != null)
+        const entries: Array<{
+          type: string
+          dayOfWeek?: number
+          slots: Slot[]
+        }> = availRes.data.data?.availabilities ?? []
+        const recurring = entries.filter(
+          e => e.type === 'recurring' && e.dayOfWeek != null
+        )
         if (recurring.length > 0) {
           const days = Array(7).fill(false)
-          recurring.forEach(e => { days[e.dayOfWeek!] = true })
+          recurring.forEach(e => {
+            days[e.dayOfWeek!] = true
+          })
           setAvDays(days)
           const first = recurring[0]
           if (first.slots?.length > 0) {
-            setAvSlots(first.slots.map(sl => ({ startTime: sl.startTime, endTime: sl.endTime })))
+            setAvSlots(
+              first.slots.map(sl => ({
+                startTime: sl.startTime,
+                endTime: sl.endTime
+              }))
+            )
           }
         }
       })
@@ -188,14 +218,22 @@ export default function DoctorProfile () {
         socialLinks: {
           twitter: socialTwitter.trim() || undefined,
           linkedin: socialLinkedin.trim() || undefined,
-          website: socialWebsite.trim() || undefined,
-        },
+          website: socialWebsite.trim() || undefined
+        }
       })
       setSaved(true)
-      modal.show({ variant: 'success', title: 'Profile Saved', message: 'Your professional profile has been updated.' })
+      modal.show({
+        variant: 'success',
+        title: 'Profile Saved',
+        message: 'Your professional profile has been updated.'
+      })
       setTimeout(() => setSaved(false), 3000)
     } catch {
-      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save your profile. Please try again.' })
+      modal.show({
+        variant: 'declined',
+        title: 'Save Failed',
+        message: 'Could not save your profile. Please try again.'
+      })
     }
     setSaving(false)
   }
@@ -229,27 +267,102 @@ export default function DoctorProfile () {
         )
       )
       setAvSaved(true)
-      modal.show({ variant: 'success', title: 'Availability Saved', message: 'Your weekly schedule has been updated.' })
+      modal.show({
+        variant: 'success',
+        title: 'Availability Saved',
+        message: 'Your weekly schedule has been updated.'
+      })
       setTimeout(() => setAvSaved(false), 3000)
     } catch {
-      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save availability. Please try again.' })
+      modal.show({
+        variant: 'declined',
+        title: 'Save Failed',
+        message: 'Could not save availability. Please try again.'
+      })
     }
     setAvSaving(false)
   }
 
-  async function saveBankAccount () {
-    setBankSaving(true); setBankSaved(false)
-    try {
-      await api.put('/doctors/my/profile', {
-        bankAccount: { bankName: bankName.trim(), accountNumber: acctNumber.trim(), accountName: acctName.trim(), bankCode: bankCode.trim() },
+  async function verifyAccount () {
+    if (!bankCode || !acctNumber || acctNumber.length !== 10) {
+      modal.show({
+        variant: 'declined',
+        title: 'Missing Details',
+        message: 'Select a bank and enter a valid 10-digit account number.'
       })
-      setBankSaved(true)
-      modal.show({ variant: 'success', title: 'Payout Account Saved', message: 'Your bank account details have been saved.' })
-      setTimeout(() => setBankSaved(false), 3000)
-    } catch {
-      modal.show({ variant: 'declined', title: 'Save Failed', message: 'Could not save payout account. Please try again.' })
+      return
     }
-    setBankSaving(false)
+    setVerifying(true)
+    try {
+      const r = await api.post('/kyc/verify-bank', {
+        accountNumber: acctNumber.trim(),
+        bankCode,
+        bankName
+      })
+      setResolvedName(r.data.data?.accountName ?? '')
+      setOtp('')
+      setBankStep('otp')
+      modal.show({
+        variant: 'success',
+        title: 'Code Sent',
+        message:
+          'A 6-digit verification code has been sent to your email address.'
+      })
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        'Could not verify account. Check the details and try again.'
+      modal.show({
+        variant: 'declined',
+        title: 'Verification Failed',
+        message: msg
+      })
+    }
+    setVerifying(false)
+  }
+
+  async function confirmAccount () {
+    if (!otp || otp.length < 6) {
+      modal.show({
+        variant: 'declined',
+        title: 'Enter OTP',
+        message: 'Enter the 6-digit code sent to your phone.'
+      })
+      return
+    }
+    setConfirming(true)
+    try {
+      await api.post('/kyc/confirm-bank', { otp: otp.trim() })
+      modal.show({
+        variant: 'success',
+        title: 'Account Saved',
+        message: 'Your payout account has been verified and saved.'
+      })
+      const r = await api.get('/doctors/my/profile')
+      const d: Doctor = r.data.data?.doctor
+      if (d) {
+        setDoctor(d)
+        setBankStep('view')
+      }
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || 'OTP incorrect or expired. Try again.'
+      modal.show({
+        variant: 'declined',
+        title: 'Confirmation Failed',
+        message: msg
+      })
+    }
+    setConfirming(false)
+  }
+
+  function startBankChange () {
+    setBankName('')
+    setBankCode('')
+    setAcctNumber('')
+    setResolvedName('')
+    setOtp('')
+    setBankStep('form')
   }
 
   function addSlot () {
@@ -279,9 +392,16 @@ export default function DoctorProfile () {
         <div className={s.avatarBlock}>
           <div className={s.avatarWrap}>
             {avatarUrl ? (
-              <Image src={avatarUrl} alt='Profile photo' fill style={{ objectFit: 'cover', borderRadius: '50%' }} />
+              <Image
+                src={avatarUrl}
+                alt='Profile photo'
+                fill
+                style={{ objectFit: 'cover', borderRadius: '50%' }}
+              />
             ) : (
-              <span>{(doctor?.user.name ?? cached?.name)?.[0]?.toUpperCase() ?? '?'}</span>
+              <span>
+                {(doctor?.user.name ?? cached?.name)?.[0]?.toUpperCase() ?? '?'}
+              </span>
             )}
             <button
               type='button'
@@ -291,11 +411,21 @@ export default function DoctorProfile () {
             >
               {avatarUploading ? '…' : <CameraIcon size={14} />}
             </button>
-            <input ref={avatarRef} type='file' accept='image/*' onChange={uploadAvatar} style={{ display: 'none' }} />
+            <input
+              ref={avatarRef}
+              type='file'
+              accept='image/*'
+              onChange={uploadAvatar}
+              style={{ display: 'none' }}
+            />
           </div>
           <div>
-            <p className={s.docName}>{doctor?.displayName || doctor?.user.name || cached?.name}</p>
-            <p className={s.docSpec}>{doctor?.specialization ?? (loading ? '…' : '')}</p>
+            <p className={s.docName}>
+              {doctor?.displayName || doctor?.user.name || cached?.name}
+            </p>
+            <p className={s.docSpec}>
+              {doctor?.specialization ?? (loading ? '…' : '')}
+            </p>
             <span
               className={`${s.kycBadge} ${
                 doctor?.isApproved ? s.approved : s.pending
@@ -356,7 +486,12 @@ export default function DoctorProfile () {
           </div>
           <div className={s.panelBody}>
             <div className={s.field}>
-              <label>Display Name <span className={s.hint}>(shown publicly — leave blank to use account name)</span></label>
+              <label>
+                Display Name{' '}
+                <span className={s.hint}>
+                  (shown publicly — leave blank to use account name)
+                </span>
+              </label>
               <input
                 type='text'
                 value={displayName}
@@ -440,7 +575,9 @@ export default function DoctorProfile () {
               </label>
               <div className={s.row3}>
                 <div>
-                  <p className={s.typeLabel}><VideoCameraIcon size={14} /> Video</p>
+                  <p className={s.typeLabel}>
+                    <VideoCameraIcon size={14} /> Video
+                  </p>
                   <input
                     type='number'
                     min={0}
@@ -454,7 +591,9 @@ export default function DoctorProfile () {
                   />
                 </div>
                 <div>
-                  <p className={s.typeLabel}><PhoneIcon size={14} /> Audio</p>
+                  <p className={s.typeLabel}>
+                    <PhoneIcon size={14} /> Audio
+                  </p>
                   <input
                     type='number'
                     min={0}
@@ -468,7 +607,9 @@ export default function DoctorProfile () {
                   />
                 </div>
                 <div>
-                  <p className={s.typeLabel}><ChatIcon size={14} /> Chat</p>
+                  <p className={s.typeLabel}>
+                    <ChatIcon size={14} /> Chat
+                  </p>
                   <input
                     type='number'
                     min={0}
@@ -555,16 +696,41 @@ export default function DoctorProfile () {
             </div>
 
             <div className={s.field}>
-              <label>Social Links <span className={s.hint}>(optional — shown on your public profile)</span></label>
+              <label>
+                Social Links{' '}
+                <span className={s.hint}>
+                  (optional — shown on your public profile)
+                </span>
+              </label>
               <div className={s.socialGrid}>
-                <input value={socialTwitter}  onChange={e => setSocialTwitter(e.target.value)}  placeholder='Twitter / X handle (e.g. @drsmith)' />
-                <input value={socialLinkedin} onChange={e => setSocialLinkedin(e.target.value)} placeholder='LinkedIn URL' />
-                <input value={socialWebsite}  onChange={e => setSocialWebsite(e.target.value)}  placeholder='Personal website URL' />
+                <input
+                  value={socialTwitter}
+                  onChange={e => setSocialTwitter(e.target.value)}
+                  placeholder='Twitter / X handle (e.g. @drsmith)'
+                />
+                <input
+                  value={socialLinkedin}
+                  onChange={e => setSocialLinkedin(e.target.value)}
+                  placeholder='LinkedIn URL'
+                />
+                <input
+                  value={socialWebsite}
+                  onChange={e => setSocialWebsite(e.target.value)}
+                  placeholder='Personal website URL'
+                />
               </div>
             </div>
 
             <button type='submit' className={s.saveBtn} disabled={saving}>
-              {saving ? 'Saving…' : saved ? <><CheckIcon size={14} /> Saved</> : 'Save Changes'}
+              {saving ? (
+                'Saving…'
+              ) : saved ? (
+                <>
+                  <CheckIcon size={14} /> Saved
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>
@@ -637,7 +803,15 @@ export default function DoctorProfile () {
               className={s.saveBtn}
               disabled={avSaving || !avDays.some(Boolean)}
             >
-              {avSaving ? 'Saving…' : avSaved ? <><CheckIcon size={14} /> Saved</> : 'Save Availability'}
+              {avSaving ? (
+                'Saving…'
+              ) : avSaved ? (
+                <>
+                  <CheckIcon size={14} /> Saved
+                </>
+              ) : (
+                'Save Availability'
+              )}
             </button>
           </div>
         </form>
@@ -649,31 +823,132 @@ export default function DoctorProfile () {
           </div>
           <div className={s.panelBody}>
             <p className={s.hint} style={{ marginBottom: '1rem' }}>
-              Enter your bank details so the platform can pay your earnings directly to your account.
+              Your bank details for receiving earnings. Verified and confirmed
+              with an OTP.
             </p>
-            <div className={s.row2}>
-              <div className={s.field}>
-                <label>Bank Name</label>
-                <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder='e.g. GTBank' />
-              </div>
-              <div className={s.field}>
-                <label>Bank Code <span style={{ fontWeight: 400, textTransform: 'none', fontSize: '0.72rem', color: 'var(--text-faint)' }}>(optional)</span></label>
-                <input value={bankCode} onChange={e => setBankCode(e.target.value)} placeholder='e.g. 058' />
-              </div>
-            </div>
-            <div className={s.row2}>
-              <div className={s.field}>
-                <label>Account Number</label>
-                <input value={acctNumber} onChange={e => setAcctNumber(e.target.value)} placeholder='10-digit NUBAN' maxLength={10} />
-              </div>
-              <div className={s.field}>
-                <label>Account Name</label>
-                <input value={acctName} onChange={e => setAcctName(e.target.value)} placeholder='As it appears on bank record' />
-              </div>
-            </div>
-            <button type='button' className={s.saveBtn} disabled={bankSaving || !bankName || !acctNumber || !acctName} onClick={saveBankAccount}>
-              {bankSaving ? 'Saving…' : bankSaved ? <><CheckIcon size={14} /> Saved</> : 'Save Payout Account'}
-            </button>
+
+            {/* View — already saved */}
+            {bankStep === 'view' && doctor?.bankAccount && (
+              <>
+                <div className={s.bankReadOnly}>
+                  <div className={s.bankRow}>
+                    <label>Bank</label>
+                    <span>{doctor.bankAccount.bankName || '—'}</span>
+                  </div>
+                  <div className={s.bankRow}>
+                    <label>Account Number</label>
+                    <span>{doctor.bankAccount.accountNumber || '—'}</span>
+                  </div>
+                  <div className={s.bankRow}>
+                    <label>Account Name</label>
+                    <span>{doctor.bankAccount.accountName || '—'}</span>
+                  </div>
+                  <div className={s.bankRow}>
+                    <label>Status</label>
+                    <span className={s.verifiedBadge}>Verified</span>
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  className={s.backLink}
+                  onClick={startBankChange}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  Change payout account
+                </button>
+              </>
+            )}
+
+            {/* Step 1 — enter bank details */}
+            {bankStep === 'form' && (
+              <>
+                <div className={s.field}>
+                  <label>Bank</label>
+                  <BankSelect
+                    bankCode={bankCode}
+                    bankName={bankName}
+                    onChange={(code, name) => {
+                      setBankCode(code)
+                      setBankName(name)
+                    }}
+                  />
+                </div>
+                <div className={s.field} style={{ marginTop: '0.75rem' }}>
+                  <label>Account Number</label>
+                  <input
+                    value={acctNumber}
+                    onChange={e =>
+                      setAcctNumber(
+                        e.target.value.replace(/\D/g, '').slice(0, 10)
+                      )
+                    }
+                    placeholder='10-digit NUBAN'
+                    maxLength={10}
+                    inputMode='numeric'
+                  />
+                </div>
+                <button
+                  type='button'
+                  className={s.saveBtn}
+                  style={{ marginTop: '0.75rem' }}
+                  onClick={verifyAccount}
+                  disabled={verifying || !bankCode || acctNumber.length !== 10}
+                >
+                  {verifying ? 'Verifying…' : 'Verify Account'}
+                </button>
+                {doctor?.bankAccount?.verified && (
+                  <button
+                    type='button'
+                    className={s.backLink}
+                    onClick={() => setBankStep('view')}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Step 2 — OTP confirmation */}
+            {bankStep === 'otp' && (
+              <>
+                <div className={s.resolvedBox}>
+                  <small>Account resolved</small>
+                  <strong>{resolvedName}</strong>
+                </div>
+                <div className={s.field} style={{ marginTop: '0.75rem' }}>
+                  <label>Enter the 6-digit code sent to your email</label>
+                  <div className={s.otpRow}>
+                    <input
+                      className={s.otpInput}
+                      value={otp}
+                      onChange={e =>
+                        setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
+                      }
+                      placeholder='000000'
+                      maxLength={6}
+                      inputMode='numeric'
+                    />
+                    <button
+                      type='button'
+                      className={s.confirmBtn}
+                      onClick={confirmAccount}
+                      disabled={confirming || otp.length < 6}
+                    >
+                      {confirming ? 'Confirming…' : 'Confirm'}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  className={s.backLink}
+                  onClick={() => setBankStep('form')}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  Back — use a different account
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

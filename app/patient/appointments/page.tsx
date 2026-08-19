@@ -6,7 +6,10 @@ import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import { downloadReceipt } from '@/lib/receipt'
-import { CalendarIcon, PhoneIcon, ChatIcon, CreditCardIcon } from '@/components/icons'
+import {
+  VideoIcon, PhoneIcon, ChatIcon, CreditCardIcon,
+  CalendarIcon, CheckCircleIcon, XIcon, ClockIcon
+} from '@/components/icons'
 import s from './page.module.scss'
 
 interface Appointment {
@@ -29,60 +32,47 @@ interface Appointment {
 
 type Tab = 'upcoming' | 'past' | 'all'
 
-function getTimingInfo (scheduledAt: string, now: number) {
-  const diff = (new Date(scheduledAt).getTime() - now) / 60_000
-  if (diff > 1440) return { label: null, variant: 'muted' }
-  if (diff > 60)
-    return { label: `In ${Math.round(diff / 60)}h`, variant: 'muted' }
-  if (diff > 15)
-    return { label: `In ${Math.round(diff)} min`, variant: 'muted' }
-  if (diff > 2)
-    return { label: `Starts in ${Math.round(diff)} min`, variant: 'soon' }
-  if (diff > -1) return { label: 'Just now', variant: 'now' }
-  if (diff > -30)
-    return { label: `${Math.floor(-diff)} min late`, variant: 'late' }
-  return { label: null, variant: 'muted' }
-}
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const TYPE_ICON: Record<string, ReactNode> = {
-  video: <PhoneIcon size={14} />,
-  audio: <PhoneIcon size={14} />,
-  chat: <ChatIcon size={14} />
+  video: <VideoIcon size={13} />,
+  audio: <PhoneIcon size={13} />,
+  chat:  <ChatIcon  size={13} />,
 }
 const TYPE_LABEL: Record<string, string> = {
   video: 'Video Call',
   audio: 'Voice Call',
-  chat: 'Chat'
+  chat:  'Chat',
 }
 
-function DoctorInitials ({ name }: { name: string }) {
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-  return (
-    <div className={s.avatarFallback}>
-      <span>{initials}</span>
-    </div>
-  )
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  confirmed: { label: 'Confirmed',  cls: 'st_confirmed' },
+  pending:   { label: 'Unpaid',     cls: 'st_pending'   },
+  completed: { label: 'Completed',  cls: 'st_completed' },
+  cancelled: { label: 'Cancelled',  cls: 'st_cancelled' },
+  no_show:   { label: 'No-show',    cls: 'st_no_show'   },
+}
+
+function DoctorAvatar ({ name, avatar }: { name: string; avatar?: string }) {
+  const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  return avatar
+    ? <img src={avatar} alt={name} className={s.avatar} />
+    : <div className={s.avatarFallback}><span>{initials}</span></div>
 }
 
 export default function PatientAppointments () {
   const router = useRouter()
-  const modal = useStatusModal()
-  const [appts, setAppts] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('upcoming')
-  const [acting, setActing] = useState<string | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const modal  = useStatusModal()
+  const [appts,       setAppts]       = useState<Appointment[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [tab,         setTab]         = useState<Tab>('upcoming')
+  const [acting,      setActing]      = useState<string | null>(null)
+  const [now,         setNow]         = useState(Date.now())
   const [paystackKey, setPaystackKey] = useState(process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '')
-  const [scriptLoaded, setScriptLoaded] = useState(false)
+  const [scriptLoaded,setScriptLoaded] = useState(false)
 
   useEffect(() => {
-    api
-      .get('/appointments/mine?limit=100')
+    api.get('/appointments/mine?limit=100')
       .then(r => setAppts(r.data.data?.appointments ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -95,9 +85,8 @@ export default function PatientAppointments () {
 
   useEffect(() => {
     const existing = document.querySelector('script[src="https://js.paystack.co/v2/inline.js"]')
-    if (existing) {
-      setScriptLoaded(true)
-    } else {
+    if (existing) { setScriptLoaded(true) }
+    else {
       const script = document.createElement('script')
       script.src = 'https://js.paystack.co/v2/inline.js'
       script.async = true
@@ -107,26 +96,17 @@ export default function PatientAppointments () {
     const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
-      .then(b => {
-        if (b?.data?.paystackPublicKey) setPaystackKey(b.data.paystackPublicKey)
-      })
+      .then(b => { if (b?.data?.paystackPublicKey) setPaystackKey(b.data.paystackPublicKey) })
       .catch(() => {})
   }, [])
 
   const nowIso = new Date(now).toISOString()
+
   const filtered = appts.filter(a => {
     if (tab === 'upcoming')
-      return (
-        a.status !== 'cancelled' &&
-        a.status !== 'completed' &&
-        a.scheduledAt >= nowIso
-      )
+      return a.status !== 'cancelled' && a.status !== 'completed' && a.scheduledAt >= nowIso
     if (tab === 'past')
-      return (
-        a.status === 'completed' ||
-        a.status === 'cancelled' ||
-        a.scheduledAt < nowIso
-      )
+      return a.status === 'completed' || a.status === 'cancelled' || a.scheduledAt < nowIso
     return true
   })
 
@@ -138,25 +118,16 @@ export default function PatientAppointments () {
       if (cid) {
         router.push(`/consultation?appt=${apptId}&cid=${cid}`)
       } else {
-        modal.show({
-          variant: 'pending',
-          title: 'Not Ready Yet',
-          message: "Doctor hasn't started the session yet. Please wait."
-        })
+        modal.show({ variant: 'pending', title: 'Not Ready Yet', message: "Doctor hasn't started the session yet. Please wait." })
       }
     } catch {
-      modal.show({
-        variant: 'pending',
-        title: 'Not Ready Yet',
-        message: "Doctor hasn't started the session yet. Please wait."
-      })
+      modal.show({ variant: 'pending', title: 'Not Ready Yet', message: "Doctor hasn't started the session yet. Please wait." })
     }
     setActing(null)
   }
 
   async function cancelAppt (appt: Appointment) {
     if (appt.status !== 'confirmed') {
-      // Unpaid — no policy applies, just cancel
       setActing(appt._id)
       try {
         await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Cancelled by patient' })
@@ -165,20 +136,17 @@ export default function PatientAppointments () {
       setActing(null)
       return
     }
-
-    // Paid — show cancellation policy before proceeding
     const hoursUntil = (new Date(appt.scheduledAt).getTime() - Date.now()) / 3_600_000
     const refundNote = hoursUntil > 24
       ? 'You are eligible for a full refund (more than 24 hrs away).'
       : hoursUntil > 2
       ? 'You are eligible for a 50% refund (2–24 hrs before appointment).'
       : 'No refund applies for cancellations under 2 hours before the appointment.'
-
     modal.show({
       variant: 'pending',
       title: 'Cancellation Policy',
-      message: `${refundNote} Refunds take 3–5 business days. See ibamhealth.com/legal/refund for the full policy. Do you still want to cancel?`,
-      actionLabel: 'Yes, Cancel Appointment',
+      message: `${refundNote} Refunds take 3–5 business days. Do you still want to cancel?`,
+      actionLabel: 'Yes, Cancel',
       dismissLabel: 'Keep Appointment',
       onAction: async () => {
         setActing(appt._id)
@@ -193,20 +161,12 @@ export default function PatientAppointments () {
 
   async function payForAppointment (appt: Appointment) {
     if (!paystackKey || !scriptLoaded) {
-      modal.show({
-        variant: 'pending',
-        title: 'Payment Loading',
-        message: 'Payment system is still initialising. Please wait a moment and try again.'
-      })
+      modal.show({ variant: 'pending', title: 'Payment Loading', message: 'Payment system is still initialising. Please wait.' })
       return
     }
     setActing(appt._id)
     try {
-      const payRes = await api.post('/payments/initiate', {
-        type: 'consultation',
-        serviceId: appt._id,
-        amount: appt.consultationFee
-      })
+      const payRes = await api.post('/payments/initiate', { type: 'consultation', serviceId: appt._id, amount: appt.consultationFee })
       const { accessCode, reference } = payRes.data.data
       setActing(null)
       const paystack = new (window as any).PaystackPop()
@@ -216,57 +176,43 @@ export default function PatientAppointments () {
         onSuccess: async () => {
           try {
             await api.get(`/payments/verify/${reference}`)
-            setAppts(prev =>
-              prev.map(a =>
-                a._id === appt._id ? { ...a, status: 'confirmed' } : a
-              )
-            )
+            setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'confirmed' } : a))
             downloadReceipt({
               bookingRef: `#${appt._id.slice(-8).toUpperCase()}`,
-              tests: [
-                `${appt.type} consultation with Dr. ${appt.doctor?.name}`
-              ],
+              tests: [`${appt.type} consultation with Dr. ${appt.doctor?.name}`],
               amount: appt.consultationFee,
               collectionType: 'walk_in',
               transactionRef: reference
             })
-            modal.show({
-              variant: 'success',
-              title: 'Payment Confirmed!',
-              message: `Your ${appt.type} appointment with Dr. ${appt.doctor?.name} is now confirmed.`
-            })
-          } catch {
-            /* silent */
-          }
+            modal.show({ variant: 'success', title: 'Payment Confirmed!', message: `Your ${appt.type} appointment with Dr. ${appt.doctor?.name} is now confirmed.` })
+          } catch { /* silent */ }
         },
         onCancel: async () => {
           await api.put(`/appointments/${appt._id}/cancel`, { reason: 'Payment not completed' }).catch(() => {})
           setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, status: 'cancelled' } : a))
-          modal.show({
-            variant: 'declined',
-            title: 'Payment Cancelled',
-            message: 'No appointment was made. The slot is now available for others to book.'
-          })
+          modal.show({ variant: 'declined', title: 'Payment Cancelled', message: 'No appointment was made. The slot is now available for others to book.' })
         }
       })
     } catch {
       setActing(null)
-      modal.show({
-        variant: 'declined',
-        title: 'Error',
-        message: 'Could not initiate payment. Please try again.'
-      })
+      modal.show({ variant: 'declined', title: 'Error', message: 'Could not initiate payment. Please try again.' })
     }
   }
 
+  const confirmedCount = appts.filter(a => {
+    const sessionEnd = new Date(a.scheduledAt).getTime() + (a.sessionDurationMinutes ?? 30) * 60_000
+    return a.status === 'confirmed' && sessionEnd > now
+  }).length
+
   const TABS: { key: Tab; label: string }[] = [
     { key: 'upcoming', label: 'Upcoming' },
-    { key: 'past', label: 'Past' },
-    { key: 'all', label: 'All' }
+    { key: 'past',     label: 'Past'     },
+    { key: 'all',      label: 'All'      },
   ]
 
   return (
     <>
+      {/* ── Tab bar ── */}
       <div className={s.tabs}>
         {TABS.map(t => (
           <button
@@ -275,29 +221,21 @@ export default function PatientAppointments () {
             onClick={() => setTab(t.key)}
           >
             {t.label}
-            {t.key === 'upcoming' &&
-              appts.filter(a => a.status === 'confirmed').length > 0 && (
-                <span className={s.tabBadge}>
-                  {appts.filter(a => a.status === 'confirmed').length}
-                </span>
-              )}
+            {t.key === 'upcoming' && confirmedCount > 0 && (
+              <span className={s.tabBadge}>{confirmedCount}</span>
+            )}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className={s.empty}>
-          <Loader label='Loading appointments…' />
-        </div>
+        <div className={s.empty}><Loader label='Loading appointments…' /></div>
       ) : filtered.length === 0 ? (
         <div className={s.empty}>
-          <span className={s.emptyIcon}><CalendarIcon size={32} /></span>
-          <p>No {tab} appointments.</p>
-          {tab === 'upcoming' && (
-            <button
-              className={s.bookNowBtn}
-              onClick={() => router.push('/patient/book')}
-            >
+          <CalendarIcon size={36} />
+          <p>No {tab === 'all' ? '' : tab + ' '}appointments.</p>
+          {tab !== 'past' && (
+            <button className={s.bookNowBtn} onClick={() => router.push('/patient/book')}>
               Find a Doctor
             </button>
           )}
@@ -306,82 +244,63 @@ export default function PatientAppointments () {
         <div className={s.list}>
           {filtered.map(a => {
             const d = new Date(a.scheduledAt)
-            const timing = getTimingInfo(a.scheduledAt, now)
-            const diffMin = (new Date(a.scheduledAt).getTime() - now) / 60_000
-            const withinWindow = diffMin < 15
-            const isLive = a.status === 'confirmed'
-            const sessionEndMs =
-              new Date(a.scheduledAt).getTime() +
-              (a.sessionDurationMinutes ?? 30) * 60_000
-            const isElapsed = sessionEndMs < now
-            const isUpcoming =
-              a.status === 'confirmed' || a.status === 'pending'
+            const sessionEndMs = d.getTime() + (a.sessionDurationMinutes ?? 30) * 60_000
+            const isElapsed    = sessionEndMs < now
+            const diffMin      = (d.getTime() - now) / 60_000
+            // Absolute guard: never show Join more than 4 hours after scheduled time
+            const absoluteDeadline = d.getTime() + 4 * 60 * 60_000
+            const isJoinable   = a.status === 'confirmed' && !isElapsed && absoluteDeadline > now
+            const isLive       = a.status === 'confirmed' && !isElapsed
+            const canCancel    = (a.status === 'confirmed' || a.status === 'pending') && !isElapsed
+            const isPast       = a.status === 'completed' || a.status === 'cancelled'
+            const sm           = STATUS_META[a.status] ?? { label: a.status, cls: 'st_pending' }
 
             return (
               <div
                 key={a._id}
-                className={`${s.card} ${
-                  isLive && !isElapsed ? s.cardLive : ''
-                }`}
+                className={`${s.card} ${isLive ? s.cardLive : ''} ${isPast ? s.cardPast : ''}`}
               >
-                {/* Live pulse accent */}
-                {isLive && !isElapsed && <div className={s.liveAccent} />}
+                {isLive && <div className={s.liveAccent} />}
 
-                {/* Doctor avatar */}
-                <div className={s.avatarWrap}>
-                  {a.doctor?.avatar ? (
-                    <img
-                      src={a.doctor.avatar}
-                      alt={a.doctor.name}
-                      className={s.avatar}
-                    />
-                  ) : (
-                    <DoctorInitials name={a.doctor?.name ?? 'D'} />
-                  )}
-                  {isLive && !isElapsed && <div className={s.livePulse} />}
+                {/* Date chip */}
+                <div className={`${s.dateChip} ${isLive ? s.dateChipLive : ''} ${isPast ? s.dateChipPast : ''}`}>
+                  <span className={s.dateMonth}>{MONTHS[d.getMonth()]}</span>
+                  <span className={s.dateDay}>{d.getDate()}</span>
+                  <span className={s.dateTime}>
+                    {d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
 
-                {/* Info block */}
+                {/* Divider */}
+                <div className={s.chipDivider} />
+
+                {/* Doctor info */}
+                <div className={s.avatarWrap}>
+                  <DoctorAvatar name={a.doctor?.name ?? 'D'} avatar={a.doctor?.avatar} />
+                  {isLive && <div className={s.liveDot} />}
+                </div>
+
                 <div className={s.info}>
                   <div className={s.infoTop}>
                     <p className={s.docName}>{a.doctor?.name ?? '—'}</p>
-                    {a.isUrgent && (
-                      <span className={s.urgentBadge}>Urgent</span>
-                    )}
-                    {a.isFollowUp && (
-                      <span className={s.followUpBadge}>Follow-up</span>
-                    )}
+                    {a.isUrgent   && <span className={s.urgentBadge}>Urgent</span>}
+                    {a.isFollowUp && <span className={s.followUpBadge}>Follow-up</span>}
                   </div>
                   {a.doctor?.specialization && (
                     <p className={s.docSpec}>{a.doctor.specialization}</p>
                   )}
                   <div className={s.metaRow}>
                     <span className={s.typeChip}>
-                      {TYPE_ICON[a.type]} {TYPE_LABEL[a.type]}
-                    </span>
-                    <span className={s.dotSep}>·</span>
-                    <span className={s.metaTime}>
-                      {d.toLocaleDateString('en-NG', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short'
-                      })}
-                    </span>
-                    <span className={s.dotSep}>·</span>
-                    <span className={s.metaTime}>
-                      {d.toLocaleTimeString('en-NG', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {TYPE_ICON[a.type]}
+                      <span>{TYPE_LABEL[a.type]}</span>
                     </span>
                   </div>
-                  {timing.label && isUpcoming && (
-                    <span
-                      className={`${s.timingPill} ${
-                        s[`timing_${timing.variant}`]
-                      }`}
-                    >
-                      {timing.label}
+                  {/* Timing pill — only for upcoming */}
+                  {!isPast && diffMin > 0 && diffMin < 1440 && (
+                    <span className={`${s.timingPill} ${diffMin < 15 ? s.timing_soon : s.timing_muted}`}>
+                      {diffMin < 60
+                        ? `In ${Math.round(diffMin)} min`
+                        : `In ${Math.round(diffMin / 60)}h`}
                     </span>
                   )}
                 </div>
@@ -389,54 +308,44 @@ export default function PatientAppointments () {
                 {/* Right: status + fee + actions */}
                 <div className={s.right}>
                   <div className={s.statusFeeRow}>
-                    <span className={`${s.statusBadge} ${s[`st_${a.status}`]}`}>
-                      {statusLabel(a.status)}
+                    <span className={`${s.statusBadge} ${s[sm.cls]}`}>
+                      {isLive ? (
+                        <><span className={s.livePulse} />{' '}Live</>
+                      ) : (
+                        sm.label
+                      )}
                     </span>
-                    <span className={s.fee}>
-                      ₦{a.consultationFee.toLocaleString()}
-                    </span>
+                    {a.consultationFee > 0 && (
+                      <span className={s.fee}>₦{a.consultationFee.toLocaleString()}</span>
+                    )}
                   </div>
 
                   <div className={s.actions}>
-                    {isLive && !isElapsed && (
-                      <button
-                        className={s.joinBtn}
-                        disabled={acting === a._id}
-                        onClick={() => joinConsultation(a._id)}
-                      >
-                        {acting === a._id
-                          ? '…'
-                          : a.type === 'video'
-                          ? <><PhoneIcon size={14} /> Join Call</>
-                          : a.type === 'audio'
-                          ? <><PhoneIcon size={14} /> Join Call</>
-                          : <><ChatIcon size={14} /> Open Chat</>}
+                    {isJoinable && (
+                      <button className={s.joinBtn} disabled={acting === a._id} onClick={() => joinConsultation(a._id)}>
+                        {acting === a._id ? <Loader label='' /> : a.type === 'chat' ? <><ChatIcon size={13} /> Open Chat</> : <><VideoIcon size={13} /> Join Call</>}
                       </button>
                     )}
-                    {isLive && isElapsed && (
-                      <span className={s.elapsedLabel}>Session ended</span>
+                    {a.status === 'confirmed' && isElapsed && (
+                      <span className={s.elapsedLabel}>
+                        <ClockIcon size={12} /> Session ended
+                      </span>
                     )}
                     {a.status === 'pending' && a.consultationFee > 0 && (
-                      <button
-                        className={s.payBtn}
-                        disabled={acting === a._id || !paystackKey || !scriptLoaded}
-                        onClick={() => payForAppointment(a)}
-                      >
-                        {acting === a._id
-                          ? '…'
-                          : !paystackKey || !scriptLoaded
-                          ? 'Loading…'
-                          : <><CreditCardIcon size={14} /> Pay Now</>}
+                      <button className={s.payBtn} disabled={acting === a._id || !paystackKey || !scriptLoaded} onClick={() => payForAppointment(a)}>
+                        {acting === a._id ? '…' : !paystackKey || !scriptLoaded ? 'Loading…' : <><CreditCardIcon size={13} /> Pay Now</>}
                       </button>
                     )}
-                    {isUpcoming && (
-                      <button
-                        className={s.cancelBtn}
-                        disabled={acting === a._id}
-                        onClick={() => cancelAppt(a)}
-                      >
+                    {canCancel && (
+                      <button className={s.cancelBtn} disabled={acting === a._id} onClick={() => cancelAppt(a)}>
                         Cancel
                       </button>
+                    )}
+                    {a.status === 'completed' && (
+                      <span className={s.completedLabel}><CheckCircleIcon size={13} /> Done</span>
+                    )}
+                    {a.status === 'cancelled' && (
+                      <span className={s.cancelledLabel}><XIcon size={13} /> Cancelled</span>
                     )}
                   </div>
                 </div>
@@ -446,17 +355,5 @@ export default function PatientAppointments () {
         </div>
       )}
     </>
-  )
-}
-
-function statusLabel (st: string) {
-  return (
-    {
-      confirmed: 'Live',
-      pending: 'Pending',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-      no_show: 'No-show'
-    }[st] ?? st
   )
 }

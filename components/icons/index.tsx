@@ -221,6 +221,9 @@ export function ArrowUpIcon ({ size, ...p }: P) {
 export function ArrowDownIcon ({ size, ...p }: P) {
   return <svg {...base(size)} {...p}><line x1='12' y1='5' x2='12' y2='19' /><polyline points='19 12 12 19 5 12' /></svg>
 }
+export function VideoIcon ({ size, ...p }: P) {
+  return <svg {...base(size)} {...p}><polygon points='23 7 16 12 23 17 23 7' /><rect x='1' y='5' width='15' height='14' rx='2' ry='2' /></svg>
+}
 export function PinIcon ({ size, ...p }: P) {
   return <svg {...base(size)} {...p}><path d='M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0Z' /><circle cx='12' cy='10' r='3' /></svg>
 }

@@ -157,12 +157,12 @@ export default function PharmacyFinancePage () {
         <>
           {/* ── Summary cards ── */}
           <div className={s.statsGrid}>
-            <div className={s.statCard}>
+            <div className={`${s.statCard} ${s.cardRevenue}`}>
               <span className={s.statLabel}>Total Net Revenue</span>
               <span className={s.statValue}>{fmt(totals.net)}</span>
               <span className={s.statSub}>{fmt(totals.gross)} gross · {earnings.length} orders</span>
             </div>
-            <div className={s.statCard}>
+            <div className={`${s.statCard} ${s.cardMonth}`}>
               <span className={s.statLabel}>This Month</span>
               <span className={s.statValue}>{fmt(data?.thisMonth ?? 0)}</span>
               <span className={s.statSub} style={{ color: changePositive ? '#10B981' : '#EF4444' }}>
@@ -171,14 +171,14 @@ export default function PharmacyFinancePage () {
             </div>
             <div className={`${s.statCard} ${s.highlightCard}`}>
               <span className={s.statLabel}>Available to Pay Out</span>
-              <span className={s.statValue} style={{ color: '#10B981' }}>{fmt(totals.pending)}</span>
+              <span className={s.statValue}>{fmt(totals.pending)}</span>
               <span className={s.statSub}>
                 {totals.requested > 0 ? `+ ${fmt(totals.requested)} awaiting approval` : 'Request below when ready'}
               </span>
             </div>
-            <div className={s.statCard}>
+            <div className={`${s.statCard} ${s.cardPaid}`}>
               <span className={s.statLabel}>Total Paid Out</span>
-              <span className={s.statValue} style={{ color: '#60A5FA' }}>{fmt(totals.paid)}</span>
+              <span className={s.statValue}>{fmt(totals.paid)}</span>
               <span className={s.statSub}>{history.filter(h => h.status === 'paid').length} completed payout(s)</span>
             </div>
           </div>

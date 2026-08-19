@@ -1,39 +1,110 @@
 @use '../../../styles/variables' as *;
 @use '../../../styles/mixins' as *;
 
-.grid {
+// ─── Layout ─────────────────────────────────────────────────────────────────
+.layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  align-items: start;
 
-  @media (min-width: $bp-lg) { grid-template-columns: 1fr 1.1fr; }
+  @media (min-width: $bp-lg) {
+    grid-template-columns: 340px 1fr;
+  }
 }
 
-// ─── Doctor list ──────────────────────────────────
-.searchRow {
-  margin-bottom: 1rem;
+// ─── List panel (left) ───────────────────────────────────────────────────────
+.listPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-  select {
-    width: 100%;
-    background: $navy-dark;
-    border: 1px solid $navy-border;
-    border-radius: $radius-md;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    outline: none;
-    cursor: pointer;
-
-    &:focus { border-color: rgba($primary,0.5); }
-    option { background: $navy-dark; }
+.listHeader {
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $white;
+    margin: 0 0 2px;
   }
+  p {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.38);
+    margin: 0;
+  }
+}
+
+// ─── Specialty chip strip ─────────────────────────────────────────────────────
+.specStrip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+
+  &::-webkit-scrollbar        { height: 3px; }
+  &::-webkit-scrollbar-track  { background: transparent; }
+  &::-webkit-scrollbar-thumb  { background: $navy-border; border-radius: 999px; }
+}
+
+.specChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 64px;
+  padding: 0.625rem 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  transition: all 0.15s;
+  scroll-snap-align: start;
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+    background: rgba($primary, 0.06);
+  }
+
+  &.specChipActive {
+    background: rgba($primary, 0.15);
+    border-color: $primary;
+
+    .specChipIcon { color: $accent; }
+    span:last-child { color: $accent; }
+  }
+
+  span:last-child {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    transition: color 0.15s;
+  }
+}
+
+.specChipIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.45);
+  transition: color 0.15s;
+  flex-shrink: 0;
+
+  svg { display: block; }
 }
 
 .docList {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  max-height: 60vh;
+  gap: 0.5rem;
+  max-height: 68vh;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -44,281 +115,442 @@
   gap: 0.875rem;
   background: $navy-dark;
   border: 1px solid $navy-border;
-  border-radius: $radius-lg;
-  padding: 0.875rem 1rem;
+  border-radius: $radius-xl;
+  padding: 0.875rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s, background 0.15s;
   position: relative;
 
-  &:hover  { border-color: rgba($primary,0.3); }
-  &.selected { border-color: $primary; background: rgba($primary,0.05); }
+  &:hover    { border-color: rgba($primary, 0.35); }
+  &.selected { border-color: $primary; background: rgba($primary, 0.06); }
 }
 
-.docAvatar {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  background: rgba($primary,0.12);
-  @include flex-center;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: $accent;
-  text-transform: uppercase;
+.docPhotoWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: $radius-lg;
+  background: linear-gradient(135deg, rgba($primary, 0.25), rgba($accent, 0.15));
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
+  @include flex-center;
+
+  span {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: $accent;
+    text-transform: uppercase;
+  }
 }
 
-.docInfo { flex: 1; min-width: 0; }
-.docName { font-size: 0.875rem; font-weight: 700; color: var(--text); }
-.docSpec { font-size: 0.75rem; color: var(--text-muted); display: block; margin: 1px 0; }
+.docInfo   { flex: 1; min-width: 0; }
+
+.docName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $white;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.docSpec {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.42);
+  display: block;
+  margin-bottom: 5px;
+}
 
 .docMeta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-top: 2px;
-}
-.docRating { font-size: 0.7rem; color: $warning; font-weight: 700; }
-.docExp    { font-size: 0.7rem; color: var(--text-faint); }
-.docFee    { font-size: 0.7rem; color: $success; font-weight: 600; }
-
-.tick {
-  font-size: 0.875rem;
-  color: $accent;
-  font-weight: 700;
-  flex-shrink: 0;
 }
 
-.empty {
+.docRating { font-size: 0.7rem; color: $warning;  font-weight: 700; }
+.docExp    { font-size: 0.7rem; color: rgba(255,255,255,0.32); }
+.docFee    { font-size: 0.7rem; color: $success;   font-weight: 700; }
+
+.docTick   { color: $primary; flex-shrink: 0; }
+
+.emptyDocs {
   text-align: center;
   padding: 2rem;
-  color: var(--text-faint);
+  color: rgba(255,255,255,0.28);
   font-size: 0.875rem;
 }
 
-// ─── Book panel ───────────────────────────────────
+// ─── Select prompt ───────────────────────────────────────────────────────────
+.selectPrompt {
+  @include flex-center;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-height: 320px;
+  background: $navy-dark;
+  border: 1px dashed $navy-border;
+  border-radius: $radius-xl;
+  color: rgba(255,255,255,0.25);
+
+  p { font-size: 0.9rem; }
+}
+
+// ─── Book panel ──────────────────────────────────────────────────────────────
 .bookPanel {
   background: $navy-dark;
   border: 1px solid $navy-border;
-  border-radius: $radius-lg;
-  padding: 1.5rem;
+  border-radius: $radius-xl;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  height: fit-content;
 }
 
-.bookHead {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.bookAvatarWrap {
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: rgba($primary,0.12);
-  @include flex-center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: $accent;
-  text-transform: uppercase;
-  flex-shrink: 0;
+// ─── Hero ────────────────────────────────────────────────────────────────────
+.hero {
   position: relative;
+  height: 240px;
+  flex-shrink: 0;
   overflow: hidden;
+  background: linear-gradient(135deg, rgba($primary, 0.35), rgba($accent, 0.18), #060d18);
+
+  @media (min-width: $bp-lg) { height: 260px; }
 }
 
-.bookHeadInfo {
-  flex: 1;
-  min-width: 0;
-  h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 2px; }
+.heroBgInitials {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+
+  span {
+    font-size: 7rem;
+    font-weight: 900;
+    color: rgba($primary, 0.18);
+    text-transform: uppercase;
+    user-select: none;
+  }
 }
 
-.bookSpec {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  margin: 0 0 6px;
+.heroGrad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.04) 0%,
+    rgba(0,0,0,0.1)  45%,
+    rgba(0,0,0,0.78) 100%
+  );
 }
 
-.bookMetaRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-.bookRating { font-size: 0.75rem; color: $warning; font-weight: 700; em { font-style: normal; font-weight: 400; color: var(--text-faint); } }
-.bookExp    { font-size: 0.75rem; color: var(--text-faint); }
-
-.socialLinks {
-  display: flex;
-  gap: 6px;
-}
-.socialBtn {
+.heroRating {
+  position: absolute;
+  top: 14px;
+  left: 14px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 26px; height: 26px;
-  border-radius: $radius-sm;
-  background: var(--input-bg);
-  border: 1px solid $navy-border;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: all 0.15s;
-  svg { width: 13px; height: 13px; }
-  &:hover { color: $accent; border-color: rgba($primary,0.4); background: rgba($primary,0.08); }
+  gap: 4px;
+  background: rgba(0,0,0,0.52);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $warning;
 }
 
-.qualsList {
+.heroActions {
+  position: absolute;
+  top: 14px;
+  right: 14px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
+
+.heroActionBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.48);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  @include flex-center;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: rgba($primary, 0.55); border-color: rgba($primary, 0.5); color: #fff; }
+
+  &.heroActionActive {
+    background: $primary;
+    border-color: $primary;
+    color: #fff;
+  }
+}
+
+.heroContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.25rem;
+}
+
+.heroName {
+  font-size: 1.3125rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 3px;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.6);
+}
+
+.heroCreds {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.58);
+  margin: 0 0 2px;
+}
+
+.heroSpec {
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.48);
+  margin: 0;
+}
+
+// ─── Book body ───────────────────────────────────────────────────────────────
+.bookBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.375rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+// ─── Stats row ───────────────────────────────────────────────────────────────
+.statsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 0.875rem 0.5rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+
+  strong {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: $white;
+    line-height: 1;
+  }
+
+  span {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+}
+
+.statDiv {
+  width: 1px;
+  height: 32px;
+  background: $navy-border;
+  flex-shrink: 0;
+}
+
+// ─── Section label ───────────────────────────────────────────────────────────
+.sectionLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 0.625rem;
+  display: block;
+}
+
+// ─── Bio ─────────────────────────────────────────────────────────────────────
+.bio {
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.65;
+  margin: 0;
+}
+
+// ─── Qualifications ──────────────────────────────────────────────────────────
+.qualsList { display: flex; flex-wrap: wrap; gap: 6px; }
+
 .qualBadge {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  background: var(--input-bg);
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.04);
   border: 1px solid $navy-border;
   border-radius: $radius-sm;
   padding: 3px 8px;
 }
 
-.bio {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  padding: 0.875rem;
-  background: var(--input-bg);
-  border-radius: $radius-md;
-  border: 1px solid $navy-border;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
-
-  input[type='date'], select {
-    background: var(--input-bg);
-    border: 1px solid $navy-border;
-    border-radius: $radius-md;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
-    color: var(--text);
-    outline: none;
-    color-scheme: dark;
-
-    &:focus { border-color: rgba($primary,0.5); }
-  }
-}
-
-.slotNote {
-  font-size: 0.8125rem;
-  color: var(--text-faint);
-}
-
-.slotGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 0.5rem;
-}
-
-.slotBtn {
-  padding: 0.5rem 0.5rem;
-  background: var(--input-bg);
-  border: 1px solid $navy-border;
-  border-radius: $radius-md;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-semi);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover    { border-color: rgba($primary,0.4); color: var(--text); }
-  &.slotActive { background: rgba($primary,0.15); border-color: $primary; color: $accent; }
-}
-
+// ─── Consultation type ───────────────────────────────────────────────────────
 .typeRow {
   display: flex;
   gap: 0.5rem;
 }
 
-.typeBtn {
+.typePill {
   flex: 1;
-  padding: 0.5rem 0.375rem;
-  background: var(--input-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.625rem 0.5rem;
+  background: rgba(255,255,255,0.04);
   border: 1px solid $navy-border;
-  border-radius: $radius-md;
+  border-radius: $radius-lg;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.48);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  small {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.28);
+    transition: color 0.15s;
+  }
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+    color: rgba(255,255,255,0.8);
+  }
+
+  &.typePillActive {
+    background: rgba($primary, 0.15);
+    border-color: $primary;
+    color: $accent;
+    small { color: rgba($accent, 0.65); }
+  }
+}
+
+// ─── Date strip ──────────────────────────────────────────────────────────────
+.dateStrip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+
+  &::-webkit-scrollbar        { height: 3px; }
+  &::-webkit-scrollbar-track  { background: transparent; }
+  &::-webkit-scrollbar-thumb  { background: $navy-border; border-radius: 999px; }
+}
+
+.dateCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 52px;
+  padding: 0.625rem 0.5rem;
+  border-radius: $radius-lg;
+  border: 1px solid $navy-border;
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.15s;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+
+  &:hover { border-color: rgba($primary, 0.4); }
+
+  &.dateCellActive {
+    background: linear-gradient(135deg, $primary, $accent);
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba($primary, 0.3);
+
+    .dateDow { color: rgba(255,255,255,0.75); }
+    .dateNum  { color: #fff; }
+  }
+}
+
+.dateDow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.32);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dateNum {
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: rgba(255,255,255,0.55);
+  line-height: 1;
+}
+
+// ─── Time slots ──────────────────────────────────────────────────────────────
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.slotPill {
+  padding: 0.5rem 0.25rem;
+  border-radius: $radius-lg;
+  border: 1px solid $navy-border;
+  background: rgba(255,255,255,0.03);
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.52);
   cursor: pointer;
-  text-transform: capitalize;
-  transition: all 0.15s ease;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: all 0.15s;
+  text-align: center;
+  white-space: nowrap;
 
-  small { font-size: 0.65rem; font-weight: 500; color: var(--text-faint); }
+  &:hover {
+    border-color: rgba($primary, 0.4);
+    color: rgba(255,255,255,0.85);
+  }
 
-  &:hover      { border-color: rgba($primary,0.4); color: var(--text); small { color: var(--text-muted); } }
-  &.typeActive { background: rgba($primary,0.15); border-color: $primary; color: $accent; small { color: var(--text-muted); } }
+  &.slotPillActive {
+    background: linear-gradient(135deg, $primary, $accent);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba($primary, 0.28);
+  }
 }
 
-.durationRow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.durationBtn {
-  padding: 6px 14px; border-radius: $radius-sm; border: 1px solid $navy-border;
-  background: var(--input-bg); color: var(--text-muted);
-  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.13s;
-  &:hover        { border-color: rgba($primary,0.4); color: var(--text); }
-  &.durationActive  { background: rgba($primary,0.15); border-color: $primary; color: $accent; }
-  &.durationDisabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
-}
-
-.summary {
-  @include flex-between;
-  padding: 0.75rem 1rem;
-  background: var(--input-bg);
-  border-radius: $radius-md;
-  border: 1px solid $navy-border;
-
-  span   { font-size: 0.875rem; color: var(--text-muted); }
-  strong { font-size: 1.125rem; font-weight: 800; color: $success; }
-}
-
-.error {
+.slotNote {
   font-size: 0.8125rem;
-  color: $danger;
-  padding: 0.5rem 0.75rem;
-  background: rgba($danger,0.08);
-  border-radius: $radius-md;
+  color: rgba(255,255,255,0.28);
 }
 
-.bookBtn {
-  @include btn-primary;
-  justify-content: center;
-  padding: 0.875rem;
-  font-size: 0.9rem;
+// ─── Duration ────────────────────────────────────────────────────────────────
+.durationRow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-  &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.durationBtn {
+  padding: 6px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid $navy-border;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.42);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.13s;
+
+  &:hover           { border-color: rgba($primary, 0.4); color: rgba(255,255,255,0.8); }
+  &.durationActive  { background: rgba($primary, 0.15); border-color: $primary; color: $accent; }
+  &.durationDisabled { opacity: 0.28; cursor: not-allowed; pointer-events: none; }
 }
 
-.selectPrompt {
-  @include flex-center;
-  min-height: 200px;
-  background: $navy-dark;
-  border: 1px dashed $navy-border;
-  border-radius: $radius-lg;
-  padding: 2rem;
-
-  p { font-size: 0.9rem; color: var(--text-faint); }
-}
-
+// ─── Urgent ──────────────────────────────────────────────────────────────────
 .urgentRow {
   display: flex;
   align-items: center;
@@ -326,36 +558,59 @@
   font-size: 0.8125rem;
   color: $warning;
   cursor: pointer;
-  margin-bottom: 0.5rem;
   input { accent-color: $warning; width: 14px; height: 14px; }
 }
 
-// ─── Success ──────────────────────────────────────
-.successBox {
-  @include flex-center;
-  flex-direction: column;
-  gap: 1rem;
-  text-align: center;
-  padding: 4rem 2rem;
-
-  h2 { font-size: 1.5rem; font-weight: 800; color: var(--text); }
-  p  { color: var(--text-muted); max-width: 380px; line-height: 1.6; }
-}
-
-.successIcon { font-size: 3rem; }
-
-.doneBtn {
-  @include btn-primary;
-  margin-top: 0.5rem;
-}
-
-.skipBtn {
-  background: transparent;
+// ─── Fee row ─────────────────────────────────────────────────────────────────
+.feeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  background: rgba(255,255,255,0.03);
   border: 1px solid $navy-border;
-  border-radius: $radius-md;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  padding: 0.5rem 1.25rem;
+  border-radius: $radius-lg;
+}
+
+.feeLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 3px;
+}
+
+.feeAmt {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 900;
+  color: $success;
+  line-height: 1;
+}
+
+.feeSub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.42);
+}
+
+// ─── Book button ─────────────────────────────────────────────────────────────
+.bookBtn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, $primary, $accent);
+  border: none;
+  border-radius: $radius-xl;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
   cursor: pointer;
-  &:hover { color: var(--text); border-color: rgba($primary,0.4); }
+  letter-spacing: 0.01em;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 4px 20px rgba($primary, 0.3);
+
+  &:hover:not(:disabled)  { opacity: 0.9; transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled              { opacity: 0.38; cursor: not-allowed; transform: none; box-shadow: none; }
 }

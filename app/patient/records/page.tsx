@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Loader } from '@/components/Loader'
 import s from './page.module.scss'
-import { PillIcon, MicroscopeIcon, DocumentIcon } from '@/components/icons'
+import { PillIcon, MicroscopeIcon, DocumentIcon, CheckIcon } from '@/components/icons'
 import { ChevronUpIcon, ChevronDownIcon } from '@/components/icons'
 
 interface Medication { name: string; dosage: string; frequency: string; duration: string; instructions?: string }
@@ -89,7 +89,7 @@ export default function HealthRecords () {
               <div key={p._id} className={s.card}>
                 <div className={s.cardTop} onClick={() => setExpanding(expanding === p._id ? null : p._id)}>
                   <div className={s.cardLeft}>
-                    <div className={s.rxIcon}><PillIcon size={18} /></div>
+                    <div className={s.rxIcon}><PillIcon size={20} /></div>
                     <div>
                       <p className={s.cardTitle}>{p.medications.map(m => m.name).join(', ')}</p>
                       <span>Dr. {p.doctor?.name ?? '—'} · {new Date(p.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -135,14 +135,17 @@ export default function HealthRecords () {
           <div className={s.list}>
             {requests.map(req => {
               const result = resultMap.get(req._id)
+              const hasResult = !!result
               return (
-                <div key={req._id} className={s.card}>
+                <div key={req._id} className={`${s.card} ${hasResult ? s.cardResultReady : ''}`}>
                   <div className={s.cardTop}>
                     <div className={s.cardLeft}>
-                      <div className={s.rxIcon}><MicroscopeIcon size={18} /></div>
+                      <div className={`${s.rxIcon} ${hasResult ? s.rxIconReady : s.rxIconLab}`}>
+                        <MicroscopeIcon size={20} />
+                      </div>
                       <div>
-                        <p className={s.cardTitle}>{req.tests.join(', ')}</p>
-                        <span>{labStatusLabel(req)} · {req.collectionType.replace('_', ' ')} · {new Date(req.createdAt).toLocaleDateString("en-NG")}</span>
+                        <p className={s.cardTitle}>{req.tests.slice(0, 3).join(', ')}{req.tests.length > 3 ? ` +${req.tests.length - 3}` : ''}</p>
+                        <span>{labStatusLabel(req)} · {req.collectionType.replace('_', ' ')} · {new Date(req.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       </div>
                     </div>
                     <div className={s.cardRight}>
@@ -159,12 +162,17 @@ export default function HealthRecords () {
                       </button>
                     </div>
                   )}
-                  {result && (
+                  {hasResult && (
                     <div className={s.cardBody}>
-                      <p className={s.resultReady}>Your results are ready.</p>
-                      {result.notes && <p className={s.resultNotes}>{result.notes}</p>}
-                      <a href={result.fileUrl} target='_blank' rel='noreferrer' className={s.downloadBtn}>
-                        <DocumentIcon size={13} /> Download Report
+                      <div className={s.resultReadyBanner}>
+                        <div className={s.resultReadyCheck}><CheckIcon size={13} /></div>
+                        <div>
+                          <p className={s.resultReady}>Your results are ready</p>
+                          {result!.notes && <p className={s.resultNotes}>{result!.notes}</p>}
+                        </div>
+                      </div>
+                      <a href={result!.fileUrl} target='_blank' rel='noreferrer' className={s.downloadBtn}>
+                        <DocumentIcon size={14} /> Download Report
                       </a>
                     </div>
                   )}

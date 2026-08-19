@@ -1,10 +1,16 @@
 @use '../../../styles/variables' as *;
 @use '../../../styles/mixins' as *;
 
+// ── Tab bar ───────────────────────────────────────────────
 .tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
   margin-bottom: 1.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 4px;
+  width: fit-content;
 }
 
 .tab {
@@ -13,7 +19,7 @@
   gap: 0.375rem;
   padding: 0.5rem 1.25rem;
   border-radius: $radius-md;
-  border: 1px solid $navy-border;
+  border: none;
   background: transparent;
   color: var(--text-muted);
   font-size: 0.875rem;
@@ -21,8 +27,12 @@
   cursor: pointer;
   transition: all 0.15s ease;
 
-  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
-  &.active { background: $primary; border-color: $primary; color: #fff; }
+  &:hover { color: var(--text); }
+  &.active {
+    background: $primary;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba($primary, 0.35);
+  }
 }
 
 .count {
@@ -39,7 +49,7 @@
   font-size: 0.875rem;
 }
 
-// ─── Order form ───────────────────────────────────
+// ── Order form ────────────────────────────────────────────
 .orderForm {
   background: $navy-dark;
   border: 1px solid $navy-border;
@@ -50,14 +60,15 @@
   gap: 1.5rem;
 }
 
-.success {
-  background: rgba($success,0.1);
-  border: 1px solid rgba($success,0.3);
+.infoNote {
+  background: rgba($primary, 0.07);
+  border: 1px solid rgba($primary, 0.2);
   border-radius: $radius-md;
   padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: $success;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  strong { color: $accent; }
 }
 
 .section {
@@ -81,13 +92,43 @@
     outline: none;
     font-family: inherit;
     resize: none;
-
     &:focus { border-color: rgba($primary,0.5); }
     &::placeholder { color: var(--text-faint); }
     option { background: $navy-dark; }
   }
 }
 
+// ── Test section header + search ─────────────────────────
+.testSectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+
+  h3 { margin-bottom: 0; }
+}
+
+.testSearch {
+  flex-shrink: 0;
+  width: 220px;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+
+  &:focus { border-color: rgba($primary, 0.45); }
+  &::placeholder { color: var(--text-faint); }
+
+  @media (max-width: 480px) { width: 100%; }
+}
+
+// ── Test grid ─────────────────────────────────────────────
 .testGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -97,7 +138,7 @@
 .testItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
   padding: 0.625rem 0.875rem;
   background: var(--input-bg);
   border: 1px solid $navy-border;
@@ -108,15 +149,23 @@
   color: var(--text-semi);
 
   input[type='checkbox'] { accent-color: $primary; width: 14px; height: 14px; flex-shrink: 0; }
-
   &:hover  { border-color: rgba($primary,0.3); }
   &.checked { border-color: $primary; background: rgba($primary,0.08); color: var(--text); }
 }
 
+.testContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  em { font-style: normal; font-size: 0.72rem; color: $success; font-weight: 600; }
+}
+
+// ── Collection type cards ─────────────────────────────────
 .collectionRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.875rem;
 }
 
 .collectionOpt {
@@ -124,13 +173,13 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.25rem;
-  padding: 1rem;
+  gap: 0.625rem;
+  padding: 1.375rem 1rem;
   background: var(--input-bg);
-  border: 1px solid $navy-border;
-  border-radius: $radius-md;
+  border: 2px solid $navy-border;
+  border-radius: $radius-lg;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 
   input[type='radio'] { display: none; }
 
@@ -143,30 +192,267 @@
   p {
     font-size: 0.75rem;
     color: var(--text-faint);
+    line-height: 1.4;
+    margin: 0;
   }
 
-  &:hover { border-color: rgba($primary,0.3); }
-  &.picked { border-color: $primary; background: rgba($primary,0.08); span { color: $accent; } }
+  &:hover { border-color: rgba($primary,0.35); }
+
+  &.picked {
+    border-color: $primary;
+    background: rgba($primary,0.07);
+
+    .collectionIcon {
+      background: rgba($primary, 0.18);
+      color: $accent;
+    }
+
+    span { color: var(--text); }
+  }
 }
 
-.error {
-  font-size: 0.8125rem;
-  color: $danger;
-  padding: 0.5rem 0.75rem;
-  background: rgba($danger,0.08);
-  border-radius: $radius-md;
+.collectionIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
 }
+
+// ── Home visit details ────────────────────────────────────
+.scheduleRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.875rem;
+}
+.scheduleField { display: flex; flex-direction: column; gap: 4px; }
+.scheduleLabel { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+
+.locationRow { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.locationInput {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  &:focus { border-color: rgba($primary,0.4); }
+  &::placeholder { color: var(--text-faint); }
+}
+.gpsBtn {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid $navy-border;
+  background: var(--input-bg);
+  color: var(--text-semi);
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+.coordsNote { font-size: 0.72rem; color: $accent; font-family: monospace; }
+
+// ── File upload ───────────────────────────────────────────
+.referralNote { font-size: 0.78rem; color: var(--text-sub); margin: 0 0 8px; }
+.fileUploadArea {
+  background: var(--input-bg);
+  border: 1.5px dashed var(--border);
+  border-radius: $radius-md;
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  p { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+  &:hover { border-color: rgba($accent,0.35); p { color: $accent; } }
+}
+.fileName { color: $accent !important; font-weight: 600 !important; }
+
+// ── Misc labels ───────────────────────────────────────────
+.optional { font-size: 0.7rem; font-weight: 500; color: var(--text-faint); margin-left: 6px; text-transform: none; letter-spacing: 0; }
+.selectedCount {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: $accent;
+  margin-left: 8px;
+  background: rgba($primary, 0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.paymentNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: rgba($success, 0.06);
+  border: 1px solid rgba($success, 0.2);
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  &[data-variant='transfer'] { background: rgba($primary, 0.06); border-color: rgba($primary, 0.2); }
+  p { margin: 0; flex: 1; }
+  strong { color: var(--text-semi); }
+}
+.paymentNoteIcon { flex-shrink: 0; font-size: 1rem; line-height: 1.4; }
 
 .submitBtn {
   @include btn-primary;
   justify-content: center;
   padding: 0.875rem;
-
   &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 }
 
-// ─── Next-gen Results Cards ────────────────────────
+// ── Wellness Packages ─────────────────────────────────────
+.pkgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
 
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.pkgCard {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover { border-color: rgba($primary, 0.35); transform: translateY(-2px); }
+}
+
+.pkgCardBand {
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(90deg, $primary, $accent);
+}
+.pkgCardBandMale   { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+.pkgCardBandFemale { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+.pkgCardBandAll    { background: linear-gradient(90deg, $primary, $accent); }
+
+.pkgCardInner {
+  padding: 1.25rem 1.375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  flex: 1;
+}
+
+.pkgCardTop {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.pkgMeta { flex: 1; min-width: 0; }
+
+.pkgGenderBadge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba($primary, 0.12);
+  color: $accent;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pkgGenderBadgeMale   { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.pkgGenderBadgeFemale { background: rgba(236,72,153,0.15); color: #f472b6; }
+
+.pkgName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.35rem;
+}
+
+.pkgBenefits {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pkgPrices {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.pkgPriceRow { display: flex; align-items: center; gap: 0.5rem; }
+.pkgPriceLabel { font-size: 0.7rem; color: var(--text-faint); font-weight: 500; }
+.pkgPriceVal { font-size: 0.875rem; font-weight: 700; color: $success; font-variant-numeric: tabular-nums; }
+
+.pkgTestsToggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: $accent;
+  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+  &:hover { opacity: 0.75; }
+}
+
+.pkgTestsList {
+  margin: 0;
+  padding: 0.625rem;
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-md;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+
+  li {
+    font-size: 0.75rem;
+    color: var(--text-semi);
+    padding: 0.2rem 0.6rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid $navy-border;
+    border-radius: 999px;
+  }
+}
+
+.pkgBookBtn {
+  @include btn-primary;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  margin-top: auto;
+}
+
+// ── Results: empty state ──────────────────────────────────
 .emptyState {
   text-align: center;
   padding: 3.5rem 1rem;
@@ -179,9 +465,10 @@
 .resultsList {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.875rem;
 }
 
+// ── Result card ───────────────────────────────────────────
 .resultCard {
   background: $navy-dark;
   border: 1px solid $navy-border;
@@ -192,6 +479,77 @@
   &:hover { border-color: rgba($primary, 0.25); }
 }
 
+.resultCardDone {
+  border-color: rgba($success, 0.3);
+  &:hover { border-color: rgba($success, 0.45); }
+}
+
+// ── Status progress steps ─────────────────────────────────
+.statusSteps {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.018);
+  border-bottom: 1px solid $navy-border;
+  position: relative;
+}
+
+.statusStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: calc(50% + 11px);
+    right: calc(-50% + 11px);
+    height: 2px;
+    background: $navy-border;
+    z-index: 0;
+  }
+  &.stepDone:not(:last-child)::after  { background: $success; }
+  &.stepActive:not(:last-child)::after { background: linear-gradient(90deg, $success 0%, $navy-border 100%); }
+}
+
+.stepDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid $navy-border;
+  background: $navy-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+  transition: all 0.2s ease;
+  color: transparent;
+  font-size: 0.6rem;
+  font-weight: 700;
+
+  .stepDone &  { background: $success; border-color: $success; color: #fff; }
+  .stepActive & { border-color: $accent; background: rgba($primary, 0.15); }
+}
+
+.stepLabel {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-align: center;
+
+  .stepDone &  { color: $success; }
+  .stepActive & { color: $accent; }
+}
+
+// ── Result card header ────────────────────────────────────
 .resultCardHeader {
   display: flex;
   align-items: center;
@@ -201,6 +559,8 @@
   transition: background 0.15s ease;
 
   &:hover { background: rgba(255,255,255,0.025); }
+
+  .resultCardDone & { background: rgba($success, 0.03); }
 }
 
 .resultIconWrap {
@@ -248,10 +608,7 @@
   font-weight: 500;
 }
 
-.resultCardSub {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
+.resultCardSub { font-size: 0.75rem; color: var(--text-muted); }
 
 .resultCardRight {
   display: flex;
@@ -261,12 +618,9 @@
   flex-shrink: 0;
 }
 
-.chevronIcon {
-  font-size: 0.5rem;
-  color: var(--text-faint);
-  line-height: 1;
-}
+.chevronIcon { color: var(--text-faint); line-height: 1; }
 
+// ── Result card body (expanded) ───────────────────────────
 .resultCardBody {
   border-top: 1px solid $navy-border;
   padding: 1rem 1.25rem;
@@ -284,11 +638,7 @@
   margin: 0 0 0.5rem;
 }
 
-.testTagList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
+.testTagList { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 
 .testTag {
   font-size: 0.75rem;
@@ -300,17 +650,9 @@
   color: var(--text-semi);
 }
 
-.detailGrid {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
+.detailGrid { display: flex; gap: 2rem; flex-wrap: wrap; }
 
-.detailItem {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
+.detailItem { display: flex; flex-direction: column; gap: 3px; }
 
 .detailLabel {
   font-size: 0.6875rem;
@@ -324,6 +666,9 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-semi);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .detailAmount { color: $success; font-size: 1rem; }
@@ -346,33 +691,32 @@
   color: $warning;
 }
 
+// ── Result ready banner (prominent) ──────────────────────
 .resultReadyBanner {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: rgba($success, 0.07);
-  border: 1px solid rgba($success, 0.22);
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  background: rgba($success, 0.08);
+  border: 1px solid rgba($success, 0.25);
   border-radius: $radius-md;
 }
 
 .resultReadyCheck {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: $success;
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
   flex-shrink: 0;
   line-height: 1;
 }
 
 .resultReadyTitle {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: $success;
   margin: 0 0 2px;
@@ -390,6 +734,7 @@
   font-style: italic;
 }
 
+// ── Action row ────────────────────────────────────────────
 .actionRow {
   display: flex;
   gap: 0.625rem;
@@ -403,7 +748,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1.125rem;
   background: rgba($primary, 0.1);
   border: 1px solid rgba($primary, 0.3);
   border-radius: $radius-md;
@@ -422,7 +767,6 @@
   background: rgba($danger, 0.07);
   border-color: rgba($danger, 0.3);
   color: $danger;
-
   &:hover { background: rgba($danger, 0.14); }
 }
 
@@ -431,10 +775,30 @@
   border-color: transparent;
   color: #fff;
   font-weight: 700;
+  &:hover { opacity: 0.88; }
+}
+
+// Download report — more prominent when result is ready
+.downloadResultBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  background: $success;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 12px rgba($success, 0.28);
 
   &:hover { opacity: 0.88; }
 }
 
+// ── Status badge ──────────────────────────────────────────
 .statusBadge {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -453,120 +817,11 @@
   &.expired          { background: rgba($warning,0.08); color: rgba($warning,0.7); }
 }
 
-// Pricing & new elements
-.priceNote { font-size: 0.75rem; color: var(--text-faint); margin: 6px 0 0; }
-
-.totalBadge {
-  display: inline-flex; margin-left: 10px; padding: 2px 10px; border-radius: 999px;
-  background: rgba($success,0.12); color: $success; font-size: 0.72rem; font-weight: 700;
-  vertical-align: middle;
-}
-
-.testContent {
-  display: flex; justify-content: space-between; align-items: center; width: 100%;
-  em { font-style: normal; font-size: 0.72rem; color: $success; font-weight: 600; }
-}
-
-.referralNote { font-size: 0.78rem; color: var(--text-sub); margin: 0 0 8px; }
-
-.fileUploadArea {
-  background: var(--input-bg); border: 1.5px dashed var(--border); border-radius: $radius-md;
-  padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.15s;
-  p { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
-  &:hover { border-color: rgba($accent,0.35); p { color: $accent; } }
-}
-.fileName { color: $accent !important; font-weight: 600 !important; }
-
-.pendingAdmin {
-  display: inline-block; margin-top: 3px; font-size: 0.68rem; font-weight: 700;
-  color: $warning; background: rgba($warning,0.1); border-radius: 999px; padding: 1px 8px;
-}
-.amountTag {
-  display: inline-block; margin-top: 3px; font-size: 0.72rem; font-weight: 700;
-  color: $success;
-}
-
-.resultFooter {
-  border-top: 1px solid $navy-border; padding: 0.875rem 1.25rem;
-  display: flex; gap: 0.625rem; flex-wrap: wrap; align-items: center;
-}
-.payBtn {
-  @include btn-primary;
-  font-size: 0.875rem; padding: 0.5rem 1.25rem;
-  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-}
-
-.infoNote {
-  background: rgba($primary, 0.07);
-  border: 1px solid rgba($primary, 0.2);
-  border-radius: $radius-md;
-  padding: 0.75rem 1rem;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-  strong { color: $accent; }
-}
-
-.selectedCount {
-  font-size: 0.72rem; font-weight: 600; color: $accent; margin-left: 8px;
-  background: rgba($primary, 0.12); padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0;
-}
-
-.optional { font-size: 0.7rem; font-weight: 500; color: var(--text-faint); margin-left: 6px; text-transform: none; letter-spacing: 0; }
-.locationRow { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-
-.scheduleRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 0.875rem;
-}
-.scheduleField { display: flex; flex-direction: column; gap: 4px; }
-.scheduleLabel { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-.locationInput {
-  flex: 1; background: var(--input-bg); border: 1px solid $navy-border;
-  border-radius: $radius-sm; padding: 9px 12px; color: var(--text); font-size: 0.875rem;
-  font-family: inherit; outline: none;
-  &:focus { border-color: rgba($primary,0.4); }
-  &::placeholder { color: var(--text-faint); }
-}
-.gpsBtn {
-  flex-shrink: 0; padding: 9px 14px; border-radius: $radius-sm;
-  border: 1px solid $navy-border; background: var(--input-bg);
-  color: var(--text-semi); font-size: 0.8rem; cursor: pointer; white-space: nowrap;
-  &:hover { border-color: rgba($primary,0.4); color: var(--text); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-.coordsNote { font-size: 0.72rem; color: $accent; font-family: monospace; }
-
-// ─── Payment note (inline, above submit btn) ──────────────
-.paymentNote {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
-  padding: 0.75rem 1rem;
-  background: rgba($success, 0.06);
-  border: 1px solid rgba($success, 0.2);
-  border-radius: $radius-md;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-
-  &[data-variant='transfer'] {
-    background: rgba($primary, 0.06);
-    border-color: rgba($primary, 0.2);
-  }
-
-  p { margin: 0; flex: 1; }
-  strong { color: var(--text-semi); }
-}
-.paymentNoteIcon { flex-shrink: 0; font-size: 1rem; line-height: 1.4; }
-
-// ─── Bank Transfer Modal ──────────────────────────────────
+// ── Payment modal & bank transfer ─────────────────────────
 .payOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0,0,0,0.72);
   z-index: 500;
   display: flex;
   align-items: center;
@@ -586,19 +841,17 @@
   gap: 1.125rem;
 }
 
-.payPanelHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.payPanelTitle { font-size: 1.0625rem; font-weight: 700; color: var(--text); margin: 0; }
+.payPanelHeader { display: flex; justify-content: space-between; align-items: center; }
+.payPanelTitle  { font-size: 1.0625rem; font-weight: 700; color: var(--text); margin: 0; }
 .payPanelClose {
   background: none; border: none; cursor: pointer; color: var(--text-faint);
-  font-size: 1.1rem; line-height: 1; padding: 2px 6px;
-  border-radius: $radius-sm;
+  line-height: 1; padding: 4px 6px; border-radius: $radius-sm;
   &:hover { color: var(--text); background: var(--nav-hover-bg); }
 }
-.payPanelSub { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0; strong { color: var(--text-semi); } }
+.payPanelSub {
+  font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin: 0;
+  strong { color: var(--text-semi); }
+}
 
 .bankCard {
   background: var(--input-bg);
@@ -610,12 +863,7 @@
   gap: 0.625rem;
 }
 
-.bankRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8125rem;
-}
+.bankRow { display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; }
 .bankRowLabel { color: var(--text-muted); }
 .bankRowVal { font-weight: 700; color: var(--text); font-family: monospace; display: flex; align-items: center; gap: 0.375rem; }
 .copyBtn {
@@ -635,7 +883,6 @@
   font-family: monospace;
   outline: none;
   box-sizing: border-box;
-
   &:focus { border-color: rgba($primary, 0.5); }
   &::placeholder { color: var(--text-faint); font-family: inherit; }
 }
@@ -647,165 +894,6 @@
   &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 }
 
-// ─── Wellness Packages ─────────────────────────────────
-.pkgGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.pkgCard {
-  background: $navy-dark;
-  border: 1px solid $navy-border;
-  border-radius: $radius-lg;
-  padding: 1.25rem 1.375rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  transition: border-color 0.15s ease;
-
-  &:hover { border-color: rgba($primary, 0.35); }
-}
-
-.pkgCardTop {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-.pkgMeta { flex: 1; min-width: 0; }
-
-.pkgGenderBadge {
-  display: inline-block;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: rgba($primary, 0.12);
-  color: $accent;
-  margin-bottom: 0.375rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.pkgName {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 0.35rem;
-}
-
-.pkgBenefits {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin: 0;
-}
-
-.pkgPrices {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  align-items: flex-end;
-}
-
-.pkgPriceRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pkgPriceLabel {
-  font-size: 0.7rem;
-  color: var(--text-faint);
-  font-weight: 500;
-}
-
-.pkgPriceVal {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: $success;
-  font-variant-numeric: tabular-nums;
-}
-
-.pkgTestsToggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.78rem;
-  color: $accent;
-  font-weight: 600;
-  padding: 0;
-  text-align: left;
-  transition: opacity 0.15s;
-
-  &:hover { opacity: 0.75; }
-}
-
-.pkgTestsList {
-  margin: 0;
-  padding: 0.625rem 1rem;
-  background: var(--input-bg);
-  border: 1px solid $navy-border;
-  border-radius: $radius-md;
-  list-style: disc;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  li {
-    font-size: 0.8rem;
-    color: var(--text-semi);
-    margin-left: 0.75rem;
-  }
-}
-
-.pkgBookBtn {
-  @include btn-primary;
-  justify-content: center;
-  padding: 0.65rem 1rem;
-  font-size: 0.875rem;
-}
-
-// ─── Walk-in Paystack Banner ──────────────────────────
-.paystackBanner {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  padding: 1rem 1.25rem;
-  background: rgba($primary, 0.06);
-  border: 1px solid rgba($primary, 0.25);
-  border-radius: $radius-lg;
-  margin-bottom: 1rem;
-}
-.paystackBannerInfo {
-  strong { color: $accent; font-size: 0.9375rem; }
-  p { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
-}
-.paystackBannerActions { display: flex; gap: 0.75rem; align-items: center; }
-
-// ─── Refund button ────────────────────────────────────
-.refundBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.35rem 0.875rem;
-  border: 1px solid rgba($danger, 0.5);
-  border-radius: $radius-md;
-  background: none;
-  color: $danger;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover { background: rgba($danger, 0.08); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-
 .pkgPriceHighlight {
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -813,7 +901,69 @@
   background: rgba($success, 0.06);
   border: 1px solid rgba($success, 0.2);
   border-radius: $radius-md;
-
   strong { color: $success; font-size: 1rem; }
   span { font-size: 0.78rem; color: var(--text-faint); margin-left: 6px; }
+}
+
+// ── Misc / legacy class names ─────────────────────────────
+.success {
+  background: rgba($success,0.1);
+  border: 1px solid rgba($success,0.3);
+  border-radius: $radius-md;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: $success;
+  font-weight: 600;
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: $danger;
+  padding: 0.5rem 0.75rem;
+  background: rgba($danger,0.08);
+  border-radius: $radius-md;
+}
+
+.priceNote { font-size: 0.75rem; color: var(--text-faint); margin: 6px 0 0; }
+
+.totalBadge {
+  display: inline-flex; margin-left: 10px; padding: 2px 10px; border-radius: 999px;
+  background: rgba($success,0.12); color: $success; font-size: 0.72rem; font-weight: 700;
+  vertical-align: middle;
+}
+
+.pendingAdmin {
+  display: inline-block; margin-top: 3px; font-size: 0.68rem; font-weight: 700;
+  color: $warning; background: rgba($warning,0.1); border-radius: 999px; padding: 1px 8px;
+}
+.amountTag { display: inline-block; margin-top: 3px; font-size: 0.72rem; font-weight: 700; color: $success; }
+
+.resultFooter {
+  border-top: 1px solid $navy-border; padding: 0.875rem 1.25rem;
+  display: flex; gap: 0.625rem; flex-wrap: wrap; align-items: center;
+}
+.payBtn {
+  @include btn-primary;
+  font-size: 0.875rem; padding: 0.5rem 1.25rem;
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+}
+
+.paystackBanner {
+  display: flex; flex-direction: column; gap: 0.875rem;
+  padding: 1rem 1.25rem; background: rgba($primary, 0.06);
+  border: 1px solid rgba($primary, 0.25); border-radius: $radius-lg; margin-bottom: 1rem;
+}
+.paystackBannerInfo {
+  strong { color: $accent; font-size: 0.9375rem; }
+  p { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+}
+.paystackBannerActions { display: flex; gap: 0.75rem; align-items: center; }
+
+.refundBtn {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.35rem 0.875rem; border: 1px solid rgba($danger, 0.5);
+  border-radius: $radius-md; background: none; color: $danger;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+  &:hover { background: rgba($danger, 0.08); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

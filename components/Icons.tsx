@@ -86,6 +86,9 @@ export function ArrowDownIcon ({ size = 12, ...p }: P) {
 export function WalkingIcon ({ size = 16, ...p }: P) {
   return <svg {...base(size, p)}><circle cx='13' cy='4' r='2' /><path d='m14.5 10.5-2 3.5H9l1.5-4' /><path d='m9.5 16.5 1-3h4l2 4' /><path d='M7 22h3l1-3' /><path d='M14 22h3l-1.5-5.5' /></svg>
 }
+export function VideoIcon ({ size = 16, ...p }: P) {
+  return <svg {...base(size, p)}><polygon points='23 7 16 12 23 17 23 7' /><rect x='1' y='5' width='15' height='14' rx='2' ry='2' /></svg>
+}
 export function ArrowRightIcon ({ size = 16, ...p }: P) {
   return <svg {...base(size, p)}><path d='M5 12h14M12 5l7 7-7 7' /></svg>
 }

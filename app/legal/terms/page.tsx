@@ -193,10 +193,10 @@ export default function TermsPage () {
       {/* ── 6 ── */}
       <h2>6. Fees &amp; Payments</h2>
       <p>
-        All payments are processed securely via Paystack, a PCI-DSS compliant
-        payment processor. By making a payment, you authorise iBam Health and
-        Paystack to charge your nominated payment method for the amount
-        displayed at checkout.
+        All payments are processed securely , a PCI-DSS compliant payment
+        processor. By making a payment, you authorise iBam Health and Paystack
+        to charge your nominated payment method for the amount displayed at
+        checkout.
       </p>
       <ul>
         <li>
