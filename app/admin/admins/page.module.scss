@@ -1,0 +1,200 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.wrap { display: flex; flex-direction: column; gap: 1.5rem; }
+.header { @include flex-between; flex-wrap: wrap; gap: 1rem; }
+.headerLeft { display: flex; align-items: center; gap: 10px; }
+.title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0; }
+.countBadge { background: rgba($primary,0.15); color: $accent; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+
+.createBtn {
+  padding: 6px 14px;
+  background: $primary;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: $primary-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.empty { color: var(--text-faint); font-size: 0.875rem; text-align: center; padding: 3rem; }
+
+// ─── Role legend ─────────────────────────────────────
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding: 0.875rem 1rem;
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.legendDesc { font-size: 0.73rem; color: var(--text-faint); }
+
+// ─── Role pills ──────────────────────────────────────
+.rolePill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  display: inline-block;
+}
+.super_admin   { background: rgba($primary,0.18); color: $accent; }
+.lab_admin     { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.finance_admin { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.support_admin { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.ops_admin     { background: rgba(251,113,133,0.15); color: #fb7185; }
+
+.inactivePill { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--badge-neutral-bg); color: var(--text-muted); }
+
+// ─── List ────────────────────────────────────────────
+.list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.card {
+  background: $navy-dark;
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.125rem 1.25rem;
+  transition: opacity 0.15s;
+}
+.cardInactive { opacity: 0.55; }
+
+.cardMain { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.cardInfo { flex: 1; min-width: 0; }
+
+.nameRow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 4px; }
+.adminName { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+.adminEmail { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 2px; }
+.adminMeta { font-size: 0.73rem; color: var(--text-faint); margin: 0; }
+
+.cardActions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
+
+.roleEditRow { display: flex; align-items: center; gap: 0.375rem; }
+.roleSelect {
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  option { background: #0D1829; }
+  &:focus { border-color: rgba($primary,0.5); }
+}
+
+.saveBtn {
+  padding: 5px 12px;
+  background: $primary;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  &:hover { background: $primary-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.editRoleBtn {
+  padding: 5px 11px;
+  border-radius: $radius-sm;
+  border: 1px solid $navy-border;
+  background: var(--input-bg);
+  color: var(--text-semi);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: var(--input-hover-bg); }
+}
+
+.cancelEditBtn {
+  padding: 5px 10px;
+  border-radius: $radius-sm;
+  border: 1px solid $navy-border;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: var(--input-hover-bg); }
+}
+
+.deactivateBtn {
+  padding: 5px 11px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba($danger,0.3);
+  background: rgba($danger,0.07);
+  color: $danger;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: rgba($danger,0.14); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.activateBtn {
+  padding: 5px 11px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba($success,0.3);
+  background: rgba($success,0.08);
+  color: $success;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: rgba($success,0.16); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ─── Modal ───────────────────────────────────────────
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 500; backdrop-filter: blur(4px); }
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(520px, 95vw);
+  max-height: 90vh; overflow-y: auto;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-xl; z-index: 501;
+  display: flex; flex-direction: column;
+}
+.modalHead {
+  @include flex-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid $navy-border;
+  flex-shrink: 0;
+  h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
+}
+.closeBtn { width: 30px; height: 30px; border-radius: 50%; background: var(--input-hover-bg); border: 1px solid $navy-border; color: var(--text-semi); cursor: pointer; font-size: 0.85rem; @include flex-center; &:hover { background: rgba(255,255,255,0.12); } }
+.modalBody { padding: 1.5rem; flex: 1; }
+.modalFooter { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid $navy-border; margin-top: 1rem; }
+.cancelBtn { padding: 7px 16px; background: var(--input-hover-bg); border: 1px solid $navy-border; border-radius: $radius-md; font-size: 0.8125rem; font-weight: 600; color: var(--text-semi); cursor: pointer; &:hover { background: rgba(255,255,255,0.1); } }
+
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+.fieldGroup {
+  display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+}
+.input {
+  background: var(--input-bg);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 6px 9px;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+  option { background: #0D1829; }
+}
+.formErr { font-size: 0.8rem; color: $danger; margin-bottom: 0.75rem; padding: 6px 10px; background: rgba($danger,0.08); border-radius: $radius-sm; }
+.roleHint { font-size: 0.75rem; color: var(--text-faint); margin: 0.5rem 0 0; padding: 6px 10px; background: rgba($primary,0.06); border-radius: $radius-sm; border-left: 2px solid rgba($primary,0.3); }

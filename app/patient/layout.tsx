@@ -14,6 +14,7 @@ const NAV = [
   { href: '/patient/appointments', label: 'Appointments', icon: <CalIcon /> },
   { href: '/patient/book', label: 'Book Doctor', icon: <DoctorIcon /> },
   { href: '/patient/labs', label: 'Lab Tests', icon: <LabIcon /> },
+  { href: '/patient/health', label: 'Health Insights', icon: <HeartIcon /> },
   { href: '/patient/records', label: 'Health Records', icon: <DocIcon /> },
   { href: '/patient/pharmacy', label: 'Pharmacy', icon: <PharmacyIcon /> },
   // { href: '/patient/subscriptions', label: 'Subscriptions',  icon: <SubIcon /> },
@@ -30,7 +31,7 @@ const BOTTOM_NAV = [
   { href: '/patient', label: 'Home', icon: <GridIcon /> },
   { href: '/patient/appointments', label: 'Appts', icon: <CalIcon /> },
   { href: '/patient/book', label: 'Book', icon: <DoctorIcon />, primary: true },
-  { href: '/patient/labs', label: 'Labs', icon: <LabIcon /> },
+  { href: '/patient/health', label: 'Health', icon: <HeartIcon /> },
   { href: '/patient/profile', label: 'Profile', icon: <UserIcon /> }
 ]
 
@@ -444,6 +445,14 @@ function CloseIcon () {
         strokeWidth={2}
         d='M6 18L18 6M6 6l12 12'
       />
+    </svg>
+  )
+}
+function HeartIcon () {
+  return (
+    <svg width='15' height='15' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+        d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' />
     </svg>
   )
 }

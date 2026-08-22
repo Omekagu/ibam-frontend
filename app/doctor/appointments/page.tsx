@@ -13,6 +13,14 @@ interface Appointment {
   type: 'video' | 'audio' | 'chat'
   status: string
   consultationFee: number
+  rescheduleCount?: number
+}
+
+interface RescheduleState {
+  appt: Appointment
+  date: string
+  time: string
+  reason: string
 }
 
 type Tab = 'today' | 'upcoming' | 'past'
@@ -39,8 +47,10 @@ export default function DoctorAppointments () {
   const [appts,   setAppts]   = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [tab,     setTab]     = useState<Tab>('today')
-  const [acting,  setActing]  = useState<string | null>(null)
-  const [now,     setNow]     = useState(Date.now())
+  const [acting,      setActing]      = useState<string | null>(null)
+  const [now,         setNow]         = useState(Date.now())
+  const [reschedule,  setReschedule]  = useState<RescheduleState | null>(null)
+  const [rescheduling, setRescheduling] = useState(false)
 
   useEffect(() => {
     api.get('/doctors/my/appointments')
@@ -86,6 +96,33 @@ export default function DoctorAppointments () {
       if (cid) router.push(`/consultation?appt=${apptId}&cid=${cid}`)
     } catch { }
     setActing(null)
+  }
+
+  function openReschedule (appt: Appointment) {
+    const d = new Date(appt.scheduledAt)
+    setReschedule({
+      appt,
+      date: d.toISOString().split('T')[0],
+      time: `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,
+      reason: '',
+    })
+  }
+
+  async function submitReschedule () {
+    if (!reschedule) return
+    const { appt, date, time, reason } = reschedule
+    if (!date || !time) return
+    const newISO = new Date(`${date}T${time}:00`).toISOString()
+    setRescheduling(true)
+    try {
+      const res = await api.put(`/appointments/${appt._id}/doctor-reschedule`, { scheduledAt: newISO, reason })
+      setAppts(prev => prev.map(a => a._id === appt._id ? { ...a, scheduledAt: res.data.data?.appointment?.scheduledAt ?? newISO } : a))
+      modal.show({ variant: 'success', title: 'Appointment Rescheduled', message: `Rescheduled to ${new Date(newISO).toDateString()}. The patient and admin have been notified.` })
+      setReschedule(null)
+    } catch (err: any) {
+      modal.show({ variant: 'declined', title: 'Reschedule Failed', message: err?.response?.data?.message ?? 'Could not reschedule. Please try again.' })
+    }
+    setRescheduling(false)
   }
 
   async function cancelAppt (appt: Appointment) {
@@ -181,6 +218,15 @@ export default function DoctorAppointments () {
                   )}
                   {isConfirmed && (
                     <button
+                      className={s.rescheduleBtn}
+                      disabled={acting === a._id}
+                      onClick={() => openReschedule(a)}
+                    >
+                      Reschedule
+                    </button>
+                  )}
+                  {isConfirmed && (
+                    <button
                       className={s.cancelBtn}
                       disabled={acting === a._id}
                       onClick={() => cancelAppt(a)}
@@ -192,6 +238,60 @@ export default function DoctorAppointments () {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ── Reschedule modal ── */}
+      {reschedule && (
+        <div className={s.modalOverlay} onClick={() => !rescheduling && setReschedule(null)}>
+          <div className={s.modalCard} onClick={e => e.stopPropagation()}>
+            <p className={s.modalTitle}>Reschedule Appointment</p>
+            <p className={s.modalSub}>
+              Patient: <strong>{reschedule.appt.patient?.name}</strong><br />
+              Current: {new Date(reschedule.appt.scheduledAt).toLocaleString('en-NG', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+            </p>
+            <div className={s.modalField}>
+              <label>New Date</label>
+              <input
+                type='date'
+                className={s.modalInput}
+                value={reschedule.date}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setReschedule(r => r ? { ...r, date: e.target.value } : r)}
+              />
+            </div>
+            <div className={s.modalField}>
+              <label>New Time</label>
+              <input
+                type='time'
+                className={s.modalInput}
+                value={reschedule.time}
+                onChange={e => setReschedule(r => r ? { ...r, time: e.target.value } : r)}
+              />
+            </div>
+            <div className={s.modalField}>
+              <label>Reason <span className={s.modalHint}>(shown to patient)</span></label>
+              <textarea
+                className={`${s.modalInput} ${s.modalTextarea}`}
+                rows={3}
+                placeholder='e.g. Emergency surgery, prior patient overran…'
+                value={reschedule.reason}
+                onChange={e => setReschedule(r => r ? { ...r, reason: e.target.value } : r)}
+              />
+            </div>
+            <div className={s.modalActions}>
+              <button className={s.modalCancelBtn} disabled={rescheduling} onClick={() => setReschedule(null)}>
+                Back
+              </button>
+              <button
+                className={s.modalSubmitBtn}
+                disabled={rescheduling || !reschedule.date || !reschedule.time}
+                onClick={submitReschedule}
+              >
+                {rescheduling ? 'Rescheduling…' : 'Confirm Reschedule'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -1,16 +1,13 @@
 import s from './Services.module.scss'
 
+const BRAND = '#22C55E'
+const BRAND_GLOW = 'rgba(34,197,94,0.10)'
+
 const SERVICES = [
   {
-    color: '#0A8F6C',
-    glow: 'rgba(10,143,108,0.08)',
     title: 'Telemedicine',
     desc: 'Consult FMOH-registered doctors via HD video, audio, or encrypted chat — from your phone or browser.',
-    features: [
-      'Video · Audio · Chat',
-      'Scheduled & on-demand',
-      'Consultation notes'
-    ],
+    features: ['Video · Audio · Chat', 'Scheduled & on-demand', 'Consultation notes'],
     icon: (
       <path
         strokeLinecap='round'
@@ -21,15 +18,9 @@ const SERVICES = [
     )
   },
   {
-    color: '#7C3AED',
-    glow: 'rgba(124,58,237,0.08)',
     title: 'Smart Triage',
     desc: 'Clinically validated symptom assessment that classifies severity in under 3 minutes and routes you to the right care.',
-    features: [
-      'Green / Yellow / Red',
-      'Clinically validated',
-      'Instant classification'
-    ],
+    features: ['Green / Yellow / Red', 'Clinically validated', 'Instant classification'],
     icon: (
       <path
         strokeLinecap='round'
@@ -40,10 +31,8 @@ const SERVICES = [
     )
   },
   {
-    color: '#0891B2',
-    glow: 'rgba(8,145,178,0.08)',
-    title: 'Diagnostics',
-    desc: 'Request lab tests from labs. Choose walk-in or home sample collection by a certified field agent.',
+    title: 'Lab Diagnostics',
+    desc: 'Request lab tests from partner labs. Choose walk-in or home sample collection by a certified field agent.',
     features: ['Home collection', 'Partnered labs', 'Digital results'],
     icon: (
       <path
@@ -55,8 +44,6 @@ const SERVICES = [
     )
   },
   {
-    color: '#2563EB',
-    glow: 'rgba(37,99,235,0.08)',
     title: 'E-Prescriptions',
     desc: 'Receive tamper-proof digital prescriptions instantly after your consultation, auto-forwarded to partner pharmacies.',
     features: ['Digitally signed', 'Sent to pharmacy', 'PDF download'],
@@ -70,8 +57,6 @@ const SERVICES = [
     )
   },
   {
-    color: '#D97706',
-    glow: 'rgba(217,119,6,0.08)',
     title: 'Pharmacy Delivery',
     desc: 'Order from trusted partner pharmacies with doorstep delivery or pickup. Real-time tracking included.',
     features: ['2–4 hr delivery', 'Verified pharmacies', 'Live tracking'],
@@ -85,8 +70,6 @@ const SERVICES = [
     )
   },
   {
-    color: '#DC2626',
-    glow: 'rgba(220,38,38,0.08)',
     title: 'Nearby Care',
     desc: 'Find hospitals, clinics, pharmacies, and diagnostic centres on a live map — including A&E emergency locations.',
     features: ['Live map', 'A&E finder', 'Directions'],
@@ -134,16 +117,16 @@ export default function Services () {
               className={s.card}
               style={
                 {
-                  '--glow-color': sv.glow,
-                  '--accent-color': sv.color
+                  '--glow-color': BRAND_GLOW,
+                  '--accent-color': BRAND
                 } as React.CSSProperties
               }
             >
               <div
                 className={s.iconWrap}
-                style={{ background: sv.glow.replace('0.08', '0.12') }}
+                style={{ background: BRAND_GLOW }}
               >
-                <svg fill='none' stroke={sv.color} viewBox='0 0 24 24'>
+                <svg fill='none' stroke={BRAND} viewBox='0 0 24 24'>
                   {sv.icon}
                 </svg>
               </div>

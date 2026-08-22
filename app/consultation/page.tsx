@@ -14,7 +14,7 @@ import { getStoredUser } from '@/lib/auth'
 import s from './page.module.scss'
 
 const SOCKET_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
+  process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
 ).replace(/\/api$/, '')
 
 const AgoraClient = dynamic(() => import('./AgoraClient'), { ssr: false })
@@ -256,7 +256,14 @@ const IcTrash = () => (
 )
 
 const IcMinimize = () => (
-  <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round'>
+  <svg
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth={2}
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
     <polyline points='4 14 10 14 10 20' />
     <polyline points='20 10 14 10 14 4' />
     <line x1='10' y1='14' x2='3' y2='21' />
@@ -264,7 +271,14 @@ const IcMinimize = () => (
   </svg>
 )
 const IcExpand = () => (
-  <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={2} strokeLinecap='round' strokeLinejoin='round'>
+  <svg
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth={2}
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
     <polyline points='15 3 21 3 21 9' />
     <polyline points='9 21 3 21 3 15' />
     <line x1='21' y1='3' x2='14' y2='10' />
@@ -303,7 +317,9 @@ function ConsultationInner () {
   const [elapsed, setElapsed] = useState(0)
   const [ending, setEnding] = useState(false)
   const [sessionEnded, setSessionEnded] = useState(false)
-  const [sessionStatus, setSessionStatus] = useState<'active' | 'ended' | null>(null)
+  const [sessionStatus, setSessionStatus] = useState<'active' | 'ended' | null>(
+    null
+  )
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(30)
   const [unread, setUnread] = useState(0)
   const [rxDrugs, setRxDrugs] = useState<RxDrug[]>([
@@ -319,7 +335,9 @@ function ConsultationInner () {
   const [rxTests, setRxTests] = useState<string[]>([''])
   const [rxLabsSent, setRxLabsSent] = useState<string[][]>([])
   const [labCatalog, setLabCatalog] = useState<string[]>([])
-  const [activeTestSuggestIdx, setActiveTestSuggestIdx] = useState<number | null>(null)
+  const [activeTestSuggestIdx, setActiveTestSuggestIdx] = useState<
+    number | null
+  >(null)
   const [rxList, setRxList] = useState<
     {
       _id: string
@@ -493,7 +511,8 @@ function ConsultationInner () {
     if (!apptId) return
     function onVisible () {
       if (document.visibilityState === 'visible' && !sessionEnded) {
-        api.get(`/consultations/by-appointment/${apptId}`)
+        api
+          .get(`/consultations/by-appointment/${apptId}`)
           .then(r => {
             const c = r.data.data?.consultation
             if (c?.status === 'ended') {
@@ -518,8 +537,13 @@ function ConsultationInner () {
     if (!isDoctor || !cid) return
     function onUnload () {
       if (!sessionEnded) {
-        const url = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') ?? ''}/api/consultations/${cid}/end`
-        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+        const url = `${
+          process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') ?? ''
+        }/api/consultations/${cid}/end`
+        const token =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('access_token')
+            : null
         if (token) {
           // sendBeacon cannot set Authorization headers, so fall back to a sync XHR
           try {
@@ -528,7 +552,9 @@ function ConsultationInner () {
             xhr.setRequestHeader('Content-Type', 'application/json')
             xhr.setRequestHeader('Authorization', `Bearer ${token}`)
             xhr.send(JSON.stringify({}))
-          } catch { /* best-effort */ }
+          } catch {
+            /* best-effort */
+          }
         }
       }
     }
@@ -552,11 +578,19 @@ function ConsultationInner () {
   useEffect(() => {
     if (!isDoctor) return
     Promise.all([
-      api.get('/diagnostics/lab-tests').catch(() => ({ data: { data: { tests: [] } } })),
-      api.get('/diagnostics/labs').catch(() => ({ data: { data: { labs: [] } } })),
+      api
+        .get('/diagnostics/lab-tests')
+        .catch(() => ({ data: { data: { tests: [] } } })),
+      api
+        .get('/diagnostics/labs')
+        .catch(() => ({ data: { data: { labs: [] } } }))
     ]).then(([catalogRes, labsRes]) => {
-      const catalogNames: string[] = (catalogRes.data.data?.tests ?? []).map((t: { name: string }) => t.name)
-      const partnerNames: string[] = (labsRes.data.data?.labs ?? []).flatMap((l: { testsOffered?: string[] }) => l.testsOffered ?? [])
+      const catalogNames: string[] = (catalogRes.data.data?.tests ?? []).map(
+        (t: { name: string }) => t.name
+      )
+      const partnerNames: string[] = (labsRes.data.data?.labs ?? []).flatMap(
+        (l: { testsOffered?: string[] }) => l.testsOffered ?? []
+      )
       setLabCatalog(Array.from(new Set([...catalogNames, ...partnerNames])))
     })
   }, [isDoctor])
@@ -647,7 +681,15 @@ function ConsultationInner () {
         })
         setRxLabsSent(prev => [...prev, tests])
       }
-      setRxDrugs([{ name: '', dosage: '', frequency: 'Twice daily', duration: '7 days', instructions: '' }])
+      setRxDrugs([
+        {
+          name: '',
+          dosage: '',
+          frequency: 'Twice daily',
+          duration: '7 days',
+          instructions: ''
+        }
+      ])
       setRxDiagnosis('')
       setRxTests([''])
       setRxOpen(false)
@@ -665,7 +707,8 @@ function ConsultationInner () {
     router.back()
   }
 
-  const showAvCall = consultType !== 'chat' && !!agoraToken && !!channelName && !sessionEnded
+  const showAvCall =
+    consultType !== 'chat' && !!agoraToken && !!channelName && !sessionEnded
   const lateMin = scheduledAt
     ? Math.floor((startedAt - new Date(scheduledAt).getTime()) / 60000)
     : 0
@@ -735,7 +778,9 @@ function ConsultationInner () {
 
       {/* ── Video / audio area ──────────────────────── */}
       {consultType !== 'chat' && (
-        <div className={`${s.callArea} ${callMinimized ? s.callAreaHidden : ''}`}>
+        <div
+          className={`${s.callArea} ${callMinimized ? s.callAreaHidden : ''}`}
+        >
           {showAvCall ? (
             <AgoraClient
               token={agoraToken!}
@@ -745,7 +790,9 @@ function ConsultationInner () {
               isAudioOnly={consultType === 'audio'}
               otherName={otherName}
               myName={myName}
-              onFallback={() => { setChatOpen(true) }}
+              onFallback={() => {
+                setChatOpen(true)
+              }}
             />
           ) : (
             <div className={s.waitScreen}>
@@ -768,13 +815,19 @@ function ConsultationInner () {
 
       {/* ── Minimized pip ───────────────────────────── */}
       {consultType !== 'chat' && callMinimized && !sessionEnded && (
-        <div className={s.pip} onClick={() => setCallMinimized(false)} title='Expand call'>
+        <div
+          className={s.pip}
+          onClick={() => setCallMinimized(false)}
+          title='Expand call'
+        >
           <div className={s.pipAvatar}>{otherName[0]?.toUpperCase()}</div>
           <div className={s.pipInfo}>
             <span className={s.pipName}>{otherName}</span>
             <span className={s.pipTimer}>{fmt(elapsed)}</span>
           </div>
-          <span className={s.pipExpand}><IcExpand /></span>
+          <span className={s.pipExpand}>
+            <IcExpand />
+          </span>
         </div>
       )}
 
@@ -924,7 +977,9 @@ function ConsultationInner () {
             className={`${s.ctrlBtn} ${s.ctrlEnd}`}
             onClick={endCall}
             disabled={ending || sessionEnded}
-            title={sessionEnded ? 'Call Ended' : isDoctor ? 'End Call' : 'Leave Call'}
+            title={
+              sessionEnded ? 'Call Ended' : isDoctor ? 'End Call' : 'Leave Call'
+            }
           >
             <span className={s.ctrlIcon}>
               {isDoctor ? <IcPhoneOff /> : <IcLeave />}
@@ -1131,7 +1186,13 @@ function ConsultationInner () {
               onClick={() =>
                 setRxDrugs(prev => [
                   ...prev,
-                  { name: '', dosage: '', frequency: 'Twice daily', duration: '7 days', instructions: '' }
+                  {
+                    name: '',
+                    dosage: '',
+                    frequency: 'Twice daily',
+                    duration: '7 days',
+                    instructions: ''
+                  }
                 ])
               }
             >
@@ -1142,28 +1203,43 @@ function ConsultationInner () {
               <span className={s.rxSectionTitle}>Lab Tests</span>
             </div>
             {rxTests.map((test, i) => {
-              const suggestions = labCatalog.filter(
-                t => t.toLowerCase().includes(test.toLowerCase()) && test.trim().length > 0 && t.toLowerCase() !== test.toLowerCase()
-              ).slice(0, 5)
+              const suggestions = labCatalog
+                .filter(
+                  t =>
+                    t.toLowerCase().includes(test.toLowerCase()) &&
+                    test.trim().length > 0 &&
+                    t.toLowerCase() !== test.toLowerCase()
+                )
+                .slice(0, 5)
               return (
                 <div key={i} className={s.rxTestWrap}>
                   <div className={s.rxTestRow}>
                     <input
                       className={s.rxTestInput}
-                      placeholder={labCatalog.length > 0 ? `e.g. ${labCatalog[0]}` : 'e.g. Full Blood Count'}
+                      placeholder={
+                        labCatalog.length > 0
+                          ? `e.g. ${labCatalog[0]}`
+                          : 'e.g. Full Blood Count'
+                      }
                       value={test}
                       onChange={e => {
-                        setRxTests(prev => prev.map((t, idx) => idx === i ? e.target.value : t))
+                        setRxTests(prev =>
+                          prev.map((t, idx) => (idx === i ? e.target.value : t))
+                        )
                         setActiveTestSuggestIdx(i)
                       }}
                       onFocus={() => setActiveTestSuggestIdx(i)}
-                      onBlur={() => setTimeout(() => setActiveTestSuggestIdx(null), 150)}
+                      onBlur={() =>
+                        setTimeout(() => setActiveTestSuggestIdx(null), 150)
+                      }
                     />
                     {rxTests.length > 1 && (
                       <button
                         type='button'
                         className={s.rxRemoveBtn}
-                        onClick={() => setRxTests(prev => prev.filter((_, idx) => idx !== i))}
+                        onClick={() =>
+                          setRxTests(prev => prev.filter((_, idx) => idx !== i))
+                        }
                       >
                         <IcTrash />
                       </button>
@@ -1177,7 +1253,9 @@ function ConsultationInner () {
                           type='button'
                           className={s.rxSuggestionItem}
                           onMouseDown={() => {
-                            setRxTests(prev => prev.map((t, idx) => idx === i ? sg : t))
+                            setRxTests(prev =>
+                              prev.map((t, idx) => (idx === i ? sg : t))
+                            )
                             setActiveTestSuggestIdx(null)
                           }}
                         >
@@ -1200,7 +1278,10 @@ function ConsultationInner () {
             <button
               className={s.rxIssueBtn}
               onClick={sendPrescription}
-              disabled={!rxDrugs.some(d => d.name.trim()) && !rxTests.some(t => t.trim())}
+              disabled={
+                !rxDrugs.some(d => d.name.trim()) &&
+                !rxTests.some(t => t.trim())
+              }
             >
               Issue Prescription
             </button>
@@ -1209,13 +1290,17 @@ function ConsultationInner () {
               <div className={s.rxSentSection}>
                 {rxList.length > 0 && (
                   <>
-                    <p className={s.rxSentTitle}>Drugs issued · {rxList.length}</p>
+                    <p className={s.rxSentTitle}>
+                      Drugs issued · {rxList.length}
+                    </p>
                     {rxList.map(rx => (
                       <div key={rx._id} className={s.rxSentCard}>
                         {rx.medications.map((m, i) => (
                           <p key={i} className={s.rxSentLine}>
                             <span>{m.name}</span>
-                            <span>{m.dosage} · {m.frequency} · {m.duration}</span>
+                            <span>
+                              {m.dosage} · {m.frequency} · {m.duration}
+                            </span>
                           </p>
                         ))}
                       </div>
@@ -1224,11 +1309,15 @@ function ConsultationInner () {
                 )}
                 {rxLabsSent.length > 0 && (
                   <>
-                    <p className={s.rxSentTitle}>Lab tests ordered · {rxLabsSent.flat().length}</p>
+                    <p className={s.rxSentTitle}>
+                      Lab tests ordered · {rxLabsSent.flat().length}
+                    </p>
                     {rxLabsSent.map((batch, bi) => (
                       <div key={bi} className={s.rxSentCard}>
                         {batch.map((t, ti) => (
-                          <p key={ti} className={s.rxSentLine}><span>{t}</span></p>
+                          <p key={ti} className={s.rxSentLine}>
+                            <span>{t}</span>
+                          </p>
                         ))}
                       </div>
                     ))}

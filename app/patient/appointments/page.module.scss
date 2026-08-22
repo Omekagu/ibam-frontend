@@ -7,7 +7,7 @@
   display: flex;
   gap: 4px;
   margin-bottom: 1.75rem;
-  background: rgba(255,255,255,0.03);
+  background: var(--badge-neutral-bg);
   border: 1px solid $navy-border;
   border-radius: $radius-md;
   padding: 4px;
@@ -22,12 +22,12 @@
   border-radius: $radius-sm;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-muted);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  &:hover  { color: rgba(255,255,255,0.8); }
+  &:hover  { color: var(--text); }
   &.active { background: rgba($primary,0.18); color: $accent; }
 }
 
@@ -49,7 +49,7 @@
   align-items: center;
   padding: 4rem 1rem;
   gap: 1rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-faint);
   font-size: 0.875rem;
   text-align: center;
   svg { opacity: 0.4; }
@@ -86,7 +86,7 @@
   position: relative;
   overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
-  &:hover { border-color: rgba($primary,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  &:hover { border-color: rgba($primary,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
 }
 
 .cardLive {
@@ -127,8 +127,8 @@
 }
 
 .dateChipPast {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.08);
+  background: var(--badge-neutral-bg);
+  border-color: var(--border);
 }
 
 .dateMonth {
@@ -140,21 +140,21 @@
 }
 
 .dateChipLive  .dateMonth { color: $success; }
-.dateChipPast  .dateMonth { color: rgba(255,255,255,0.3); }
+.dateChipPast  .dateMonth { color: var(--text-faint); }
 
 .dateDay {
   font-size: 1.375rem;
   font-weight: 900;
-  color: $white;
+  color: var(--text);
   line-height: 1;
 }
 
-.dateChipPast .dateDay { color: rgba(255,255,255,0.45); }
+.dateChipPast .dateDay { color: var(--text-muted); }
 
 .dateTime {
   font-size: 0.6rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.38);
+  color: var(--text-faint);
   white-space: nowrap;
   margin-top: 2px;
 }
@@ -174,7 +174,7 @@
   width: 44px; height: 44px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255,255,255,0.08);
+  border: 2px solid var(--border);
   display: block;
 }
 
@@ -216,11 +216,11 @@
 
 .docName {
   font-size: 0.9375rem; font-weight: 700;
-  color: $white; margin: 0;
+  color: var(--text); margin: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.docSpec { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin: 0; }
+.docSpec { font-size: 0.72rem; color: var(--text-muted); margin: 0; }
 
 .urgentBadge {
   font-size: 0.59rem; font-weight: 800; padding: 2px 7px;
@@ -237,8 +237,8 @@
 
 .typeChip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.45);
-  background: rgba(255,255,255,0.05); border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+  background: var(--badge-neutral-bg); border-radius: 999px;
   padding: 2px 8px;
   svg { flex-shrink: 0; }
 }
@@ -248,7 +248,7 @@
   font-size: 0.65rem; font-weight: 700;
   padding: 2px 8px; border-radius: 999px;
 }
-.timing_muted { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+.timing_muted { background: var(--badge-neutral-bg); color: var(--text-muted); }
 .timing_soon  { background: rgba($warning,0.12); color: $warning; }
 
 // ─── Right column ─────────────────────────────────────────────────────────────
@@ -267,7 +267,7 @@
 
   &.st_confirmed { background: rgba($success,0.12); color: $success; }
   &.st_pending   { background: rgba($warning,0.12); color: $warning; }
-  &.st_completed { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); }
+  &.st_completed { background: var(--badge-neutral-bg); color: var(--text-muted); }
   &.st_cancelled { background: rgba($danger,0.08); color: rgba($danger,0.65); }
   &.st_no_show   { background: rgba($danger,0.06); color: rgba($danger,0.45); }
 }
@@ -325,18 +325,18 @@
 .elapsedLabel {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.7rem; font-weight: 600;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-faint);
   padding: 4px 10px; border-radius: 999px;
-  background: rgba(255,255,255,0.04);
+  background: var(--badge-neutral-bg);
   svg { opacity: 0.6; }
 }
 
 .completedLabel {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.7rem; font-weight: 600; color: rgba($success,0.5);
+  font-size: 0.7rem; font-weight: 600; color: rgba($success,0.65);
 }
 
 .cancelledLabel {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.7rem; font-weight: 600; color: rgba($danger,0.45);
+  font-size: 0.7rem; font-weight: 600; color: rgba($danger,0.55);
 }

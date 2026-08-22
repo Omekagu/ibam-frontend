@@ -166,6 +166,21 @@
   &:hover:not(:disabled) { background: #059669; }
 }
 
+.rescheduleBtn {
+  padding: 0.375rem 0.875rem;
+  background: transparent;
+  border: 1px solid rgba($accent,0.45);
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $accent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) { background: rgba($accent,0.1); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
 .cancelBtn {
   padding: 0.375rem 0.875rem;
   background: transparent;
@@ -179,4 +194,88 @@
 
   &:hover:not(:disabled) { background: rgba($danger,0.1); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ─── Reschedule modal ─────────────────────────────
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: var(--bg-card);
+  border: 1px solid $navy-border;
+  border-radius: $radius-lg;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modalTitle { font-size: 1rem; font-weight: 800; color: var(--text); margin: 0; }
+.modalSub   { font-size: 0.8rem; color: var(--text-muted); margin: -0.25rem 0 0; line-height: 1.6; }
+.modalHint  { font-size: 0.72rem; color: var(--text-faint); font-weight: 400; }
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+}
+
+.modalInput {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid $navy-border;
+  border-radius: $radius-sm;
+  padding: 9px 12px;
+  font-size: 0.875rem;
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  &:focus { border-color: rgba($accent,0.5); }
+  &::placeholder { color: var(--text-faint); }
+  color-scheme: dark;
+}
+
+.modalTextarea { resize: vertical; min-height: 72px; }
+
+.modalActions { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
+
+.modalCancelBtn {
+  flex: 1;
+  padding: 10px;
+  border-radius: $radius-sm;
+  border: 1px solid $navy-border;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.modalSubmitBtn {
+  flex: 2;
+  padding: 10px;
+  border-radius: $radius-sm;
+  border: none;
+  background: $accent;
+  color: #000;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  &:hover:not(:disabled) { opacity: 0.85; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }

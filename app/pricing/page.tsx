@@ -23,7 +23,8 @@ interface Plan {
 
 async function fetchPlans (): Promise<Plan[]> {
   try {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
+    const base =
+      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
     const res = await fetch(`${base}/admin/public/content`, {
       next: { revalidate: 300 }
     })
@@ -177,7 +178,13 @@ export default async function PricingPage () {
                         key={i}
                         className={v === true ? s.yes : v === false ? s.no : ''}
                       >
-                        {v === true ? <CheckIconSvg size={14} /> : v === false ? <span>—</span> : v}
+                        {v === true ? (
+                          <CheckIconSvg size={14} />
+                        ) : v === false ? (
+                          <span>—</span>
+                        ) : (
+                          v
+                        )}
                       </td>
                     ))}
                   </tr>

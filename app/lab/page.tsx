@@ -4,14 +4,29 @@ import { useSearchParams } from 'next/navigation'
 import axios from 'axios'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
-import { MicroscopeIcon, DocumentIcon, XIcon, SearchIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ClockIcon, HomeIcon, WalkingIcon, MapPinIcon, ClipboardIcon } from '@/components/icons'
+import {
+  MicroscopeIcon,
+  DocumentIcon,
+  XIcon,
+  SearchIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  ClockIcon,
+  HomeIcon,
+  WalkingIcon,
+  MapPinIcon,
+  ClipboardIcon
+} from '@/components/icons'
 import s from './page.module.scss'
 import { Suspense } from 'react'
+import { downloadReceipt } from '@/lib/receipt'
 
 // ── Axios instance that uses either the session-storage lab token (impersonation)
 //    or the normal localStorage token (lab logs in themselves).
 function makeLabApi (token?: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
+  const base =
+    process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
   const inst = axios.create({ baseURL: base })
   inst.interceptors.request.use(cfg => {
     const t =
@@ -76,7 +91,7 @@ const STATUS_CLS: Record<string, string> = {
   no_show: s.statusCancelled
 }
 
-type Tab = 'available' | 'mine' | 'completed'
+type Tab = 'available' | 'mine' | 'completed' | 'walkin'
 
 function fmt (iso: string) {
   return new Date(iso).toLocaleDateString('en-NG', {
@@ -281,9 +296,15 @@ function RequestCard ({
             </p>
             <span className={s.reqMeta}>
               {req.patient?.name ?? 'Patient'} ·{' '}
-              {req.collectionType === 'home_visit'
-                ? <><HomeIcon size={14} /> Home Visit</>
-                : <><WalkingIcon size={14} /> Walk-in</>}{' '}
+              {req.collectionType === 'home_visit' ? (
+                <>
+                  <HomeIcon size={14} /> Home Visit
+                </>
+              ) : (
+                <>
+                  <WalkingIcon size={14} /> Walk-in
+                </>
+              )}{' '}
               · {fmt(req.createdAt)}
             </span>
           </div>
@@ -293,7 +314,13 @@ function RequestCard ({
             >
               {STATUS_LABEL[req.status] ?? req.status}
             </span>
-            <span className={s.chevron}>{expanded ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
+            <span className={s.chevron}>
+              {expanded ? (
+                <ChevronUpIcon size={14} />
+              ) : (
+                <ChevronDownIcon size={14} />
+              )}
+            </span>
           </div>
         </div>
 
@@ -350,7 +377,15 @@ function RequestCard ({
                       isPaid ? s.detailGreen : s.detailWarn
                     }`}
                   >
-                    {isPaid ? <><CheckIcon size={14} /> Confirmed</> : <><ClockIcon size={14} /> Pending</>}
+                    {isPaid ? (
+                      <>
+                        <CheckIcon size={14} /> Confirmed
+                      </>
+                    ) : (
+                      <>
+                        <ClockIcon size={14} /> Pending
+                      </>
+                    )}
                   </span>
                   {req.paymentRef.reference && (
                     <span className={s.detailSub}>
@@ -365,7 +400,9 @@ function RequestCard ({
             {req.collectionType === 'home_visit' && (
               <div className={s.visitBox}>
                 {req.pickupLocation?.address && (
-                  <p className={s.visitAddr}><MapPinIcon size={14} /> {req.pickupLocation.address}</p>
+                  <p className={s.visitAddr}>
+                    <MapPinIcon size={14} /> {req.pickupLocation.address}
+                  </p>
                 )}
                 {preferred && (
                   <p className={s.visitDate}>
@@ -380,7 +417,9 @@ function RequestCard ({
 
             {/* Wellness package */}
             {req.wellnessPackage && (
-              <p className={s.pkgTag}><ClipboardIcon size={14} /> Package: {req.wellnessPackage.name}</p>
+              <p className={s.pkgTag}>
+                <ClipboardIcon size={14} /> Package: {req.wellnessPackage.name}
+              </p>
             )}
 
             {/* Actions */}
@@ -455,6 +494,568 @@ function RequestCard ({
         />
       )}
     </>
+  )
+}
+
+// ── Walk-in registration tab ─────────────────────────────────────────────────
+interface WalkInTest {
+  _id: string
+  name: string
+  category: string
+  walkInPrice?: number
+  estimatedPrice?: number
+  turnaroundHours: number
+}
+type WalkInStep = 'patient' | 'tests' | 'payment' | 'done'
+type WalkInPay = 'walk_in_cash' | 'pos' | 'direct_transfer'
+
+const WALK_IN_PAY: { value: WalkInPay; label: string; desc: string }[] = [
+  {
+    value: 'walk_in_cash',
+    label: 'Cash',
+    desc: 'Patient pays in cash at the counter'
+  },
+  {
+    value: 'pos',
+    label: 'POS / Card',
+    desc: 'Debit or credit card via POS terminal'
+  },
+  {
+    value: 'direct_transfer',
+    label: 'Bank Transfer',
+    desc: 'Direct bank transfer to account'
+  }
+]
+
+function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
+  const [step, setStep] = useState<WalkInStep>('patient')
+  const [allTests, setAllTests] = useState<WalkInTest[]>([])
+  const [loadingTests, setLoadingTests] = useState(true)
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
+  const [patient, setPatient] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    notes: ''
+  })
+  const [payMethod, setPayMethod] = useState<WalkInPay>('walk_in_cash')
+  const [submitting, setSubmitting] = useState(false)
+  const [result, setResult] = useState<{
+    bookingRef: string
+    patientName: string
+    phone: string
+    tests: string[]
+    total: number
+    payLabel: string
+  } | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    labApi
+      .get('/diagnostics/labs/test-catalog')
+      .then(r => setAllTests(r.data.data?.tests ?? []))
+      .catch(() => setAllTests([]))
+      .finally(() => setLoadingTests(false))
+  }, [labApi])
+
+  const filtered = allTests.filter(
+    t =>
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      (t.category ?? '').toLowerCase().includes(search.toLowerCase())
+  )
+  const grouped = filtered.reduce<Record<string, WalkInTest[]>>((acc, t) => {
+    const cat = t.category || 'General'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(t)
+    return acc
+  }, {})
+
+  const selectedTests = allTests.filter(t => selected.includes(t.name))
+  const total = selectedTests.reduce(
+    (sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0),
+    0
+  )
+
+  function toggle (name: string) {
+    setSelected(p =>
+      p.includes(name) ? p.filter(n => n !== name) : [...p, name]
+    )
+  }
+
+  async function submit () {
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await labApi.post('/diagnostics/labs/walk-in', {
+        patientName: patient.name,
+        patientPhone: patient.phone,
+        patientEmail: patient.email || undefined,
+        tests: selected,
+        paymentMethod: payMethod,
+        totalAmount: total,
+        notes: patient.notes || undefined
+      })
+      const d = res.data.data
+      setResult({
+        bookingRef: d.bookingRef,
+        patientName: d.patient.name,
+        phone: d.patient.phone,
+        tests: selected,
+        total,
+        payLabel:
+          WALK_IN_PAY.find(m => m.value === payMethod)?.label ?? payMethod
+      })
+      setStep('done')
+    } catch (e: unknown) {
+      setError(
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Failed to create request.'
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function reset () {
+    setStep('patient')
+    setSelected([])
+    setSearch('')
+    setPatient({ name: '', phone: '', email: '', notes: '' })
+    setPayMethod('walk_in_cash')
+    setResult(null)
+    setError('')
+  }
+
+  const STEPS: WalkInStep[] = ['patient', 'tests', 'payment', 'done']
+  const STEP_LABELS: Record<WalkInStep, string> = {
+    patient: 'Patient',
+    tests: 'Tests',
+    payment: 'Payment',
+    done: 'Done'
+  }
+
+  return (
+    <div className={s.wiWrap}>
+      {/* Stepper */}
+      <div className={s.wiStepper}>
+        {STEPS.map((st, i) => {
+          const done = STEPS.indexOf(st) < STEPS.indexOf(step)
+          const active = st === step
+          return (
+            <div key={st} className={s.wiStepItem}>
+              <div
+                className={`${s.wiStepBubble} ${active ? s.wiStepActive : ''} ${
+                  done ? s.wiStepDone : ''
+                }`}
+              >
+                {done ? '✓' : i + 1}
+              </div>
+              <span
+                className={`${s.wiStepLabel} ${
+                  active ? s.wiStepLabelActive : ''
+                }`}
+              >
+                {STEP_LABELS[st]}
+              </span>
+              {i < STEPS.length - 1 && (
+                <div
+                  className={`${s.wiStepLine} ${done ? s.wiStepLineDone : ''}`}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Step 1: Patient ── */}
+      {step === 'patient' && (
+        <div className={s.wiCard}>
+          <h3 className={s.wiTitle}>Patient Information</h3>
+          <p className={s.wiHint}>
+            Enter the walk-in patient's details. If they have an existing
+            account it will be linked automatically.
+          </p>
+          <div className={s.wiGrid}>
+            <label className={s.wiField}>
+              <span className={s.wiLabel}>
+                Full Name <em className={s.wiReq}>*</em>
+              </span>
+              <input
+                className={s.wiInput}
+                placeholder='e.g. John Adeyemi'
+                value={patient.name}
+                onChange={e =>
+                  setPatient(p => ({ ...p, name: e.target.value }))
+                }
+                autoFocus
+              />
+            </label>
+            <label className={s.wiField}>
+              <span className={s.wiLabel}>
+                Phone <em className={s.wiReq}>*</em>
+              </span>
+              <input
+                className={s.wiInput}
+                placeholder='e.g. 08012345678'
+                value={patient.phone}
+                onChange={e =>
+                  setPatient(p => ({ ...p, phone: e.target.value }))
+                }
+              />
+            </label>
+            <label className={s.wiField}>
+              <span className={s.wiLabel}>
+                Email <small className={s.wiOpt}>(optional)</small>
+              </span>
+              <input
+                className={s.wiInput}
+                type='email'
+                placeholder='patient@example.com'
+                value={patient.email}
+                onChange={e =>
+                  setPatient(p => ({ ...p, email: e.target.value }))
+                }
+              />
+            </label>
+            <label className={`${s.wiField} ${s.wiFieldFull}`}>
+              <span className={s.wiLabel}>
+                Clinical Notes <small className={s.wiOpt}>(optional)</small>
+              </span>
+              <textarea
+                className={`${s.wiInput} ${s.wiTextarea}`}
+                placeholder='Referral info, symptoms…'
+                value={patient.notes}
+                onChange={e =>
+                  setPatient(p => ({ ...p, notes: e.target.value }))
+                }
+              />
+            </label>
+          </div>
+          <div className={s.wiActions}>
+            <button
+              className={s.wiBtn}
+              disabled={!patient.name.trim() || !patient.phone.trim()}
+              onClick={() => setStep('tests')}
+            >
+              Next: Select Tests →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 2: Tests ── */}
+      {step === 'tests' && (
+        <div className={s.wiCard}>
+          <div className={s.wiTopRow}>
+            <div>
+              <h3 className={s.wiTitle}>Select Tests</h3>
+              <p className={s.wiHint}>Choose all tests the patient requires.</p>
+            </div>
+            {selected.length > 0 && (
+              <div className={s.wiSelBadge}>
+                {selected.length} · ₦{total.toLocaleString()}
+              </div>
+            )}
+          </div>
+          <div className={s.wiSearch}>
+            <SearchIcon size={14} />
+            <input
+              className={s.wiSearchInput}
+              placeholder='Search tests…'
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              autoFocus
+            />
+            {search && (
+              <button className={s.searchClear} onClick={() => setSearch('')}>
+                <XIcon size={12} />
+              </button>
+            )}
+          </div>
+          {loadingTests ? (
+            <div className={s.empty}>
+              <Loader label='Loading tests…' />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className={s.empty}>
+              No tests found{search ? ` for "${search}"` : '.'}
+            </p>
+          ) : (
+            <div className={s.wiTestsScroll}>
+              {Object.entries(grouped)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([cat, tests]) => (
+                  <div key={cat} className={s.wiCatGroup}>
+                    <p className={s.wiCatLabel}>
+                      {cat} <span className={s.wiCatCount}>{tests.length}</span>
+                    </p>
+                    {tests.map(t => {
+                      const price = t.walkInPrice ?? t.estimatedPrice ?? 0
+                      const sel = selected.includes(t.name)
+                      return (
+                        <label
+                          key={t._id}
+                          className={`${s.wiTestRow} ${
+                            sel ? s.wiTestRowSel : ''
+                          }`}
+                        >
+                          <span
+                            className={`${s.wiCheck} ${sel ? s.wiCheckOn : ''}`}
+                          >
+                            {sel && '✓'}
+                          </span>
+                          <input
+                            type='checkbox'
+                            checked={sel}
+                            onChange={() => toggle(t.name)}
+                            style={{ display: 'none' }}
+                          />
+                          <span className={s.wiTestName}>{t.name}</span>
+                          <span className={s.wiTurnaround}>
+                            {t.turnaroundHours}h
+                          </span>
+                          <span className={s.wiPrice}>
+                            {price > 0 ? `₦${price.toLocaleString()}` : '—'}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                ))}
+            </div>
+          )}
+          {selected.length > 0 && (
+            <div className={s.wiSummaryBar}>
+              <span>
+                {selected.length} test{selected.length !== 1 ? 's' : ''}
+              </span>
+              <span className={s.wiSummaryTotal}>
+                ₦{total.toLocaleString()}
+              </span>
+            </div>
+          )}
+          <div className={s.wiActions}>
+            <button className={s.wiBtn2} onClick={() => setStep('patient')}>
+              ← Back
+            </button>
+            <button
+              className={s.wiBtn}
+              disabled={!selected.length}
+              onClick={() => setStep('payment')}
+            >
+              Next: Payment →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 3: Payment ── */}
+      {step === 'payment' && (
+        <div className={s.wiCard}>
+          <h3 className={s.wiTitle}>Review & Record Payment</h3>
+
+          <div className={s.wiReviewBlock}>
+            <p className={s.wiReviewTitle}>Patient</p>
+            <div className={s.wiPatientRow}>
+              <div className={s.wiAvatar}>
+                {patient.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className={s.wiPatientName}>{patient.name}</p>
+                <p className={s.wiPatientMeta}>
+                  {patient.phone}
+                  {patient.email ? ` · ${patient.email}` : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className={s.wiReviewBlock}>
+            <p className={s.wiReviewTitle}>Tests ({selected.length})</p>
+            {selectedTests.map(t => {
+              const price = t.walkInPrice ?? t.estimatedPrice ?? 0
+              return (
+                <div key={t._id} className={s.wiReviewRow}>
+                  <span className={s.wiReviewName}>{t.name}</span>
+                  <span className={s.wiReviewCat}>{t.category}</span>
+                  <span className={s.wiReviewPrice}>
+                    {price > 0 ? `₦${price.toLocaleString()}` : 'Free'}
+                  </span>
+                </div>
+              )
+            })}
+            <div className={s.wiTotalRow}>
+              <span>Total</span>
+              <span className={s.wiTotalVal}>₦{total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className={s.wiReviewBlock}>
+            <p className={s.wiReviewTitle}>Payment Method</p>
+            <div className={s.wiPayGrid}>
+              {WALK_IN_PAY.map(m => (
+                <label
+                  key={m.value}
+                  className={`${s.wiPayCard} ${
+                    payMethod === m.value ? s.wiPayCardActive : ''
+                  }`}
+                >
+                  <input
+                    type='radio'
+                    name='pm'
+                    value={m.value}
+                    checked={payMethod === m.value}
+                    onChange={() => setPayMethod(m.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <span
+                    className={`${s.wiPayDot} ${
+                      payMethod === m.value ? s.wiPayDotOn : ''
+                    }`}
+                  />
+                  <div>
+                    <p className={s.wiPayLabel}>{m.label}</p>
+                    <p className={s.wiPayDesc}>{m.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {error && <p className={s.errMsg}>{error}</p>}
+          <div className={s.wiActions}>
+            <button
+              className={s.wiBtn2}
+              onClick={() => {
+                setError('')
+                setStep('tests')
+              }}
+            >
+              ← Back
+            </button>
+            <button className={s.wiBtn} disabled={submitting} onClick={submit}>
+              {submitting ? (
+                <Loader inline size='sm' />
+              ) : (
+                'Confirm & Register →'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 4: Done ── */}
+      {step === 'done' && result && (
+        <div className={s.wiCard}>
+          <div className={s.wiSuccessBanner}>
+            <span className={s.wiSuccessCheck}>✓</span>
+            <div>
+              <p className={s.wiSuccessTitle}>Registered Successfully</p>
+              <p className={s.wiSuccessSub}>
+                Walk-in request created and payment recorded.
+              </p>
+            </div>
+          </div>
+
+          <div className={s.wiTicket} id='lab-walkin-ticket'>
+            {/* Branded header stripe */}
+            <div className={s.wiTicketHeader}>
+              <div className={s.wiTicketHeaderLeft}>
+                <span className={s.wiTicketHeaderLogo}>iBam Health</span>
+                <span className={s.wiTicketHeaderSub}>Diagnostics Centre</span>
+              </div>
+              <div className={s.wiTicketHeaderRight}>
+                <span className={s.wiTicketHeaderBadge}>OFFICIAL RECEIPT</span>
+                <span className={s.wiTicketHeaderDate}>
+                  {new Date().toLocaleDateString('en-NG', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* Booking reference */}
+            <div className={s.wiTicketRefWrap}>
+              <span className={s.wiTicketRefLabel}>Booking Reference</span>
+              <span className={s.wiTicketRef}>{result.bookingRef}</span>
+            </div>
+
+            {/* Patient details grid */}
+            <div className={s.wiTicketGrid}>
+              <div>
+                <p className={s.wiTLabel}>Patient Name</p>
+                <p className={s.wiTVal}>{result.patientName}</p>
+              </div>
+              <div>
+                <p className={s.wiTLabel}>Phone</p>
+                <p className={s.wiTVal}>{result.phone}</p>
+              </div>
+              <div>
+                <p className={s.wiTLabel}>Collection Type</p>
+                <p className={s.wiTVal}>Walk-in</p>
+              </div>
+              <div>
+                <p className={s.wiTLabel}>Payment Method</p>
+                <p className={s.wiTVal}>{result.payLabel}</p>
+              </div>
+            </div>
+
+            <div className={s.wiTicketDiv} />
+
+            {/* Tests */}
+            <div>
+              <p className={s.wiTLabel}>Tests Requested</p>
+              <ul className={s.wiTicketList}>
+                {result.tests.map(t => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={s.wiTicketDiv} />
+
+            {/* Total */}
+            <div className={s.wiTicketTotalRow}>
+              <span>Amount Paid</span>
+              <span className={s.wiTicketTotalVal}>
+                ₦{result.total.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Footer */}
+            <p className={s.wiTicketFooter}>
+              Present this slip at the sample collection point.
+              <br />
+              <strong>iBam Health</strong> · ibamhealth.com
+            </p>
+          </div>
+
+          <div className={s.wiActions}>
+            <button
+              className={s.wiBtn2}
+              onClick={() =>
+                downloadReceipt({
+                  bookingRef: result.bookingRef,
+                  tests: result.tests,
+                  amount: result.total,
+                  collectionType: 'walk_in',
+                  patientName: result.patientName,
+                  paymentMethod: result.payLabel
+                })
+              }
+            >
+              🖨 Print Slip
+            </button>
+            <button className={s.wiBtn} onClick={reset}>
+              + Register Another Patient
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -541,7 +1142,8 @@ function LabPortalInner () {
   const tabData: Record<Tab, LabRequest[]> = {
     available: filterRequests(available),
     mine: filterRequests(myActive),
-    completed: filterRequests(myDone)
+    completed: filterRequests(myDone),
+    walkin: []
   }
 
   return (
@@ -556,9 +1158,14 @@ function LabPortalInner () {
         </button>
       </div>
 
-      {/* Search bar */}
-      <div className={s.searchWrap}>
-        <span className={s.searchIcon}><SearchIcon size={14} /></span>
+      {/* Search bar — hidden on walk-in tab */}
+      <div
+        className={s.searchWrap}
+        style={tab === 'walkin' ? { display: 'none' } : undefined}
+      >
+        <span className={s.searchIcon}>
+          <SearchIcon size={14} />
+        </span>
         <input
           className={s.searchInput}
           placeholder='Search by patient ID, name, or transaction ref…'
@@ -605,13 +1212,23 @@ function LabPortalInner () {
         >
           Completed
         </button>
+        <button
+          className={`${s.tab} ${tab === 'walkin' ? s.tabActive : ''} ${
+            s.tabWalkin
+          }`}
+          onClick={() => setTab('walkin')}
+        >
+          + Walk-in
+        </button>
       </div>
 
-      {loading ? (
+      {tab === 'walkin' ? (
+        <WalkInTab labApi={labApi} />
+      ) : loading ? (
         <div className={s.empty}>
           <Loader label='Loading requests…' />
         </div>
-      ) : tabData[tab].length === 0 ? (
+      ) : tabData[tab as Exclude<Tab, 'walkin'>]?.length === 0 ? (
         <div className={s.empty}>
           {search.trim()
             ? 'No requests match your search.'
@@ -623,7 +1240,7 @@ function LabPortalInner () {
         </div>
       ) : (
         <div className={s.list}>
-          {tabData[tab].map(req => (
+          {tabData[tab as Exclude<Tab, 'walkin'>]?.map(req => (
             <RequestCard
               key={req._id}
               req={req}

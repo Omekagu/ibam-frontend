@@ -150,6 +150,40 @@ export default function TermsPage () {
         valid only for the subscribed account holder.
       </p>
 
+      <h3>4.7 Appointment Rescheduling</h3>
+      <p>
+        A doctor may reschedule a confirmed appointment if they are genuinely
+        unable to attend at the agreed time. The following conditions apply:
+      </p>
+      <ul>
+        <li>
+          The doctor must provide a brief reason for the reschedule, which is
+          shared with the patient.
+        </li>
+        <li>
+          Upon reschedule, the patient receives an immediate notification via
+          in-app alert, push notification, and email. iBam Health
+          administration is also notified.
+        </li>
+        <li>
+          Doctors are expected to reschedule an appointment{' '}
+          <strong>no more than once</strong>. A second reschedule of the same
+          appointment may be treated as a cancellation, triggering the
+          cancellation and refund policy in full.
+        </li>
+        <li>
+          If the patient does not accept the rescheduled time, they may cancel
+          the appointment and receive a <strong>full refund</strong> in
+          accordance with the{' '}
+          <a href='/legal/refund'>Refund Policy</a>.
+        </li>
+        <li>
+          Doctors who repeatedly reschedule or fail to attend confirmed
+          appointments without valid cause may have their platform access
+          reviewed, suspended, or terminated.
+        </li>
+      </ul>
+
       {/* ── 5 ── */}
       <h2>5. Doctor &amp; Professional Terms</h2>
       <p>Medical professionals using iBam Health agree to:</p>
@@ -178,6 +212,11 @@ export default function TermsPage () {
         <li>
           Update their availability status accurately to avoid patient
           inconvenience.
+        </li>
+        <li>
+          Only reschedule confirmed appointments in genuine cases of
+          unavailability. Repeated or habitual rescheduling is treated as a
+          breach of professional obligations and may result in suspension.
         </li>
         <li>
           Not solicit patients for off-platform consultations to circumvent iBam

@@ -55,6 +55,18 @@ export default function AdminLabsPage () {
 
   const [openingPortal, setOpeningPortal] = useState<string | null>(null)
 
+  // Create lab_partner account modal
+  const [accLabId,    setAccLabId]    = useState<string | null>(null)
+  const [accForm,     setAccForm]     = useState({ name: '', email: '', phone: '', password: '' })
+  const [accErr,      setAccErr]      = useState('')
+  const [accCreating, setAccCreating] = useState(false)
+
+  // Create lab_admin account modal
+  const [adminLabId,    setAdminLabId]    = useState<string | null>(null)
+  const [adminForm,     setAdminForm]     = useState({ name: '', email: '', phone: '', password: '' })
+  const [adminErr,      setAdminErr]      = useState('')
+  const [adminCreating, setAdminCreating] = useState(false)
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -141,6 +153,48 @@ export default function AdminLabsPage () {
       setFormErr(err?.response?.data?.message ?? 'Failed to create lab.')
     }
     setCreating(false)
+  }
+
+  async function submitCreateAccount (lab: Lab) {
+    setAccErr('')
+    if (!accForm.name || !accForm.email || !accForm.password) {
+      setAccErr('Name, email and password are required.')
+      return
+    }
+    setAccCreating(true)
+    try {
+      const r = await api.post(`/admin/labs/${lab._id}/create-account`, accForm)
+      const updatedUser = r.data.data?.user
+      setLabs(prev => prev.map(l => l._id === lab._id ? { ...l, user: { _id: updatedUser._id, name: updatedUser.name, email: updatedUser.email, isActive: updatedUser.isActive } } : l))
+      setAccLabId(null)
+      setAccForm({ name: '', email: '', phone: '', password: '' })
+      modal.show({ variant: 'success', title: 'Account Created', message: `Login account created for ${lab.name}.` })
+    } catch (err: any) {
+      setAccErr(err?.response?.data?.message ?? 'Failed to create account.')
+    }
+    setAccCreating(false)
+  }
+
+  async function submitLabAdmin (lab: Lab) {
+    setAdminErr('')
+    if (!adminForm.name || !adminForm.email || !adminForm.password) {
+      setAdminErr('Name, email and password are required.')
+      return
+    }
+    setAdminCreating(true)
+    try {
+      await api.post('/admin/admin-users', {
+        ...adminForm,
+        adminRole: 'lab_admin',
+        managedLabId: lab._id,
+      })
+      setAdminLabId(null)
+      setAdminForm({ name: '', email: '', phone: '', password: '' })
+      modal.show({ variant: 'success', title: 'Lab Admin Created', message: `Admin account created for ${lab.name}. They can now log in via the admin portal.` })
+    } catch (err: any) {
+      setAdminErr(err?.response?.data?.message ?? 'Failed to create lab admin.')
+    }
+    setAdminCreating(false)
   }
 
   async function openLabPortal (labId: string) {
@@ -234,6 +288,20 @@ export default function AdminLabsPage () {
                     >
                       {kycLabId === lab._id ? 'Close KYC' : 'Verify KYC'}
                     </button>
+                    {!lab.user && (
+                      <button
+                        className={s.approveBtn}
+                        onClick={() => { setAccLabId(lab._id); setAccForm({ name: '', email: lab.email ?? '', phone: lab.phone ?? '', password: '' }); setAccErr('') }}
+                      >
+                        + Create Account
+                      </button>
+                    )}
+                    <button
+                      className={s.testsBtn}
+                      onClick={() => { setAdminLabId(lab._id); setAdminForm({ name: '', email: '', phone: '', password: '' }); setAdminErr('') }}
+                    >
+                      + Add Lab Admin
+                    </button>
                     <button
                       className={s.portalBtn}
                       disabled={openingPortal === lab._id}
@@ -324,6 +392,103 @@ export default function AdminLabsPage () {
           ))}
         </div>
       )}
+
+      {/* ── Create Lab Account modal ── */}
+      {accLabId && (() => {
+        const lab = labs.find(l => l._id === accLabId)!
+        return (
+          <>
+            <div className={s.modalOverlay} onClick={() => setAccLabId(null)} />
+            <div className={s.modal}>
+              <div className={s.modalHead}>
+                <h3>Create Login Account — {lab.name}</h3>
+                <button className={s.closeBtn} onClick={() => setAccLabId(null)}><XIcon size={14} /></button>
+              </div>
+              <div className={s.modalBody}>
+                {accErr && <p className={s.editorErr}>{accErr}</p>}
+                <div className={s.formGrid}>
+                  <div className={s.fieldGroup}>
+                    <label>Full Name *</label>
+                    <input className={s.input} placeholder='Lab manager name' value={accForm.name}
+                      onChange={e => setAccForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Email *</label>
+                    <input className={s.input} type='email' placeholder='manager@lab.com' value={accForm.email}
+                      onChange={e => setAccForm(p => ({ ...p, email: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Phone</label>
+                    <input className={s.input} placeholder='+234 800 000 0000' value={accForm.phone}
+                      onChange={e => setAccForm(p => ({ ...p, phone: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Temporary Password *</label>
+                    <input className={s.input} type='password' placeholder='Min 8 characters' value={accForm.password}
+                      onChange={e => setAccForm(p => ({ ...p, password: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+              <div className={s.modalFooter}>
+                <button type='button' className={s.cancelBtn} onClick={() => setAccLabId(null)}>Cancel</button>
+                <button className={s.saveTestsBtn} disabled={accCreating} onClick={() => submitCreateAccount(lab)}>
+                  {accCreating ? 'Creating…' : 'Create Account'}
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
+
+      {/* ── Add Lab Admin modal ── */}
+      {adminLabId && (() => {
+        const lab = labs.find(l => l._id === adminLabId)!
+        return (
+          <>
+            <div className={s.modalOverlay} onClick={() => setAdminLabId(null)} />
+            <div className={s.modal}>
+              <div className={s.modalHead}>
+                <h3>Add Lab Admin — {lab.name}</h3>
+                <button className={s.closeBtn} onClick={() => setAdminLabId(null)}><XIcon size={14} /></button>
+              </div>
+              <div className={s.modalBody}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                  Creates an admin account linked to <strong>{lab.name}</strong>. This admin can manage requests, walk-ins, catalog, and profile for this lab only — they log in at <strong>/admin</strong>.
+                </p>
+                {adminErr && <p className={s.editorErr}>{adminErr}</p>}
+                <div className={s.formGrid}>
+                  <div className={s.fieldGroup}>
+                    <label>Full Name *</label>
+                    <input className={s.input} placeholder='Lab admin name' value={adminForm.name}
+                      onChange={e => setAdminForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Email *</label>
+                    <input className={s.input} type='email' placeholder='admin@lab.com' value={adminForm.email}
+                      onChange={e => setAdminForm(p => ({ ...p, email: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Phone</label>
+                    <input className={s.input} placeholder='+234 800 000 0000' value={adminForm.phone}
+                      onChange={e => setAdminForm(p => ({ ...p, phone: e.target.value }))} />
+                  </div>
+                  <div className={s.fieldGroup}>
+                    <label>Temporary Password *</label>
+                    <input className={s.input} type='password' placeholder='Min 8 characters' value={adminForm.password}
+                      onChange={e => setAdminForm(p => ({ ...p, password: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+              <div className={s.modalFooter}>
+                <button type='button' className={s.cancelBtn} onClick={() => setAdminLabId(null)}>Cancel</button>
+                <button className={s.saveTestsBtn} disabled={adminCreating} onClick={() => submitLabAdmin(lab)}>
+                  {adminCreating ? 'Creating…' : 'Create Lab Admin'}
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
 
       {/* ── Register Lab modal ── */}
       {showRegister && (

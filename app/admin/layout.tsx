@@ -4,10 +4,25 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { logout } from '@/lib/auth'
+import api from '@/lib/api'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
 import { StatusModalProvider } from '@/components/StatusModal'
 import s from './layout.module.scss'
+
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  lab_admin:     ['labs', 'diagnostics', 'walk_in', 'lab_tests', 'doctors', 'kyc'],
+  finance_admin: ['payments', 'payouts', 'earnings'],
+  support_admin: ['users', 'monitoring', 'appointments', 'audit', 'broadcast'],
+  ops_admin:     ['approvals', 'orders', 'pharmacy', 'drugs'],
+}
+
+function canSee (adminRole: string, permission?: string): boolean {
+  if (!permission) return true
+  if (adminRole === 'super_admin') return true
+  if (permission === '__super__') return false
+  return (ROLE_PERMISSIONS[adminRole] ?? []).includes(permission)
+}
 
 const NAV = [
   {
@@ -17,59 +32,98 @@ const NAV = [
   {
     section: 'People',
     items: [
-      { href: '/admin/doctors', label: 'Doctors',  icon: <DoctorIcon />, badge: 'KYC' },
-      { href: '/admin/users',   label: 'Patients', icon: <UsersIcon /> },
+      { href: '/admin/doctors', label: 'Doctors',  icon: <DoctorIcon />, badge: 'KYC', permission: 'doctors' },
+      { href: '/admin/users',   label: 'Patients', icon: <UsersIcon />,               permission: 'users' },
     ],
   },
   {
     section: 'Live',
-    items: [{ href: '/admin/monitoring', label: 'Monitoring', icon: <LiveIcon />, badge: 'Live' }],
+    items: [{ href: '/admin/monitoring', label: 'Monitoring', icon: <LiveIcon />, badge: 'Live', permission: 'monitoring' }],
   },
   {
     section: 'Operations',
     items: [
-      { href: '/admin/appointments', label: 'Appointments', icon: <CalIcon /> },
-      { href: '/admin/orders',       label: 'All Orders',   icon: <OrderIcon /> },
-      { href: '/admin/payments',     label: 'Payments',     icon: <CardIcon /> },
-      { href: '/admin/payouts',      label: 'Payouts',      icon: <WalletIcon /> },
+      { href: '/admin/appointments', label: 'Appointments', icon: <CalIcon />,    permission: 'appointments' },
+      { href: '/admin/orders',       label: 'All Orders',   icon: <OrderIcon />,  permission: 'orders' },
+      { href: '/admin/payments',     label: 'Payments',     icon: <CardIcon />,   permission: 'payments' },
+      { href: '/admin/payouts',      label: 'Payouts',      icon: <WalletIcon />, permission: 'payouts' },
     ],
   },
   {
     section: 'Partners',
     items: [
-      { href: '/admin/pharmacy',    label: 'Pharmacies',   icon: <PillIcon /> },
-      { href: '/admin/labs',        label: 'Labs',         icon: <LabIcon /> },
-      { href: '/admin/diagnostics', label: 'Diagnostics',  icon: <TestIcon /> },
-      { href: '/admin/drugs',       label: 'Drug Catalog', icon: <CatalogIcon /> },
+      { href: '/admin/pharmacy',    label: 'Pharmacies',   icon: <PillIcon />,   permission: 'pharmacy' },
+      { href: '/admin/labs',        label: 'Labs',         icon: <LabIcon />,    permission: 'labs' },
+      { href: '/admin/diagnostics', label: 'Diagnostics',  icon: <TestIcon />,   permission: 'diagnostics' },
+      { href: '/admin/drugs',       label: 'Drug Catalog', icon: <CatalogIcon />, permission: 'drugs' },
+      { href: '/admin/walk-in',     label: 'Walk-in Lab',  icon: <WalkInIcon />, badge: 'New', permission: 'walk_in' },
     ],
   },
   {
     section: 'Review',
-    items: [{ href: '/admin/approvals', label: 'Approvals', icon: <CheckIcon /> }],
+    items: [{ href: '/admin/approvals', label: 'Approvals', icon: <CheckIcon />, permission: 'approvals' }],
   },
   {
     section: 'Comms',
-    items: [{ href: '/admin/broadcast', label: 'Broadcast', icon: <BroadcastIcon /> }],
+    items: [{ href: '/admin/broadcast', label: 'Broadcast', icon: <BroadcastIcon />, permission: 'broadcast' }],
   },
   {
     section: 'Logs',
-    items: [{ href: '/admin/audit', label: 'Audit Log', icon: <AuditIcon /> }],
+    items: [{ href: '/admin/audit', label: 'Audit Log', icon: <AuditIcon />, permission: 'audit' }],
   },
   {
     section: 'Config',
     items: [
-      { href: '/admin/plans',    label: 'Plans',    icon: <PlansIcon /> },
-      { href: '/admin/settings', label: 'Settings', icon: <SettingsIcon /> },
+      { href: '/admin/plans',    label: 'Plans',    icon: <PlansIcon />,   permission: '__super__' },
+      { href: '/admin/settings', label: 'Settings', icon: <SettingsIcon />, permission: '__super__' },
     ],
   },
+  {
+    section: 'System',
+    items: [{ href: '/admin/admins', label: 'Admin Users', icon: <AdminUsersIcon />, permission: '__super__' }],
+  },
 ]
+
+const ROLE_LABELS: Record<string, string> = {
+  super_admin:   'Super Admin',
+  lab_admin:     'Lab Admin',
+  finance_admin: 'Finance Admin',
+  support_admin: 'Support Admin',
+  ops_admin:     'Ops Admin',
+}
+
+interface Me { name: string; email: string; adminRole: string }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // Read synchronously from localStorage so the nav never flickers
+  const [me, setMe] = useState<Me | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem('user')
+      if (!raw) return null
+      const u = JSON.parse(raw)
+      return u?.adminRole ? { name: u.name ?? '', email: u.email ?? '', adminRole: u.adminRole } : null
+    } catch { return null }
+  })
 
   useEffect(() => { setDrawerOpen(false) }, [path])
+
+  useEffect(() => {
+    api.get('/auth/me').then(r => {
+      const u = r.data.data?.user
+      if (!u) return
+      setMe({ name: u.name, email: u.email, adminRole: u.adminRole })
+      // Keep localStorage in sync so future page loads are also flicker-free
+      try {
+        const raw = localStorage.getItem('user')
+        const stored = raw ? JSON.parse(raw) : {}
+        localStorage.setItem('user', JSON.stringify({ ...stored, name: u.name, adminRole: u.adminRole }))
+      } catch { }
+    }).catch(() => {})
+  }, [])
 
   async function handleLogout() {
     await logout()
@@ -88,33 +142,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className={s.adminBadge}>Admin Console</div>
 
       <nav className={s.nav}>
-        {NAV.map(group => (
-          <div key={group.section}>
-            <p className={s.navSection}>{group.section}</p>
-            {group.items.map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${s.navLink} ${path === item.href ? s.active : ''}`}
-              >
-                {item.icon}
-                {item.label}
-                {'badge' in item && item.badge && (
-                  <span className={`${s.navBadge} ${item.badge === 'Live' ? s.navBadgeLive : ''}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        ))}
+        {NAV.map(group => {
+          const role = me?.adminRole ?? 'super_admin'
+          const visible = group.items.filter(item => canSee(role, (item as { permission?: string }).permission))
+          if (!visible.length) return null
+          return (
+            <div key={group.section}>
+              <p className={s.navSection}>{group.section}</p>
+              {visible.map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${s.navLink} ${path === item.href ? s.active : ''}`}
+                >
+                  {item.icon}
+                  {item.label}
+                  {(item as { badge?: string }).badge && (
+                    <span className={`${s.navBadge} ${(item as { badge?: string }).badge === 'Live' ? s.navBadgeLive : ''}`}>
+                      {(item as { badge?: string }).badge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )
+        })}
       </nav>
 
       <div className={s.sidebarBottom}>
-        <div className={s.adminAvatar}>A</div>
+        <div className={s.adminAvatar}>{me?.name?.[0]?.toUpperCase() ?? 'A'}</div>
         <div className={s.adminInfo}>
-          <p>Super Admin</p>
-          <span>admin@ibamhealth.com</span>
+          <p>{me?.name ?? 'Admin'}</p>
+          <span>{me ? ROLE_LABELS[me.adminRole] ?? me.adminRole : 'Loading…'}</span>
         </div>
         <button className={s.logoutBtn} onClick={handleLogout} aria-label='Log out'>
           <LogoutIcon />
@@ -174,3 +233,5 @@ function CloseIcon()    { return <svg width='20' height='20' fill='none' stroke=
 function SettingsIcon() { return <svg width='16' height='16' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' /><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' /></svg> }
 function PlansIcon()      { return <svg width='16' height='16' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' /></svg> }
 function BroadcastIcon()  { return <svg width='16' height='16' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' /></svg> }
+function WalkInIcon()      { return <svg width='16' height='16' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' /></svg> }
+function AdminUsersIcon()  { return <svg width='16' height='16' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' /></svg> }

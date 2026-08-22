@@ -3,7 +3,19 @@ import { useEffect, useState, useRef, FormEvent, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import s from './page.module.scss'
-import { MapPinIcon, MicroscopeIcon, DocumentIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ClockIcon, HomeIcon, WalkingIcon, CreditCardIcon, XIcon } from '@/components/icons'
+import {
+  MapPinIcon,
+  MicroscopeIcon,
+  DocumentIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  ClockIcon,
+  HomeIcon,
+  WalkingIcon,
+  CreditCardIcon,
+  XIcon
+} from '@/components/icons'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
 import { downloadReceipt } from '@/lib/receipt'
@@ -63,17 +75,33 @@ interface BankSettings {
 
 type Tab = 'order' | 'results' | 'packages'
 
-const RESULT_STEPS = ['Submitted', 'Lab Assigned', 'Processing', 'Ready'] as const
+const RESULT_STEPS = [
+  'Submitted',
+  'Lab Assigned',
+  'Processing',
+  'Ready'
+] as const
 
 function stepIndex (status: string): number {
   const map: Record<string, number> = {
-    pending: 0, assigned: 1, sample_collected: 2, processing: 2, completed: 3
+    pending: 0,
+    assigned: 1,
+    sample_collected: 2,
+    processing: 2,
+    completed: 3
   }
   return map[status] ?? 0
 }
 
-const BAND_CLS: Record<string, string> = { male: 'pkgCardBandMale', female: 'pkgCardBandFemale', all: 'pkgCardBandAll' }
-const BADGE_CLS: Record<string, string> = { male: 'pkgGenderBadgeMale', female: 'pkgGenderBadgeFemale' }
+const BAND_CLS: Record<string, string> = {
+  male: 'pkgCardBandMale',
+  female: 'pkgCardBandFemale',
+  all: 'pkgCardBandAll'
+}
+const BADGE_CLS: Record<string, string> = {
+  male: 'pkgGenderBadgeMale',
+  female: 'pkgGenderBadgeFemale'
+}
 
 function PatientLabsInner () {
   const modal = useStatusModal()
@@ -87,7 +115,9 @@ function PatientLabsInner () {
     WellnessPackageItem[]
   >([])
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null)
-  const [paystackPublicKey, setPaystackPublicKey] = useState(process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? '')
+  const [paystackPublicKey, setPaystackPublicKey] = useState(
+    process.env.NEXT_PUBLIC_PAYSTACK_KEY ?? ''
+  )
 
   // Individual test order
   const [selectedTests, setSelectedTests] = useState<string[]>([])
@@ -151,7 +181,10 @@ function PatientLabsInner () {
     const tabParam = params.get('tab')
     if (tabParam === 'order') setTab('order')
     if (testsParam) {
-      const names = testsParam.split(',').map(t => t.trim()).filter(Boolean)
+      const names = testsParam
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
       if (names.length) setSelectedTests(names)
     }
   }, [params])
@@ -171,7 +204,8 @@ function PatientLabsInner () {
   }, [])
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://10.0.1.44:5000/api'
+    const base =
+      process.env.NEXT_PUBLIC_API_URL ?? 'https://api.ibamhealth.com/api'
     fetch(`${base}/admin/public/content`)
       .then(r => r.json())
       .then(body => {
@@ -338,12 +372,17 @@ function PatientLabsInner () {
             }
           },
           onCancel: async () => {
-            try { await api.delete(`/diagnostics/request/${reqId}`) } catch { /* silent */ }
+            try {
+              await api.delete(`/diagnostics/request/${reqId}`)
+            } catch {
+              /* silent */
+            }
             setRequests(prev => prev.filter(r => r._id !== reqId))
             modal.show({
               variant: 'declined',
               title: 'Payment Cancelled',
-              message: 'No booking was made. Your selected tests are still available.'
+              message:
+                'No booking was made. Your selected tests are still available.'
             })
           }
         })
@@ -644,7 +683,11 @@ function PatientLabsInner () {
             }
           },
           onCancel: async () => {
-            try { await api.delete(`/diagnostics/request/${reqId}`) } catch { /* silent */ }
+            try {
+              await api.delete(`/diagnostics/request/${reqId}`)
+            } catch {
+              /* silent */
+            }
             setRequests(prev => prev.filter(r => r._id !== reqId))
             modal.show({
               variant: 'declined',
@@ -773,36 +816,40 @@ function PatientLabsInner () {
               <Loader inline variant='dots' size='sm' label='Loading tests…' />
             ) : (
               <div className={s.testGrid}>
-                {catalogTests.filter(t =>
-                  !testSearch || t.name.toLowerCase().includes(testSearch.toLowerCase())
-                ).map(t => {
-                  const price =
-                    collection === 'home_visit'
-                      ? t.homeVisitPrice ?? t.estimatedPrice
-                      : t.walkInPrice ?? t.estimatedPrice
-                  return (
-                    <label
-                      key={t._id}
-                      className={`${s.testItem} ${
-                        selectedTests.includes(t.name) ? s.checked : ''
-                      }`}
-                    >
-                      <input
-                        type='checkbox'
-                        checked={selectedTests.includes(t.name)}
-                        onChange={() => toggleTest(t.name)}
-                      />
-                      <div className={s.testContent}>
-                        <span>{t.name}</span>
-                        {price != null && (
-                          <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>
-                            ₦{price.toLocaleString('en-NG')}
-                          </span>
-                        )}
-                      </div>
-                    </label>
+                {catalogTests
+                  .filter(
+                    t =>
+                      !testSearch ||
+                      t.name.toLowerCase().includes(testSearch.toLowerCase())
                   )
-                })}
+                  .map(t => {
+                    const price =
+                      collection === 'home_visit'
+                        ? t.homeVisitPrice ?? t.estimatedPrice
+                        : t.walkInPrice ?? t.estimatedPrice
+                    return (
+                      <label
+                        key={t._id}
+                        className={`${s.testItem} ${
+                          selectedTests.includes(t.name) ? s.checked : ''
+                        }`}
+                      >
+                        <input
+                          type='checkbox'
+                          checked={selectedTests.includes(t.name)}
+                          onChange={() => toggleTest(t.name)}
+                        />
+                        <div className={s.testContent}>
+                          <span>{t.name}</span>
+                          {price != null && (
+                            <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>
+                              ₦{price.toLocaleString('en-NG')}
+                            </span>
+                          )}
+                        </div>
+                      </label>
+                    )
+                  })}
               </div>
             )}
           </div>
@@ -825,7 +872,11 @@ function PatientLabsInner () {
                     onChange={() => setCollection(c)}
                   />
                   <div className={s.collectionIcon}>
-                    {c === 'walk_in' ? <WalkingIcon size={24} /> : <HomeIcon size={24} />}
+                    {c === 'walk_in' ? (
+                      <WalkingIcon size={24} />
+                    ) : (
+                      <HomeIcon size={24} />
+                    )}
                   </div>
                   <span>{c === 'walk_in' ? 'Walk-in Lab' : 'Home Visit'}</span>
                   <p>
@@ -840,7 +891,9 @@ function PatientLabsInner () {
 
           {collection === 'home_visit' && estimatedTotal > 0 && (
             <div className={s.paymentNote} data-variant='transfer'>
-              <span className={s.paymentNoteIcon}><CreditCardIcon size={14} /></span>
+              <span className={s.paymentNoteIcon}>
+                <CreditCardIcon size={14} />
+              </span>
               <p>
                 Estimated total:{' '}
                 <strong>₦{estimatedTotal.toLocaleString()}</strong>. Pay
@@ -1011,11 +1064,21 @@ function PatientLabsInner () {
               const open = expandedPkg === pkg._id
               return (
                 <div key={pkg._id} className={s.pkgCard}>
-                  <div className={`${s.pkgCardBand} ${s[BAND_CLS[pkg.gender] ?? 'pkgCardBandAll']}`} />
+                  <div
+                    className={`${s.pkgCardBand} ${
+                      s[BAND_CLS[pkg.gender] ?? 'pkgCardBandAll']
+                    }`}
+                  />
                   <div className={s.pkgCardInner}>
                     <div className={s.pkgCardTop}>
                       <div className={s.pkgMeta}>
-                        <span className={`${s.pkgGenderBadge} ${BADGE_CLS[pkg.gender] ? s[BADGE_CLS[pkg.gender]] : ''}`}>
+                        <span
+                          className={`${s.pkgGenderBadge} ${
+                            BADGE_CLS[pkg.gender]
+                              ? s[BADGE_CLS[pkg.gender]]
+                              : ''
+                          }`}
+                        >
                           {GENDER_LABEL[pkg.gender] ?? pkg.gender}
                         </span>
                         <h3 className={s.pkgName}>{pkg.name}</h3>
@@ -1043,7 +1106,12 @@ function PatientLabsInner () {
                       className={s.pkgTestsToggle}
                       onClick={() => setExpandedPkg(open ? null : pkg._id)}
                     >
-                      {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />} {pkg.includedTests.length} included tests
+                      {open ? (
+                        <ChevronUpIcon size={14} />
+                      ) : (
+                        <ChevronDownIcon size={14} />
+                      )}{' '}
+                      {pkg.includedTests.length} included tests
                     </button>
 
                     {open && (
@@ -1093,9 +1161,15 @@ function PatientLabsInner () {
                     (req.status === 'no_show' || req.status === 'cancelled')
                   )
                   const hasResult = !!result
-                  const showSteps = req.status !== 'cancelled' && req.status !== 'no_show'
+                  const showSteps =
+                    req.status !== 'cancelled' && req.status !== 'no_show'
                   return (
-                    <div key={req._id} className={`${s.resultCard} ${hasResult ? s.resultCardDone : ''}`}>
+                    <div
+                      key={req._id}
+                      className={`${s.resultCard} ${
+                        hasResult ? s.resultCardDone : ''
+                      }`}
+                    >
                       {showSteps && (
                         <div className={s.statusSteps}>
                           {RESULT_STEPS.map((label, i) => {
@@ -1103,8 +1177,15 @@ function PatientLabsInner () {
                             const done = idx > i
                             const active = idx === i
                             return (
-                              <div key={label} className={`${s.statusStep} ${done ? s.stepDone : ''} ${active ? s.stepActive : ''}`}>
-                                <div className={s.stepDot}>{done ? '✓' : ''}</div>
+                              <div
+                                key={label}
+                                className={`${s.statusStep} ${
+                                  done ? s.stepDone : ''
+                                } ${active ? s.stepActive : ''}`}
+                              >
+                                <div className={s.stepDot}>
+                                  {done ? '✓' : ''}
+                                </div>
                                 <span className={s.stepLabel}>{label}</span>
                               </div>
                             )
@@ -1163,7 +1244,11 @@ function PatientLabsInner () {
                             {req.status.replace(/_/g, ' ')}
                           </span>
                           <span className={s.chevronIcon}>
-                            {open ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
+                            {open ? (
+                              <ChevronUpIcon size={14} />
+                            ) : (
+                              <ChevronDownIcon size={14} />
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1188,9 +1273,15 @@ function PatientLabsInner () {
                             <div className={s.detailItem}>
                               <span className={s.detailLabel}>Collection</span>
                               <span className={s.detailValue}>
-                                {req.collectionType === 'walk_in'
-                                  ? <><WalkingIcon size={14} /> Walk-in at Lab</>
-                                  : <><HomeIcon size={14} /> Home Visit</>}
+                                {req.collectionType === 'walk_in' ? (
+                                  <>
+                                    <WalkingIcon size={14} /> Walk-in at Lab
+                                  </>
+                                ) : (
+                                  <>
+                                    <HomeIcon size={14} /> Home Visit
+                                  </>
+                                )}
                               </span>
                             </div>
                             {req.totalAmount > 0 && (
@@ -1213,9 +1304,15 @@ function PatientLabsInner () {
                                       : s.detailPending
                                   }`}
                                 >
-                                  {req.paymentRef.status === 'success'
-                                    ? <><CheckIcon size={14} /> Confirmed</>
-                                    : <><ClockIcon size={14} /> Pending</>}
+                                  {req.paymentRef.status === 'success' ? (
+                                    <>
+                                      <CheckIcon size={14} /> Confirmed
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ClockIcon size={14} /> Pending
+                                    </>
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -1250,7 +1347,9 @@ function PatientLabsInner () {
                           {/* Result ready banner */}
                           {hasResult && (
                             <div className={s.resultReadyBanner}>
-                              <span className={s.resultReadyCheck}><CheckIcon size={14} /></span>
+                              <span className={s.resultReadyCheck}>
+                                <CheckIcon size={14} />
+                              </span>
                               <div>
                                 <p className={s.resultReadyTitle}>
                                   Your results are ready
@@ -1286,8 +1385,9 @@ function PatientLabsInner () {
                                   {payingLabId === req._id ? (
                                     <Loader inline size='sm' />
                                   ) : (
-                                    <><CreditCardIcon size={14} /> Pay Now</>
-
+                                    <>
+                                      <CreditCardIcon size={14} /> Pay Now
+                                    </>
                                   )}
                                 </button>
                               </div>

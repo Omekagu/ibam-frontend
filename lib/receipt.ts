@@ -8,6 +8,7 @@ export interface ReceiptData {
   transactionRef?: string
   patientName?: string
   packageName?: string
+  paymentMethod?: string
 }
 
 export function buildReceiptHTML(data: ReceiptData): string {
@@ -31,6 +32,8 @@ export function buildReceiptHTML(data: ReceiptData): string {
     patientName ? `<div style="margin-bottom:14px"><div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Patient</div><div style="font-size:14px;color:#111;font-weight:600">${patientName}</div></div>` : '',
     packageName  ? `<div style="margin-bottom:14px"><div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Package</div><div style="font-size:14px;color:#111;font-weight:600">${packageName}</div></div>` : '',
   ].filter(Boolean).join('')
+
+  const payMethodLabel = data.paymentMethod ?? 'Paystack (Card)'
 
   const txnRow = transactionRef
     ? `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px solid #e8f5e9"><span style="font-size:11px;color:#888">Transaction Ref</span><span style="font-size:11px;color:#166534;font-weight:600;font-family:monospace">${transactionRef}</span></div>`
@@ -157,7 +160,7 @@ export function buildReceiptHTML(data: ReceiptData): string {
       <div class="pay-box">
         <div class="pay-row">
           <span class="pay-key">Payment Method</span>
-          <span class="pay-val">Paystack (Card)</span>
+          <span class="pay-val">${payMethodLabel}</span>
         </div>
         ${txnRow}
       </div>
