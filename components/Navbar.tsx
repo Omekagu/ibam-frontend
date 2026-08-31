@@ -23,7 +23,7 @@ export default function Navbar () {
     function sync () {
       const authed = isLoggedIn()
       setLoggedIn(authed)
-      if (authed) setDashboard(dashboardFor(getStoredUser()?.role))
+      if (authed) { const u = getStoredUser(); setDashboard(dashboardFor(u?.role, u?.adminRole)) }
     }
     sync()
     window.addEventListener('storage', sync)

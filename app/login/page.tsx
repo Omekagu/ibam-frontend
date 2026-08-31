@@ -3,7 +3,7 @@ import { useState, FormEvent, Suspense, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { login } from '@/lib/auth'
+import { login, verifyAdminOtp, type AdminOtpRequired } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { useStatusModal } from '@/components/StatusModal'
@@ -87,6 +87,8 @@ function LoginInner () {
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [adminOtp, setAdminOtp] = useState<AdminOtpRequired | null>(null)
+  const [otpCode, setOtpCode] = useState('')
 
   useEffect(() => {
     const msg = searchParams.get('error')
@@ -104,8 +106,15 @@ function LoginInner () {
     try {
       const payload =
         mode === 'email' ? { email, password } : { phone, password }
-      const { user } = await login(payload)
-      if (user.role === 'admin') router.push('/admin')
+      const result = await login(payload)
+      if ('requiresAdminOtp' in result) {
+        setAdminOtp(result)
+        setOtpCode('')
+        return
+      }
+      const { user } = result
+      if (user.role === 'admin')
+        router.push(user.adminRole === 'lab_admin' ? '/partner/lab' : '/admin')
       else if (user.role === 'doctor') router.push('/doctor')
       else if (user.role === 'pharmacy_partner')
         router.push('/partner/pharmacy')
@@ -132,6 +141,25 @@ function LoginInner () {
     }
   }
 
+  async function handleAdminOtp (e: FormEvent) {
+    e.preventDefault()
+    if (!adminOtp) return
+    setLoading(true)
+    try {
+      const { user } = await verifyAdminOtp(adminOtp.adminUserId, otpCode)
+      router.push(user.adminRole === 'lab_admin' ? '/partner/lab' : '/admin')
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      modal.show({
+        variant: 'declined',
+        title: 'Invalid Code',
+        message: e?.response?.data?.message ?? 'Incorrect or expired code.'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className={s.page}>
       <AuthBrandPanel />
@@ -150,133 +178,196 @@ function LoginInner () {
             </span>
           </Link>
 
-          <h1 className={s.formTitle}>Welcome back</h1>
-          <p className={s.formSub}>
-            New to iBam? <Link href='/signup'>Create an account</Link>
-          </p>
+          {adminOtp ? (
+            <>
+              <h1 className={s.formTitle}>Admin Verification</h1>
+              <p className={s.formSub}>
+                A 6-digit code was sent to your admin email. Enter it below to
+                continue.
+              </p>
 
-          <div className={s.modeToggle}>
-            <button
-              type='button'
-              className={`${s.modeBtn} ${
-                mode === 'email' ? s.modeBtnActive : ''
-              }`}
-              onClick={() => setMode('email')}
-            >
-              Email
-            </button>
-            <button
-              type='button'
-              className={`${s.modeBtn} ${
-                mode === 'phone' ? s.modeBtnActive : ''
-              }`}
-              onClick={() => setMode('phone')}
-            >
-              Phone Number
-            </button>
-          </div>
+              <form onSubmit={handleAdminOtp}>
+                <div className={s.field}>
+                  <label htmlFor='otp'>Verification Code</label>
+                  <input
+                    id='otp'
+                    type='text'
+                    inputMode='numeric'
+                    pattern='[0-9]{6}'
+                    maxLength={6}
+                    placeholder='000000'
+                    autoComplete='one-time-code'
+                    value={otpCode}
+                    onChange={e =>
+                      setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                    }
+                    required
+                    autoFocus
+                  />
+                </div>
 
-          <form onSubmit={handleSubmit}>
-            {mode === 'email' ? (
-              <div className={s.field}>
-                <label htmlFor='email'>Email Address</label>
-                <input
-                  id='email'
-                  type='email'
-                  placeholder='you@example.com'
-                  autoComplete='email'
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            ) : (
-              <div className={s.field}>
-                <label htmlFor='phone'>Phone Number</label>
-                <input
-                  id='phone'
-                  type='tel'
-                  placeholder='+234 800 000 0000'
-                  autoComplete='tel'
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-            )}
+                <button
+                  type='submit'
+                  className={s.submit}
+                  disabled={loading || otpCode.length < 6}
+                >
+                  {loading ? (
+                    <Loader inline size='sm' label='Verifying…' />
+                  ) : (
+                    'Verify & Sign In →'
+                  )}
+                </button>
+              </form>
 
-            <div className={s.field}>
-              <label htmlFor='password'>Password</label>
-              <div className={s.fieldInner}>
-                <input
-                  id='password'
-                  type={showPw ? 'text' : 'password'}
-                  placeholder='••••••••'
-                  autoComplete='current-password'
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
+              <button
+                type='button'
+                className={s.verifyLink}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+                onClick={() => {
+                  setAdminOtp(null)
+                  setOtpCode('')
+                }}
+              >
+                ← Back to login
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className={s.formTitle}>Welcome back</h1>
+              <p className={s.formSub}>
+                New to iBam? <Link href='/signup'>Create an account</Link>
+              </p>
+
+              <div className={s.modeToggle}>
                 <button
                   type='button'
-                  className={s.eyeBtn}
-                  onClick={() => setShowPw(v => !v)}
-                  tabIndex={-1}
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  className={`${s.modeBtn} ${
+                    mode === 'email' ? s.modeBtnActive : ''
+                  }`}
+                  onClick={() => setMode('email')}
                 >
-                  {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                  Email
+                </button>
+                <button
+                  type='button'
+                  className={`${s.modeBtn} ${
+                    mode === 'phone' ? s.modeBtnActive : ''
+                  }`}
+                  onClick={() => setMode('phone')}
+                >
+                  Phone Number
                 </button>
               </div>
-            </div>
 
-            <div className={s.meta}>
-              <label>
-                <input type='checkbox' /> Remember me
-              </label>
-              <Link href='/forgot-password'>Forgot password?</Link>
-            </div>
+              <form onSubmit={handleSubmit}>
+                {mode === 'email' ? (
+                  <div className={s.field}>
+                    <label htmlFor='email'>Email Address</label>
+                    <input
+                      id='email'
+                      type='email'
+                      placeholder='you@example.com'
+                      autoComplete='email'
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div className={s.field}>
+                    <label htmlFor='phone'>Phone Number</label>
+                    <input
+                      id='phone'
+                      type='tel'
+                      placeholder='+234 800 000 0000'
+                      autoComplete='tel'
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
 
-            <button type='submit' className={s.submit} disabled={loading}>
-              {loading ? (
-                <Loader inline size='sm' label='Logging in…' />
-              ) : (
-                'Log In →'
-              )}
-            </button>
-          </form>
+                <div className={s.field}>
+                  <label htmlFor='password'>Password</label>
+                  <div className={s.fieldInner}>
+                    <input
+                      id='password'
+                      type={showPw ? 'text' : 'password'}
+                      placeholder='••••••••'
+                      autoComplete='current-password'
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type='button'
+                      className={s.eyeBtn}
+                      onClick={() => setShowPw(v => !v)}
+                      tabIndex={-1}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                    >
+                      {showPw ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                </div>
 
-          <div className={s.dividerRow}>
-            <span className={s.dividerLine} />
-            <span className={s.dividerLabel}>or</span>
-            <span className={s.dividerLine} />
-          </div>
+                <div className={s.meta}>
+                  <label>
+                    <input type='checkbox' /> Remember me
+                  </label>
+                  <Link href='/forgot-password'>Forgot password?</Link>
+                </div>
 
-          <button
-            type='button'
-            className={s.googleBtn}
-            onClick={() => {
-              const api =
-                process.env.NEXT_PUBLIC_API_URL ??
-                'https://api.ibamhealth.com/api'
-              const cb = window.location.origin + '/auth/google/callback'
-              window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
-                cb
-              )}`
-            }}
-          >
-            <span className={s.googleIconWrap}>
-              <GoogleIcon />
-            </span>
-            Continue with Google
-          </button>
+                <button type='submit' className={s.submit} disabled={loading}>
+                  {loading ? (
+                    <Loader inline size='sm' label='Logging in…' />
+                  ) : (
+                    'Log In →'
+                  )}
+                </button>
+              </form>
 
-          <p className={s.signup}>
-            Don&apos;t have an account? <Link href='/signup'>Sign up free</Link>
-          </p>
+              <div className={s.dividerRow}>
+                <span className={s.dividerLine} />
+                <span className={s.dividerLabel}>or</span>
+                <span className={s.dividerLine} />
+              </div>
 
-          <div className={s.verifyLink}>
-            <Link href='/verify-email'>Verify your email →</Link>
-          </div>
+              <button
+                type='button'
+                className={s.googleBtn}
+                onClick={() => {
+                  const api =
+                    process.env.NEXT_PUBLIC_API_URL ??
+                    'https://api.ibamhealth.com/api'
+                  const cb = window.location.origin + '/auth/google/callback'
+                  window.location.href = `${api}/auth/google?platform=web&redirectUrl=${encodeURIComponent(
+                    cb
+                  )}`
+                }}
+              >
+                <span className={s.googleIconWrap}>
+                  <GoogleIcon />
+                </span>
+                Continue with Google
+              </button>
+
+              <p className={s.signup}>
+                Don&apos;t have an account?{' '}
+                <Link href='/signup'>Sign up free</Link>
+              </p>
+
+              <div className={s.verifyLink}>
+                <Link href='/verify-email'>Verify your email →</Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

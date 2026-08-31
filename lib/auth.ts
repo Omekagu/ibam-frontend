@@ -25,9 +25,15 @@ export interface AuthResponse {
     name: string
     email: string
     role: string
+    adminRole?: string
     avatar?: string
     isVerified: boolean
   }
+}
+
+export interface AdminOtpRequired {
+  requiresAdminOtp: true
+  adminUserId: string
 }
 
 function persist (data: AuthResponse) {
@@ -36,7 +42,7 @@ function persist (data: AuthResponse) {
   if (data.user) localStorage.setItem('user', JSON.stringify(data.user))
 }
 
-export async function login (payload: LoginPayload): Promise<AuthResponse> {
+export async function login (payload: LoginPayload): Promise<AuthResponse | AdminOtpRequired> {
   // Clear any existing session before establishing a new one so two accounts
   // can never coexist in the same browser storage.
   const existing = localStorage.getItem('access_token')
@@ -47,6 +53,14 @@ export async function login (payload: LoginPayload): Promise<AuthResponse> {
     localStorage.removeItem('user')
   }
   const res = await api.post('/auth/login', payload)
+  const data = res.data.data
+  if (data?.requiresAdminOtp) return data as AdminOtpRequired
+  persist(data as AuthResponse)
+  return data as AuthResponse
+}
+
+export async function verifyAdminOtp (adminUserId: string, otp: string): Promise<AuthResponse> {
+  const res = await api.post('/auth/verify-admin-otp', { adminUserId, otp })
   const data: AuthResponse = res.data.data
   persist(data)
   return data

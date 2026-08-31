@@ -991,3 +991,42 @@
   flex-shrink: 0;
   &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 }
+
+.orderExpandedBody {
+  border-top: 1px solid $navy-border;
+  padding: 0.875rem 1.25rem 0.875rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.orderDetailRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.4;
+  svg { flex-shrink: 0; margin-top: 2px; }
+  strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+}
+
+.orderFileLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $primary;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.orderRefCode {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.04em;
+  margin: 0;
+  margin-top: 2px;
+}

@@ -108,6 +108,8 @@ interface PharmacyOrder {
   pharmacy: { name: string; address: string; phone: string }
   fulfillmentType: 'delivery' | 'pickup'
   deliveryAddress?: string
+  notes?: string
+  externalPrescriptionUrl?: string
   status: string
   totalAmount: number
   paymentRef?: string | { _id: string; reference?: string; status?: string }
@@ -241,6 +243,7 @@ function PharmacyContent () {
   const [rxNotes, setRxNotes] = useState('')
   const [rxSub, setRxSub] = useState(false)
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null)
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
   const [gpsLoading, setGpsLoading] = useState(false)
 
   // ── Init ────────────────────────────────────────────────────────────────────
@@ -1484,6 +1487,7 @@ function PharmacyContent () {
                     ? order.prescription
                     : null
                 const pending = isPendingPayment(order)
+                const expanded = expandedOrderId === order._id
                 return (
                   <div
                     key={order._id}
@@ -1491,7 +1495,13 @@ function PharmacyContent () {
                   >
                     <div className={s.orderAccent} />
 
-                    <div className={s.orderCardTop}>
+                    <div
+                      className={s.orderCardTop}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() =>
+                        setExpandedOrderId(expanded ? null : order._id)
+                      }
+                    >
                       <div className={s.orderCardLeft}>
                         <div className={s.orderPharmacyIcon}>
                           <BuildingIcon size={18} />
@@ -1553,6 +1563,54 @@ function PharmacyContent () {
                         )}
                       </div>
                     </div>
+
+                    {/* Expanded details */}
+                    {expanded && (
+                      <div className={s.orderExpandedBody}>
+                        {order.fulfillmentType === 'delivery' &&
+                          order.deliveryAddress && (
+                            <p className={s.orderDetailRow}>
+                              <MapPinIcon size={13} />{' '}
+                              <strong>Delivery to:</strong>{' '}
+                              {order.deliveryAddress}
+                            </p>
+                          )}
+                        {order.pharmacy?.address && (
+                          <p className={s.orderDetailRow}>
+                            <BuildingIcon size={13} />{' '}
+                            <strong>Pharmacy:</strong> {order.pharmacy.address}
+                            {order.pharmacy.phone
+                              ? ` · ${order.pharmacy.phone}`
+                              : ''}
+                          </p>
+                        )}
+                        {rx?.diagnosis && (
+                          <p className={s.orderDetailRow}>
+                            <ClipboardIcon size={13} />{' '}
+                            <strong>Diagnosis:</strong> {rx.diagnosis}
+                          </p>
+                        )}
+                        {order.notes && (
+                          <p className={s.orderDetailRow}>
+                            <strong>Notes:</strong> {order.notes}
+                          </p>
+                        )}
+                        {order.externalPrescriptionUrl && (
+                          <a
+                            href={order.externalPrescriptionUrl}
+                            target='_blank'
+                            rel='noreferrer'
+                            className={s.orderFileLink}
+                          >
+                            <ClipboardIcon size={13} /> View Uploaded
+                            Prescription
+                          </a>
+                        )}
+                        <p className={s.orderRefCode}>
+                          Ref: #{order._id.slice(-8).toUpperCase()}
+                        </p>
+                      </div>
+                    )}
 
                     {pending && (
                       <div className={s.orderCardFooter}>

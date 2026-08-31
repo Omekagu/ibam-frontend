@@ -23,7 +23,7 @@ export default function SessionSync () {
         // Another tab logged in — redirect away from auth pages
         if (PUBLIC_ONLY.some(p => pathname.startsWith(p))) {
           const user = getStoredUser()
-          router.replace(dashboardFor(user?.role))
+          router.replace(dashboardFor(user?.role, user?.adminRole))
         }
       } else {
         // Another tab logged out — redirect portal pages to login

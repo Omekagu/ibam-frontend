@@ -31,6 +31,17 @@ interface LabRequest {
   createdAt: string
   walkInExpiresAt?: string
   wellnessPackage?: { name: string }
+  notes?: string
+  pickupLocation?: { address?: string; lat?: number; lng?: number }
+  preferredDate?: string
+  preferredTime?: string
+  externalReferralUrl?: string
+  result?: {
+    fileUrl: string
+    signedUrl?: string
+    notes?: string
+    createdAt: string
+  }
   paymentRef?: {
     _id?: string
     status?: string
@@ -1153,7 +1164,7 @@ function PatientLabsInner () {
             ) : (
               <div className={s.resultsList}>
                 {requests.map(req => {
-                  const result = resultMap.get(req._id)
+                  const result = req.result ?? resultMap.get(req._id)
                   const open = expandingResult === req._id
                   const canRefund = !!(
                     req.paymentRef?._id &&
@@ -1316,7 +1327,56 @@ function PatientLabsInner () {
                                 </span>
                               </div>
                             )}
+                            {req.pickupLocation?.address && (
+                              <div className={s.detailItem}>
+                                <span className={s.detailLabel}>Address</span>
+                                <span className={s.detailValue}>
+                                  <MapPinIcon size={14} />{' '}
+                                  {req.pickupLocation.address}
+                                </span>
+                              </div>
+                            )}
+                            {req.preferredDate && (
+                              <div className={s.detailItem}>
+                                <span className={s.detailLabel}>Preferred</span>
+                                <span className={s.detailValue}>
+                                  {new Date(
+                                    req.preferredDate
+                                  ).toLocaleDateString('en-NG', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short'
+                                  })}
+                                  {req.preferredTime &&
+                                    ` · ${req.preferredTime}`}
+                                </span>
+                              </div>
+                            )}
                           </div>
+
+                          {req.notes && (
+                            <div>
+                              <p className={s.bodyLabel}>Notes</p>
+                              <p
+                                className={s.pendingNote}
+                                style={{ marginTop: 0 }}
+                              >
+                                {req.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {req.externalReferralUrl && (
+                            <a
+                              href={req.externalReferralUrl}
+                              target='_blank'
+                              rel='noreferrer'
+                              className={s.downloadResultBtn}
+                            >
+                              <DocumentIcon size={15} /> View Prescription /
+                              Referral
+                            </a>
+                          )}
 
                           {/* Admin approval chip */}
                           {req.adminApprovalStatus === 'pending' && (
@@ -1400,7 +1460,9 @@ function PatientLabsInner () {
                             <div className={s.actionRow}>
                               {hasResult && result!.fileUrl && (
                                 <a
-                                  href={result!.fileUrl}
+                                  href={
+                                    (result as any).signedUrl ?? result!.fileUrl
+                                  }
                                   target='_blank'
                                   rel='noreferrer'
                                   className={s.downloadResultBtn}

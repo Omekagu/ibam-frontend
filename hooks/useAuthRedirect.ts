@@ -3,9 +3,9 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { isLoggedIn, getStoredUser } from '@/lib/auth'
 
-export function dashboardFor (role?: string): string {
+export function dashboardFor (role?: string, adminRole?: string): string {
   if (role === 'doctor')           return '/doctor'
-  if (role === 'admin')            return '/admin'
+  if (role === 'admin')            return adminRole === 'lab_admin' ? '/partner/lab' : '/admin'
   if (role === 'pharmacy_partner') return '/partner/pharmacy'
   if (role === 'lab_partner')      return '/partner/lab'
   return '/patient'
@@ -21,6 +21,6 @@ export function useAuthRedirect () {
   useEffect(() => {
     if (!isLoggedIn()) return
     const user = getStoredUser()
-    router.replace(dashboardFor(user?.role))
+    router.replace(dashboardFor(user?.role, user?.adminRole))
   }, [router])
 }
