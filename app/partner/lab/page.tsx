@@ -376,7 +376,7 @@ function RequestCard ({
               <p className={s.sectionLabel}>Payment Receipt</p>
               <div className={s.receiptRow}>
                 <span>Amount</span>
-                <strong>₦{(req.totalAmount > 0 ? req.totalAmount : Math.round((req.paymentRef.amount ?? 0) / 100)).toLocaleString()}</strong>
+                <strong>₦{(req.totalAmount != null && req.totalAmount > 0 ? req.totalAmount : Math.round((req.paymentRef?.amount ?? 0) / 100)).toLocaleString()}</strong>
               </div>
               <div className={s.receiptRow}>
                 <span>Method</span>
@@ -546,7 +546,7 @@ function ClaimCard ({ req, claiming, onClaim }: { req: Request; claiming: string
               <p className={s.sectionLabel}>Payment</p>
               <div className={s.receiptRow}>
                 <span>Amount</span>
-                <strong>₦{(req.totalAmount > 0 ? req.totalAmount : Math.round((req.paymentRef.amount ?? 0) / 100)).toLocaleString()}</strong>
+                <strong>₦{(req.totalAmount != null && req.totalAmount > 0 ? req.totalAmount : Math.round((req.paymentRef?.amount ?? 0) / 100)).toLocaleString()}</strong>
               </div>
               <div className={s.receiptRow}>
                 <span>Method</span>
