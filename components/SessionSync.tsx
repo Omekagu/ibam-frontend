@@ -27,7 +27,7 @@ export default function SessionSync () {
         }
       } else {
         // Another tab logged out — redirect portal pages to login
-        const isPortal = ['/patient/', '/doctor/', '/admin/', '/partner/'].some(p => pathname.startsWith(p))
+        const isPortal = ['/patient/', '/doctor/', '/admin/', '/partner/', '/lab'].some(p => pathname.startsWith(p))
         if (isPortal) {
           router.replace('/login')
         }

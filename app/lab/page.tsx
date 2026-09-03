@@ -506,8 +506,17 @@ interface WalkInTest {
   estimatedPrice?: number
   turnaroundHours: number
 }
+interface WellnessPkg {
+  _id: string
+  name: string
+  gender: string
+  walkInPrice: number
+  includedTests: string[]
+  isActive: boolean
+}
 type WalkInStep = 'patient' | 'tests' | 'payment' | 'done'
 type WalkInPay = 'pos' | 'direct_transfer'
+type WalkInMode = 'individual' | 'wellness'
 
 const WALK_IN_PAY: { value: WalkInPay; label: string; desc: string }[] = [
   {
@@ -523,18 +532,21 @@ const WALK_IN_PAY: { value: WalkInPay; label: string; desc: string }[] = [
 ]
 
 function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
-  const [step, setStep] = useState<WalkInStep>('patient')
-  const [allTests, setAllTests] = useState<WalkInTest[]>([])
+  const [step,        setStep]        = useState<WalkInStep>('patient')
+  const [testMode,    setTestMode]    = useState<WalkInMode>('individual')
+  const [allTests,    setAllTests]    = useState<WalkInTest[]>([])
+  const [allPackages, setAllPackages] = useState<WellnessPkg[]>([])
+  const [selectedPkg, setSelectedPkg] = useState<WellnessPkg | null>(null)
   const [loadingTests, setLoadingTests] = useState(true)
-  const [search, setSearch] = useState('')
-  const [selected, setSelected] = useState<string[]>([])
-  const [patient, setPatient] = useState({
+  const [search,      setSearch]      = useState('')
+  const [selected,    setSelected]    = useState<string[]>([])
+  const [patient,     setPatient]     = useState({
     name: '',
     phone: '',
     email: '',
     notes: ''
   })
-  const [payMethod, setPayMethod] = useState<WalkInPay>()
+  const [payMethod,  setPayMethod]  = useState<WalkInPay>('pos')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{
     bookingRef: string
@@ -552,6 +564,10 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
       .then(r => setAllTests(r.data.data?.tests ?? []))
       .catch(() => setAllTests([]))
       .finally(() => setLoadingTests(false))
+    labApi
+      .get('/diagnostics/labs/wellness-packages')
+      .then(r => setAllPackages(r.data.data ?? []))
+      .catch(() => {})
   }, [labApi])
 
   const filtered = allTests.filter(
@@ -567,10 +583,15 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
   }, {})
 
   const selectedTests = allTests.filter(t => selected.includes(t.name))
-  const total = selectedTests.reduce(
-    (sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0),
-    0
-  )
+  const total = testMode === 'wellness' && selectedPkg
+    ? selectedPkg.walkInPrice
+    : selectedTests.reduce((sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0), 0)
+
+  const displayTests = testMode === 'wellness' && selectedPkg
+    ? selectedPkg.includedTests
+    : selected
+
+  const canProceed = testMode === 'wellness' ? !!selectedPkg : selected.length > 0
 
   function toggle (name: string) {
     setSelected(p =>
@@ -582,26 +603,29 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     setSubmitting(true)
     setError('')
     try {
-      const res = await labApi.post('/diagnostics/labs/walk-in', {
+      const body: Record<string, unknown> = {
         patientName: patient.name,
         patientPhone: patient.phone,
         patientEmail: patient.email || undefined,
-        tests: selected,
         paymentMethod: payMethod,
         totalAmount: total,
         notes: patient.notes || undefined
-      })
+      }
+      if (testMode === 'wellness' && selectedPkg) {
+        body.wellnessPackageId = selectedPkg._id
+      } else {
+        body.tests = selected
+      }
+      const res = await labApi.post('/diagnostics/labs/walk-in', body)
       const d = res.data.data
       setResult({
         bookingRef: d.bookingRef,
         patientName: d.patient.name,
         phone: d.patient.phone,
-        tests: selected,
+        tests: displayTests,
         total,
         payLabel:
-          WALK_IN_PAY.find(m => m.value === payMethod)?.label ??
-          payMethod ??
-          'pos'
+          WALK_IN_PAY.find(m => m.value === payMethod)?.label ?? payMethod
       })
       setStep('done')
     } catch (e: unknown) {
@@ -617,6 +641,8 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
   function reset () {
     setStep('patient')
     setSelected([])
+    setSelectedPkg(null)
+    setTestMode('individual')
     setSearch('')
     setPatient({ name: '', phone: '', email: '', notes: '' })
     setPayMethod('pos')
@@ -747,98 +773,152 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
           <div className={s.wiTopRow}>
             <div>
               <h3 className={s.wiTitle}>Select Tests</h3>
-              <p className={s.wiHint}>Choose all tests the patient requires.</p>
+              <p className={s.wiHint}>Choose individual tests or a wellness package.</p>
             </div>
-            {selected.length > 0 && (
+            {canProceed && (
               <div className={s.wiSelBadge}>
-                {selected.length} · ₦{total.toLocaleString()}
+                {testMode === 'wellness'
+                  ? selectedPkg!.name
+                  : `${selected.length} · ₦${total.toLocaleString()}`}
               </div>
             )}
           </div>
-          <div className={s.wiSearch}>
-            <SearchIcon size={14} />
-            <input
-              className={s.wiSearchInput}
-              placeholder='Search tests…'
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-            />
-            {search && (
-              <button className={s.searchClear} onClick={() => setSearch('')}>
-                <XIcon size={12} />
-              </button>
-            )}
+
+          {/* Mode toggle */}
+          <div className={s.wiModeToggle}>
+            <button
+              className={`${s.wiModeBtn} ${testMode === 'individual' ? s.wiModeBtnActive : ''}`}
+              onClick={() => { setTestMode('individual'); setSelectedPkg(null) }}
+            >
+              Individual Tests
+            </button>
+            <button
+              className={`${s.wiModeBtn} ${testMode === 'wellness' ? s.wiModeBtnActive : ''}`}
+              onClick={() => { setTestMode('wellness'); setSelected([]) }}
+            >
+              Wellness Package
+            </button>
           </div>
-          {loadingTests ? (
-            <div className={s.empty}>
-              <Loader label='Loading tests…' />
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className={s.empty}>
-              No tests found{search ? ` for "${search}"` : '.'}
-            </p>
+
+          {testMode === 'individual' ? (
+            <>
+              <div className={s.wiSearch}>
+                <SearchIcon size={14} />
+                <input
+                  className={s.wiSearchInput}
+                  placeholder='Search tests…'
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  autoFocus
+                />
+                {search && (
+                  <button className={s.searchClear} onClick={() => setSearch('')}>
+                    <XIcon size={12} />
+                  </button>
+                )}
+              </div>
+              {loadingTests ? (
+                <div className={s.empty}>
+                  <Loader label='Loading tests…' />
+                </div>
+              ) : filtered.length === 0 ? (
+                <p className={s.empty}>
+                  No tests found{search ? ` for "${search}"` : '.'}
+                </p>
+              ) : (
+                <div className={s.wiTestsScroll}>
+                  {Object.entries(grouped)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([cat, tests]) => (
+                      <div key={cat} className={s.wiCatGroup}>
+                        <p className={s.wiCatLabel}>
+                          {cat} <span className={s.wiCatCount}>{tests.length}</span>
+                        </p>
+                        {tests.map(t => {
+                          const price = t.walkInPrice ?? t.estimatedPrice ?? 0
+                          const sel = selected.includes(t.name)
+                          return (
+                            <label
+                              key={t._id}
+                              className={`${s.wiTestRow} ${sel ? s.wiTestRowSel : ''}`}
+                            >
+                              <span className={`${s.wiCheck} ${sel ? s.wiCheckOn : ''}`}>
+                                {sel && '✓'}
+                              </span>
+                              <input
+                                type='checkbox'
+                                checked={sel}
+                                onChange={() => toggle(t.name)}
+                                style={{ display: 'none' }}
+                              />
+                              <span className={s.wiTestName}>{t.name}</span>
+                              <span className={s.wiTurnaround}>{t.turnaroundHours}h</span>
+                              <span className={s.wiPrice}>
+                                {price > 0 ? `₦${price.toLocaleString()}` : '—'}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    ))}
+                </div>
+              )}
+              {selected.length > 0 && (
+                <div className={s.wiSummaryBar}>
+                  <span>{selected.length} test{selected.length !== 1 ? 's' : ''}</span>
+                  <span className={s.wiSummaryTotal}>₦{total.toLocaleString()}</span>
+                </div>
+              )}
+            </>
           ) : (
-            <div className={s.wiTestsScroll}>
-              {Object.entries(grouped)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([cat, tests]) => (
-                  <div key={cat} className={s.wiCatGroup}>
-                    <p className={s.wiCatLabel}>
-                      {cat} <span className={s.wiCatCount}>{tests.length}</span>
-                    </p>
-                    {tests.map(t => {
-                      const price = t.walkInPrice ?? t.estimatedPrice ?? 0
-                      const sel = selected.includes(t.name)
-                      return (
-                        <label
-                          key={t._id}
-                          className={`${s.wiTestRow} ${
-                            sel ? s.wiTestRowSel : ''
-                          }`}
-                        >
-                          <span
-                            className={`${s.wiCheck} ${sel ? s.wiCheckOn : ''}`}
-                          >
-                            {sel && '✓'}
-                          </span>
-                          <input
-                            type='checkbox'
-                            checked={sel}
-                            onChange={() => toggle(t.name)}
-                            style={{ display: 'none' }}
-                          />
-                          <span className={s.wiTestName}>{t.name}</span>
-                          <span className={s.wiTurnaround}>
-                            {t.turnaroundHours}h
-                          </span>
-                          <span className={s.wiPrice}>
-                            {price > 0 ? `₦${price.toLocaleString()}` : '—'}
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                ))}
-            </div>
+            <>
+              {loadingTests ? (
+                <div className={s.empty}><Loader label='Loading packages…' /></div>
+              ) : allPackages.length === 0 ? (
+                <p className={s.empty}>No wellness packages available.</p>
+              ) : (
+                <div className={s.wiPkgGrid}>
+                  {allPackages.map(pkg => (
+                    <button
+                      key={pkg._id}
+                      className={`${s.wiPkgCard} ${selectedPkg?._id === pkg._id ? s.wiPkgCardSel : ''}`}
+                      onClick={() => setSelectedPkg(pkg)}
+                    >
+                      <p className={s.wiPkgName}>{pkg.name}</p>
+                      {pkg.gender !== 'all' && (
+                        <span className={s.wiPkgGender}>{pkg.gender}</span>
+                      )}
+                      <p className={s.wiPkgPrice}>₦{pkg.walkInPrice.toLocaleString()}</p>
+                      {pkg.includedTests.length > 0 && (
+                        <div className={s.wiPkgTests}>
+                          {pkg.includedTests.slice(0, 4).map(t => (
+                            <span key={t} className={s.wiPkgTag}>{t}</span>
+                          ))}
+                          {pkg.includedTests.length > 4 && (
+                            <span className={s.wiPkgTag}>+{pkg.includedTests.length - 4} more</span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedPkg && (
+                <div className={s.wiSummaryBar}>
+                  <span>{selectedPkg.name}</span>
+                  <span className={s.wiSummaryTotal}>₦{total.toLocaleString()}</span>
+                </div>
+              )}
+            </>
           )}
-          {selected.length > 0 && (
-            <div className={s.wiSummaryBar}>
-              <span>
-                {selected.length} test{selected.length !== 1 ? 's' : ''}
-              </span>
-              <span className={s.wiSummaryTotal}>
-                ₦{total.toLocaleString()}
-              </span>
-            </div>
-          )}
+
           <div className={s.wiActions}>
             <button className={s.wiBtn2} onClick={() => setStep('patient')}>
               ← Back
             </button>
             <button
               className={s.wiBtn}
-              disabled={!selected.length}
+              disabled={!canProceed}
               onClick={() => setStep('payment')}
             >
               Next: Payment →
@@ -869,19 +949,41 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
           </div>
 
           <div className={s.wiReviewBlock}>
-            <p className={s.wiReviewTitle}>Tests ({selected.length})</p>
-            {selectedTests.map(t => {
-              const price = t.walkInPrice ?? t.estimatedPrice ?? 0
-              return (
-                <div key={t._id} className={s.wiReviewRow}>
-                  <span className={s.wiReviewName}>{t.name}</span>
-                  <span className={s.wiReviewCat}>{t.category}</span>
-                  <span className={s.wiReviewPrice}>
-                    {price > 0 ? `₦${price.toLocaleString()}` : 'Free'}
-                  </span>
+            {testMode === 'wellness' && selectedPkg ? (
+              <>
+                <p className={s.wiReviewTitle}>Wellness Package</p>
+                <div className={s.wiReviewRow}>
+                  <span className={s.wiReviewName}>{selectedPkg.name}</span>
+                  {selectedPkg.gender !== 'all' && (
+                    <span className={s.wiReviewCat}>{selectedPkg.gender}</span>
+                  )}
+                  <span className={s.wiReviewPrice}>₦{selectedPkg.walkInPrice.toLocaleString()}</span>
                 </div>
-              )
-            })}
+                {selectedPkg.includedTests.length > 0 && (
+                  <div className={s.wiPkgTests} style={{ marginTop: 6 }}>
+                    {selectedPkg.includedTests.map(t => (
+                      <span key={t} className={s.wiPkgTag}>{t}</span>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <p className={s.wiReviewTitle}>Tests ({selectedTests.length})</p>
+                {selectedTests.map(t => {
+                  const price = t.walkInPrice ?? t.estimatedPrice ?? 0
+                  return (
+                    <div key={t._id} className={s.wiReviewRow}>
+                      <span className={s.wiReviewName}>{t.name}</span>
+                      <span className={s.wiReviewCat}>{t.category}</span>
+                      <span className={s.wiReviewPrice}>
+                        {price > 0 ? `₦${price.toLocaleString()}` : 'Free'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </>
+            )}
             <div className={s.wiTotalRow}>
               <span>Total</span>
               <span className={s.wiTotalVal}>₦{total.toLocaleString()}</span>
