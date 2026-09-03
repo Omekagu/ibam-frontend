@@ -49,7 +49,6 @@ interface Request {
 }
 
 const METHOD_LABEL: Record<string, string> = {
-  walk_in_cash: 'Cash',
   pos: 'POS',
   direct_transfer: 'Bank Transfer',
   paystack: 'Paystack',
@@ -85,7 +84,7 @@ function WalkInModal ({
   const [patientPhone,  setPatientPhone]  = useState('')
   const [patientEmail,  setPatientEmail]  = useState('')
   const [selected,      setSelected]      = useState<string[]>([])
-  const [paymentMethod, setPaymentMethod] = useState('walk_in_cash')
+  const [paymentMethod, setPaymentMethod] = useState('pos')
   const [notes,         setNotes]         = useState('')
   const [search,        setSearch]        = useState('')
   const [loading,       setLoading]       = useState(false)
@@ -245,7 +244,6 @@ function WalkInModal ({
             <div className={s.field}>
               <label>Payment Method</label>
               <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                <option value="walk_in_cash">Cash</option>
                 <option value="pos">POS</option>
                 <option value="direct_transfer">Bank Transfer</option>
               </select>

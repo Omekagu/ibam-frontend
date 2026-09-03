@@ -180,7 +180,7 @@ export default function PharmacyPartnerDashboard () {
                         <span className={s.receiptLabel}>Payment</span>
                         <span className={isPaid ? s.paidBadge : s.unpaidBadge}>
                           {isPaid
-                            ? `Paid via ${order.paymentRef?.method === 'walk_in_cash' ? 'Cash' : 'App'}`
+                            ? `Paid via ${order.paymentRef?.method === 'pos' ? 'POS' : order.paymentRef?.method === 'direct_transfer' ? 'Bank Transfer' : 'App'}`
                             : 'Not yet paid'}
                         </span>
                       </div>

@@ -507,14 +507,9 @@ interface WalkInTest {
   turnaroundHours: number
 }
 type WalkInStep = 'patient' | 'tests' | 'payment' | 'done'
-type WalkInPay = 'walk_in_cash' | 'pos' | 'direct_transfer'
+type WalkInPay = 'pos' | 'direct_transfer'
 
 const WALK_IN_PAY: { value: WalkInPay; label: string; desc: string }[] = [
-  {
-    value: 'walk_in_cash',
-    label: 'Cash',
-    desc: 'Patient pays in cash at the counter'
-  },
   {
     value: 'pos',
     label: 'POS / Card',
@@ -539,7 +534,7 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     email: '',
     notes: ''
   })
-  const [payMethod, setPayMethod] = useState<WalkInPay>('walk_in_cash')
+  const [payMethod, setPayMethod] = useState<WalkInPay>()
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{
     bookingRef: string
