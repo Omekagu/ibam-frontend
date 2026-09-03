@@ -14,8 +14,21 @@ interface LabTest {
   turnaroundHours: number
 }
 
+interface WellnessPkg {
+  _id: string
+  name: string
+  targetAudience?: string
+  benefits?: string
+  includedTests: string[]
+  walkInPrice: number
+  homeVisitPrice: number
+  gender: string
+  isActive: boolean
+}
+
 type Step = 'patient' | 'tests' | 'payment' | 'done'
 type PayMethod = 'pos' | 'direct_transfer'
+type TestMode = 'individual' | 'wellness'
 
 interface PatientInfo {
   name: string
@@ -61,27 +74,31 @@ function stepIndex (st: Step) {
 
 export default function WalkInLabPage () {
   const [step, setStep] = useState<Step>('patient')
+  const [testMode, setTestMode] = useState<TestMode>('individual')
   const [allTests, setAllTests] = useState<LabTest[]>([])
+  const [allPackages, setAllPackages] = useState<WellnessPkg[]>([])
   const [loadingTests, setLoadingTests] = useState(true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<string[]>([])
+  const [selectedPkg, setSelectedPkg] = useState<WellnessPkg | null>(null)
   const [patient, setPatient] = useState<PatientInfo>({
     name: '',
     phone: '',
     email: '',
     notes: ''
   })
-  const [payMethod, setPayMethod] = useState<PayMethod>()
+  const [payMethod, setPayMethod] = useState<PayMethod>('pos')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<SuccessData | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api
-      .get('/admin/lab-tests')
-      .then(r => setAllTests(r.data.data?.labTests ?? r.data.data?.tests ?? []))
-      .catch(() => setAllTests([]))
-      .finally(() => setLoadingTests(false))
+    Promise.allSettled([
+      api.get('/admin/lab-tests').then(r => setAllTests(r.data.data?.labTests ?? [])),
+      api.get('/admin/wellness-packages').then(r =>
+        setAllPackages((r.data.data?.packages ?? []).filter((p: WellnessPkg) => p.isActive))
+      )
+    ]).finally(() => setLoadingTests(false))
   }, [])
 
   const filtered = allTests.filter(
@@ -97,10 +114,13 @@ export default function WalkInLabPage () {
   }, {})
 
   const selectedTests = allTests.filter(t => selected.includes(t.name))
-  const total = selectedTests.reduce(
-    (sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0),
-    0
-  )
+  const total = testMode === 'wellness' && selectedPkg
+    ? selectedPkg.walkInPrice
+    : selectedTests.reduce((sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0), 0)
+
+  const displayTests = testMode === 'wellness' && selectedPkg
+    ? selectedPkg.includedTests
+    : selected
 
   function toggleTest (name: string) {
     setSelected(prev =>
@@ -108,41 +128,40 @@ export default function WalkInLabPage () {
     )
   }
 
+  const canProceedFromTests = testMode === 'wellness' ? !!selectedPkg : selected.length > 0
+
   async function handleSubmit () {
     setSubmitting(true)
     setError('')
     try {
-      const res = await api.post('/admin/diagnostics/walk-in', {
+      const payload: Record<string, unknown> = {
         patientName: patient.name,
         patientPhone: patient.phone,
         patientEmail: patient.email || undefined,
-        tests: selected,
         paymentMethod: payMethod,
         totalAmount: total,
         notes: patient.notes || undefined
-      })
+      }
+      if (testMode === 'wellness' && selectedPkg) {
+        payload.wellnessPackageId = selectedPkg._id
+      } else {
+        payload.tests = selected
+      }
+      const res = await api.post('/admin/diagnostics/walk-in', payload)
       const data = res.data.data
-      const methodLabel =
-        PAY_METHODS.find(m => m.value === payMethod)?.label ?? payMethod
+      const methodLabel = PAY_METHODS.find(m => m.value === payMethod)?.label ?? payMethod
       setSuccess({
         bookingRef: data.bookingRef,
         patientName: data.patient.name,
         phone: data.patient.phone,
-        tests: selected,
+        tests: displayTests,
         total,
         payMethodLabel: methodLabel,
-        date: new Date().toLocaleDateString('en-NG', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        })
+        date: new Date().toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
       })
       setStep('done')
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message ??
-          'Failed to create request. Please try again.'
-      )
+    } catch (e: unknown) {
+      setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create request. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -151,6 +170,8 @@ export default function WalkInLabPage () {
   function resetAll () {
     setStep('patient')
     setSelected([])
+    setSelectedPkg(null)
+    setTestMode('individual')
     setPatient({ name: '', phone: '', email: '', notes: '' })
     setSuccess(null)
     setError('')
@@ -280,118 +301,122 @@ export default function WalkInLabPage () {
         </div>
       )}
 
-      {/* ─────────────── STEP 2: Test Selection ─────────────── */}
+      {/* ─────────────── STEP 2: Test / Package Selection ─────────────── */}
       {step === 'tests' && (
         <div className={s.card}>
           <div className={s.testTopRow}>
             <div>
               <h2 className={s.cardTitle}>Select Tests</h2>
               <p className={s.cardHint}>
-                Choose all tests the patient needs. Walk-in prices shown.
+                Choose individual tests or a wellness package for the patient.
               </p>
             </div>
-            {selected.length > 0 && (
+            {canProceedFromTests && (
               <div className={s.selBadge}>
-                {selected.length} selected &nbsp;·&nbsp; ₦
-                {total.toLocaleString()}
+                {testMode === 'wellness' && selectedPkg
+                  ? selectedPkg.name
+                  : `${selected.length} selected`}
+                &nbsp;·&nbsp; ₦{total.toLocaleString()}
               </div>
             )}
           </div>
 
-          <div className={s.searchBar}>
-            <MagnifyIcon />
-            <input
-              className={s.searchInput}
-              placeholder='Search by test name or category…'
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-            />
-            {search && (
-              <button className={s.clearBtn} onClick={() => setSearch('')}>
-                ✕
-              </button>
-            )}
+          {/* Mode toggle */}
+          <div className={s.modeToggle}>
+            <button
+              className={`${s.modeBtn} ${testMode === 'individual' ? s.modeBtnActive : ''}`}
+              onClick={() => { setTestMode('individual'); setSelectedPkg(null) }}
+            >
+              Individual Tests
+            </button>
+            <button
+              className={`${s.modeBtn} ${testMode === 'wellness' ? s.modeBtnActive : ''}`}
+              onClick={() => { setTestMode('wellness'); setSelected([]) }}
+            >
+              Wellness Package
+            </button>
           </div>
 
-          {loadingTests ? (
-            <div className={s.centered}>
-              <Loader />
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className={s.empty}>
-              No tests found{search ? ` for "${search}"` : '.'}
-            </p>
-          ) : (
-            <div className={s.categoriesWrap}>
-              {Object.entries(grouped)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([cat, catTests]) => (
-                  <div key={cat} className={s.catGroup}>
-                    <p className={s.catLabel}>
-                      {cat}
-                      <span className={s.catCount}>{catTests.length}</span>
-                    </p>
-                    <div className={s.testRows}>
-                      {catTests.map(t => {
-                        const price = t.walkInPrice ?? t.estimatedPrice ?? 0
-                        const sel = selected.includes(t.name)
-                        return (
-                          <label
-                            key={t._id}
-                            className={`${s.testRow} ${
-                              sel ? s.testRowSel : ''
-                            }`}
-                          >
-                            <span
-                              className={`${s.checkBox} ${
-                                sel ? s.checkBoxOn : ''
-                              }`}
-                            >
-                              {sel && <CheckSmallIcon />}
-                            </span>
-                            <input
-                              type='checkbox'
-                              checked={sel}
-                              onChange={() => toggleTest(t.name)}
-                              className={s.hiddenCheck}
-                            />
-                            <span className={s.testName}>{t.name}</span>
-                            <span className={s.turnaround}>
-                              {t.turnaroundHours}h
-                            </span>
-                            <span className={s.testPrice}>
-                              {price > 0 ? `₦${price.toLocaleString()}` : '—'}
-                            </span>
-                          </label>
-                        )
-                      })}
-                    </div>
+          {testMode === 'wellness' ? (
+            loadingTests ? (
+              <div className={s.centered}><Loader /></div>
+            ) : allPackages.length === 0 ? (
+              <p className={s.empty}>No wellness packages configured yet.</p>
+            ) : (
+              <div className={s.pkgGrid}>
+                {allPackages.map(pkg => (
+                  <div
+                    key={pkg._id}
+                    className={`${s.pkgCard} ${selectedPkg?._id === pkg._id ? s.pkgCardSel : ''}`}
+                    onClick={() => setSelectedPkg(pkg)}
+                  >
+                    <p className={s.pkgName}>{pkg.name}</p>
+                    {pkg.targetAudience && <p className={s.pkgAudience}>{pkg.targetAudience}</p>}
+                    <p className={s.pkgPrice}>₦{pkg.walkInPrice.toLocaleString()} walk-in</p>
+                    <p className={s.pkgTests}>{pkg.includedTests.slice(0, 4).join(', ')}{pkg.includedTests.length > 4 ? ` +${pkg.includedTests.length - 4} more` : ''}</p>
                   </div>
                 ))}
-            </div>
-          )}
-
-          {selected.length > 0 && (
-            <div className={s.floatSummary}>
-              <span className={s.floatCount}>
-                {selected.length} test{selected.length !== 1 ? 's' : ''}{' '}
-                selected
-              </span>
-              <span className={s.floatTotal}>₦{total.toLocaleString()}</span>
-            </div>
+              </div>
+            )
+          ) : (
+            <>
+              <div className={s.searchBar}>
+                <MagnifyIcon />
+                <input
+                  className={s.searchInput}
+                  placeholder='Search by test name or category…'
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  autoFocus
+                />
+                {search && (
+                  <button className={s.clearBtn} onClick={() => setSearch('')}>✕</button>
+                )}
+              </div>
+              {loadingTests ? (
+                <div className={s.centered}><Loader /></div>
+              ) : filtered.length === 0 ? (
+                <p className={s.empty}>No tests found{search ? ` for "${search}"` : '.'}</p>
+              ) : (
+                <div className={s.categoriesWrap}>
+                  {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([cat, catTests]) => (
+                    <div key={cat} className={s.catGroup}>
+                      <p className={s.catLabel}>{cat}<span className={s.catCount}>{catTests.length}</span></p>
+                      <div className={s.testRows}>
+                        {catTests.map(t => {
+                          const price = t.walkInPrice ?? t.estimatedPrice ?? 0
+                          const sel = selected.includes(t.name)
+                          return (
+                            <label key={t._id} className={`${s.testRow} ${sel ? s.testRowSel : ''}`}>
+                              <span className={`${s.checkBox} ${sel ? s.checkBoxOn : ''}`}>
+                                {sel && <CheckSmallIcon />}
+                              </span>
+                              <input type='checkbox' checked={sel} onChange={() => toggleTest(t.name)} className={s.hiddenCheck} />
+                              <span className={s.testName}>{t.name}</span>
+                              <span className={s.turnaround}>{t.turnaroundHours}h</span>
+                              <span className={s.testPrice}>{price > 0 ? `₦${price.toLocaleString()}` : '—'}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selected.length > 0 && (
+                <div className={s.floatSummary}>
+                  <span className={s.floatCount}>{selected.length} test{selected.length !== 1 ? 's' : ''} selected</span>
+                  <span className={s.floatTotal}>₦{total.toLocaleString()}</span>
+                </div>
+              )}
+            </>
           )}
 
           <div className={s.actions}>
-            <button
-              className={s.btnSecondary}
-              onClick={() => setStep('patient')}
-            >
-              ← Back
-            </button>
+            <button className={s.btnSecondary} onClick={() => setStep('patient')}>← Back</button>
             <button
               className={s.btnPrimary}
-              disabled={selected.length === 0}
+              disabled={!canProceedFromTests}
               onClick={() => setStep('payment')}
             >
               Next: Payment →
@@ -422,29 +447,22 @@ export default function WalkInLabPage () {
             </div>
           </div>
 
-          {/* Tests */}
+          {/* Tests / Package */}
           <div className={s.reviewSection}>
             <p className={s.reviewSectionTitle}>
-              Tests Selected ({selected.length})
+              {testMode === 'wellness' && selectedPkg
+                ? `Wellness Package · ${selectedPkg.name}`
+                : `Tests Selected (${displayTests.length})`}
             </p>
             <div className={s.reviewTestList}>
-              {selectedTests.map(t => {
-                const price = t.walkInPrice ?? t.estimatedPrice ?? 0
-                return (
-                  <div key={t._id} className={s.reviewTestRow}>
-                    <span className={s.reviewTestName}>{t.name}</span>
-                    <span className={s.reviewTestCat}>{t.category}</span>
-                    <span className={s.reviewTestPrice}>
-                      {price > 0 ? `₦${price.toLocaleString()}` : 'Free'}
-                    </span>
-                  </div>
-                )
-              })}
+              {displayTests.map((name, i) => (
+                <div key={i} className={s.reviewTestRow}>
+                  <span className={s.reviewTestName}>{name}</span>
+                </div>
+              ))}
               <div className={s.reviewTotal}>
                 <span>Total</span>
-                <span className={s.reviewTotalVal}>
-                  ₦{total.toLocaleString()}
-                </span>
+                <span className={s.reviewTotalVal}>₦{total.toLocaleString()}</span>
               </div>
             </div>
           </div>

@@ -436,6 +436,179 @@
   justify-content: center;
 }
 
+// ── Walk-in tab styles ────────────────────────────────────────────────────────
+
+.tabWalkin { color: $primary; font-weight: 700; }
+
+.wiWrap { display: flex; flex-direction: column; gap: 1.5rem; max-width: 720px; }
+
+// Stepper
+.wiStepper { display: flex; align-items: center; gap: 0; }
+.wiStepItem { display: flex; align-items: center; gap: 8px; flex: 1; }
+.wiStepBubble {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 800; flex-shrink: 0;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.4);
+}
+.wiStepActive { background: rgba($primary,0.2); border-color: $primary; color: $primary; }
+.wiStepDone   { background: rgba($success,0.15); border-color: $success; color: $success; }
+.wiStepLabel  { font-size: 0.72rem; color: rgba(255,255,255,0.35); white-space: nowrap; }
+.wiStepLabelActive { color: $white; font-weight: 700; }
+.wiStepLine   { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+.wiStepLineDone { background: $success; }
+
+// Card
+.wiCard { background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.wiTitle { font-size: 1rem; font-weight: 800; color: $white; margin: 0; }
+.wiHint  { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin: 0; }
+
+// Fields
+.wiGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.wiField { display: flex; flex-direction: column; gap: 5px; }
+.wiFieldFull { grid-column: 1 / -1; }
+.wiLabel { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.05em; }
+.wiReq   { font-style: normal; color: $danger; margin-left: 2px; }
+.wiOpt   { font-size: 0.68rem; color: rgba(255,255,255,0.28); font-weight: 400; }
+.wiInput {
+  background: rgba(255,255,255,0.05); border: 1px solid $navy-border; border-radius: $radius-sm;
+  padding: 9px 11px; font-size: 0.875rem; color: $white; font-family: inherit; outline: none;
+  transition: border-color 0.15s; width: 100%; box-sizing: border-box;
+  &::placeholder { color: rgba(255,255,255,0.2); }
+  &:focus { border-color: rgba($primary,0.45); }
+}
+.wiTextarea { resize: vertical; min-height: 72px; }
+
+// Actions row
+.wiActions { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 0.25rem; }
+.wiBtn {
+  padding: 10px 22px; border-radius: $radius-sm; border: none;
+  background: linear-gradient(135deg, $primary, $accent); color: $white;
+  font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+.wiBtn2 {
+  padding: 10px 18px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: transparent; color: rgba(255,255,255,0.5); font-size: 0.875rem; cursor: pointer;
+  &:hover { color: $white; }
+}
+
+// Tests step
+.wiTopRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.wiSelBadge {
+  font-size: 0.78rem; font-weight: 800; color: $primary; background: rgba($primary,0.12);
+  border: 1px solid rgba($primary,0.25); border-radius: 999px; padding: 4px 12px; white-space: nowrap; flex-shrink: 0;
+}
+
+// Mode toggle
+.wiModeToggle { display: flex; gap: 0.5rem; }
+.wiModeBtn {
+  padding: 7px 16px; border-radius: $radius-sm; border: 1px solid $navy-border;
+  background: transparent; color: rgba(255,255,255,0.45); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+  &:hover { color: $white; }
+}
+.wiModeBtnActive { background: rgba($primary,0.12); border-color: rgba($primary,0.35); color: $primary; }
+
+// Search
+.wiSearch { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid $navy-border; border-radius: $radius-sm; padding: 0 10px; }
+.wiSearch svg { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.wiSearchInput { flex: 1; background: transparent; border: none; padding: 9px 0; font-size: 0.875rem; color: $white; font-family: inherit; outline: none; &::placeholder { color: rgba(255,255,255,0.2); } }
+.wiSearchClear { background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 0; line-height: 0; &:hover { color: $white; } }
+
+// Test list
+.wiTestsScroll { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 4px; }
+.wiTestRow {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: $radius-sm;
+  border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); cursor: pointer;
+  transition: all 0.1s; font-size: 0.82rem;
+  &:hover { border-color: rgba($primary,0.25); background: rgba($primary,0.04); }
+}
+.wiTestRowSel { border-color: rgba($primary,0.4); background: rgba($primary,0.08); }
+.wiCheck { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; color: transparent; }
+.wiCheckOn { border-color: $primary; background: rgba($primary,0.25); color: $primary; }
+.wiTestName { flex: 1; color: rgba(255,255,255,0.8); min-width: 0; }
+.wiTurnaround { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+.wiPrice { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.45); white-space: nowrap; }
+
+// Summary bar
+.wiSummaryBar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba($primary,0.06); border: 1px solid rgba($primary,0.15); border-radius: $radius-sm; font-size: 0.82rem; color: rgba(255,255,255,0.6); }
+.wiSummaryTotal { font-weight: 800; color: $primary; }
+
+// Wellness packages
+.wiPkgGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+.wiPkgCard {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: $radius-md;
+  padding: 1rem; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 4px;
+  &:hover { border-color: rgba($primary,0.3); background: rgba($primary,0.05); }
+}
+.wiPkgCardSel { border-color: $primary; background: rgba($primary,0.1); }
+.wiPkgName   { font-size: 0.875rem; font-weight: 700; color: $white; margin: 0; }
+.wiPkgGender { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin: 0; text-transform: capitalize; }
+.wiPkgPrice  { font-size: 1rem; font-weight: 800; color: $primary; margin: 4px 0 0; }
+.wiPkgTests  { font-size: 0.72rem; color: rgba(255,255,255,0.38); margin: 0; }
+.wiPkgTag    { font-size: 0.78rem; color: $primary; font-weight: 600; margin: 0 0 6px; }
+
+// Payment step
+.wiReviewBlock { display: flex; flex-direction: column; gap: 6px; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: $radius-sm; }
+.wiReviewTitle { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.3); margin: 0; }
+.wiPatientRow  { display: flex; align-items: center; gap: 12px; }
+.wiAvatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, $primary, $accent); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: $white; flex-shrink: 0; }
+.wiPatientName { font-size: 0.9rem; font-weight: 700; color: $white; margin: 0; }
+.wiPatientMeta { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 2px 0 0; }
+.wiReviewRow   { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); &:last-of-type { border-bottom: none; } }
+.wiReviewName  { flex: 1; font-size: 0.82rem; color: rgba(255,255,255,0.75); }
+.wiReviewCat   { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+.wiReviewPrice { font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.5); white-space: nowrap; }
+.wiTotalRow    { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82rem; color: rgba(255,255,255,0.5); }
+.wiTotalVal    { font-size: 1rem; font-weight: 800; color: $primary; }
+
+// Payment cards
+.wiPayGrid { display: flex; flex-direction: column; gap: 8px; }
+.wiPayCard {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: $radius-sm;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); cursor: pointer; transition: all 0.15s;
+  &:hover { border-color: rgba($primary,0.3); }
+}
+.wiPayCardActive { border-color: $primary; background: rgba($primary,0.08); }
+.wiPayDot   { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+.wiPayDotOn { border-color: $primary; background: $primary; box-shadow: 0 0 0 3px rgba($primary,0.2); }
+.wiPayLabel { font-size: 0.875rem; font-weight: 700; color: $white; margin: 0; }
+.wiPayDesc  { font-size: 0.72rem; color: rgba(255,255,255,0.35); margin: 2px 0 0; }
+
+// Success
+.wiSuccessBanner { display: flex; align-items: center; gap: 14px; padding: 1rem 1.25rem; background: rgba($success,0.08); border: 1px solid rgba($success,0.2); border-radius: $radius-md; }
+.wiSuccessCheck  { width: 36px; height: 36px; border-radius: 50%; background: $success; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: $white; flex-shrink: 0; font-weight: 800; }
+.wiSuccessTitle  { font-size: 0.95rem; font-weight: 800; color: $white; margin: 0; }
+.wiSuccessSub    { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 2px 0 0; }
+
+// Ticket receipt
+.wiTicket {
+  background: #fff; border-radius: $radius-md; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3); color: #1a1a2e;
+}
+.wiTicketHeader {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 1rem 1.25rem; background: linear-gradient(135deg, $primary, $accent);
+}
+.wiTicketHeaderLeft  { display: flex; flex-direction: column; gap: 2px; }
+.wiTicketHeaderLogo  { font-size: 0.95rem; font-weight: 800; color: #fff; }
+.wiTicketHeaderSub   { font-size: 0.68rem; color: rgba(255,255,255,0.75); }
+.wiTicketHeaderRight { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.wiTicketHeaderBadge { font-size: 0.6rem; font-weight: 800; color: rgba(255,255,255,0.9); letter-spacing: 0.08em; }
+.wiTicketHeaderDate  { font-size: 0.72rem; color: rgba(255,255,255,0.75); }
+.wiTicketRefWrap     { display: flex; flex-direction: column; align-items: center; padding: 1rem 1.25rem 0.5rem; gap: 2px; background: #fff; }
+.wiTicketRefLabel    { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+.wiTicketRef         { font-size: 1.15rem; font-weight: 900; color: #1a1a2e; letter-spacing: 0.06em; }
+.wiTicketGrid        { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; padding: 0.75rem 1.25rem; background: #fff; }
+.wiTLabel            { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 0 0 2px; }
+.wiTVal              { font-size: 0.82rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+.wiTicketDiv         { height: 1px; background: #eee; margin: 0 1.25rem; }
+.wiTicketList        { margin: 8px 1.25rem; padding: 0 0 0 1.1rem; display: flex; flex-direction: column; gap: 3px; li { font-size: 0.82rem; color: #1a1a2e; } }
+.wiTicketTotalRow    { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; font-size: 0.8rem; color: #555; }
+.wiTicketTotalVal    { font-size: 1.1rem; font-weight: 900; color: $primary; }
+.wiTicketFooter      { font-size: 0.72rem; color: #888; text-align: center; padding: 0.75rem 1.25rem 1rem; line-height: 1.5; strong { color: #333; } }
+
 // ── Walk-in success toast ─────────────────────────────────────────────────────
 
 .successToast {

@@ -170,10 +170,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       <div className={s.sidebarBottom}>
-        <div className={s.adminAvatar}>{me?.name?.[0]?.toUpperCase() ?? 'A'}</div>
+        <div className={s.adminAvatar} suppressHydrationWarning>{me?.name?.[0]?.toUpperCase() ?? 'A'}</div>
         <div className={s.adminInfo}>
-          <p>{me?.name ?? 'Admin'}</p>
-          <span>{me ? ROLE_LABELS[me.adminRole] ?? me.adminRole : 'Loading…'}</span>
+          <p suppressHydrationWarning>{me?.name ?? 'Admin'}</p>
+          <span suppressHydrationWarning>{me ? ROLE_LABELS[me.adminRole] ?? me.adminRole : 'Loading…'}</span>
         </div>
         <button className={s.logoutBtn} onClick={handleLogout} aria-label='Log out'>
           <LogoutIcon />

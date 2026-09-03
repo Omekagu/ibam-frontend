@@ -599,7 +599,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
         tests: selected,
         total,
         payLabel:
-          WALK_IN_PAY.find(m => m.value === payMethod)?.label ?? payMethod
+          WALK_IN_PAY.find(m => m.value === payMethod)?.label ??
+          payMethod ??
+          'pos'
       })
       setStep('done')
     } catch (e: unknown) {
@@ -617,7 +619,7 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     setSelected([])
     setSearch('')
     setPatient({ name: '', phone: '', email: '', notes: '' })
-    setPayMethod('walk_in_cash')
+    setPayMethod('pos')
     setResult(null)
     setError('')
   }

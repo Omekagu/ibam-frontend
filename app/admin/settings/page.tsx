@@ -1331,14 +1331,212 @@ function LabTestsTab () {
   )
 }
 
+// ─── Wellness Packages Catalog ───────────────────────────────────────────────
+interface WellnessPkg {
+  _id: string
+  name: string
+  targetAudience?: string
+  benefits?: string
+  includedTests: string[]
+  walkInPrice: number
+  homeVisitPrice: number
+  gender: 'male' | 'female' | 'all'
+  isActive: boolean
+  order: number
+}
+
+const EMPTY_PKG = {
+  name: '', targetAudience: '', benefits: '', includedTests: '',
+  walkInPrice: '', homeVisitPrice: '', gender: 'all', order: '0'
+}
+
+function WellnessTab () {
+  const statusModal = useStatusModal()
+  const [items, setItems] = useState<WellnessPkg[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [modal, setModal] = useState<'add' | 'edit' | null>(null)
+  const [editing, setEditing] = useState<WellnessPkg | null>(null)
+  const [form, setForm] = useState(EMPTY_PKG)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/admin/wellness-packages')
+      .then(r => setItems(r.data.data?.packages ?? []))
+      .catch(() => statusModal.show({ variant: 'declined', title: 'Load Failed', message: 'Failed to load wellness packages.' }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  function openAdd () { setForm(EMPTY_PKG); setEditing(null); setModal('add') }
+
+  function openEdit (item: WellnessPkg) {
+    setForm({
+      name: item.name,
+      targetAudience: item.targetAudience ?? '',
+      benefits: item.benefits ?? '',
+      includedTests: item.includedTests.join(', '),
+      walkInPrice: String(item.walkInPrice),
+      homeVisitPrice: String(item.homeVisitPrice),
+      gender: item.gender,
+      order: String(item.order)
+    })
+    setEditing(item)
+    setModal('edit')
+  }
+
+  async function submit () {
+    if (!form.name.trim() || !form.walkInPrice || !form.homeVisitPrice) return
+    setSaving(true)
+    const payload = {
+      name: form.name.trim(),
+      targetAudience: form.targetAudience || undefined,
+      benefits: form.benefits || undefined,
+      includedTests: form.includedTests.split(',').map(s => s.trim()).filter(Boolean),
+      walkInPrice: Number(form.walkInPrice),
+      homeVisitPrice: Number(form.homeVisitPrice),
+      gender: form.gender,
+      order: Number(form.order) || 0
+    }
+    try {
+      if (modal === 'add') await api.post('/admin/wellness-packages', payload)
+      else if (editing) await api.put(`/admin/wellness-packages/${editing._id}`, payload)
+      setModal(null)
+      load()
+    } catch {
+      statusModal.show({ variant: 'declined', title: 'Save Failed', message: 'Failed to save wellness package.' })
+    }
+    setSaving(false)
+  }
+
+  async function toggle (item: WellnessPkg) {
+    try {
+      await api.put(`/admin/wellness-packages/${item._id}`, { isActive: !item.isActive })
+      load()
+    } catch {
+      statusModal.show({ variant: 'declined', title: 'Update Failed', message: 'Failed to update package.' })
+    }
+  }
+
+  async function remove (item: WellnessPkg) {
+    if (!confirm(`Delete "${item.name}"?`)) return
+    try {
+      await api.delete(`/admin/wellness-packages/${item._id}`)
+      load()
+    } catch {
+      statusModal.show({ variant: 'declined', title: 'Delete Failed', message: 'Failed to delete package.' })
+    }
+  }
+
+  return (
+    <div className={s.card}>
+      <div className={s.listHeader}>
+        <p className={s.listTitle}>
+          Wellness Packages{' '}
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-faint)', fontWeight: 400 }}>
+            ({items.length} packages)
+          </span>
+        </p>
+        <button className={s.addBtn} onClick={openAdd}>+ Add Package</button>
+      </div>
+
+      {loading ? (
+        <div className={s.empty}><Loader label='Loading…' /></div>
+      ) : items.length === 0 ? (
+        <p className={s.empty}>No wellness packages configured yet.</p>
+      ) : (
+        <div className={s.itemList}>
+          {items.map(item => (
+            <div key={item._id} className={`${s.itemRow} ${item.isActive ? '' : s.inactive}`}>
+              <span className={s.itemName}>{item.name}</span>
+              <span className={s.itemSub}>
+                Walk-in: ₦{item.walkInPrice.toLocaleString('en-NG')} · Home: ₦{item.homeVisitPrice.toLocaleString('en-NG')} · {item.gender}
+              </span>
+              <span className={`${s.badge} ${item.isActive ? s.badgeActive : s.badgeInactive}`}>
+                {item.isActive ? 'Active' : 'Inactive'}
+              </span>
+              <div className={s.rowActions}>
+                <button className={s.iconBtn} onClick={() => openEdit(item)}>Edit</button>
+                <button className={s.iconBtn} onClick={() => toggle(item)}>{item.isActive ? 'Disable' : 'Enable'}</button>
+                <button className={`${s.iconBtn} ${s.danger}`} onClick={() => remove(item)}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modal && (
+        <div className={s.overlay} onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
+          <div className={s.modal}>
+            <div className={s.modalHead}>
+              <h2>{modal === 'add' ? 'Add Wellness Package' : 'Edit Wellness Package'}</h2>
+              <button className={s.closeBtn} onClick={() => setModal(null)}>×</button>
+            </div>
+            <div className={s.modalBody}>
+              <div className={s.field}>
+                <label>Package Name *</label>
+                <input className={s.input} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Men's Health Check" />
+              </div>
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Walk-in Price (₦) *</label>
+                  <input className={s.input} type='number' min={0} value={form.walkInPrice} onChange={e => setForm(p => ({ ...p, walkInPrice: e.target.value }))} placeholder='e.g. 25000' />
+                </div>
+                <div className={s.field}>
+                  <label>Home Visit Price (₦) *</label>
+                  <input className={s.input} type='number' min={0} value={form.homeVisitPrice} onChange={e => setForm(p => ({ ...p, homeVisitPrice: e.target.value }))} placeholder='e.g. 35000' />
+                </div>
+              </div>
+              <div className={s.row2}>
+                <div className={s.field}>
+                  <label>Gender</label>
+                  <select className={s.input} value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
+                    <option value='all'>All</option>
+                    <option value='male'>Male</option>
+                    <option value='female'>Female</option>
+                  </select>
+                </div>
+                <div className={s.field}>
+                  <label>Display Order</label>
+                  <input className={s.input} type='number' min={0} value={form.order} onChange={e => setForm(p => ({ ...p, order: e.target.value }))} />
+                </div>
+              </div>
+              <div className={s.field}>
+                <label>Target Audience</label>
+                <input className={s.input} value={form.targetAudience} onChange={e => setForm(p => ({ ...p, targetAudience: e.target.value }))} placeholder='e.g. Adults 30+' />
+              </div>
+              <div className={s.field}>
+                <label>Benefits</label>
+                <textarea className={s.input} rows={2} value={form.benefits} onChange={e => setForm(p => ({ ...p, benefits: e.target.value }))} placeholder='Brief description of what this package covers…' />
+              </div>
+              <div className={s.field}>
+                <label>Included Tests <span className={s.hint}>(comma-separated)</span></label>
+                <textarea className={s.input} rows={3} value={form.includedTests} onChange={e => setForm(p => ({ ...p, includedTests: e.target.value }))} placeholder='Full Blood Count, Liver Function Test, Blood Sugar' />
+              </div>
+            </div>
+            <div className={s.modalFoot}>
+              <button className={s.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
+              <button className={s.confirmBtn} onClick={submit} disabled={saving || !form.name.trim() || !form.walkInPrice || !form.homeVisitPrice}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
-type Tab = 'payment' | 'specializations' | 'services' | 'lab-tests'
+type Tab = 'payment' | 'specializations' | 'services' | 'lab-tests' | 'wellness'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'payment', label: 'Payment' },
   { id: 'specializations', label: 'Specializations' },
   { id: 'services', label: 'Services' },
-  { id: 'lab-tests', label: 'Lab Tests' }
+  { id: 'lab-tests', label: 'Lab Tests' },
+  { id: 'wellness', label: 'Wellness Plans' }
 ]
 
 export default function AdminSettingsPage () {
@@ -1349,8 +1547,8 @@ export default function AdminSettingsPage () {
       <div className={s.pageHeader}>
         <h1 className={s.title}>Platform Settings</h1>
         <p className={s.subtitle}>
-          Manage payment methods, doctor specializations, platform services, and
-          lab test catalog.
+          Manage payment methods, doctor specializations, platform services,
+          lab test catalog, and wellness packages.
         </p>
       </div>
 
@@ -1370,6 +1568,7 @@ export default function AdminSettingsPage () {
       {tab === 'specializations' && <SpecializationsTab />}
       {tab === 'services' && <ServicesTab />}
       {tab === 'lab-tests' && <LabTestsTab />}
+      {tab === 'wellness' && <WellnessTab />}
     </div>
   )
 }
