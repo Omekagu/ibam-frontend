@@ -9,6 +9,7 @@ interface AdminUser { name: string; email: string }
 interface AuditLog {
   _id: string
   admin: AdminUser
+  actorRole?: string
   action: string
   targetModel?: string
   targetId?: string
@@ -23,11 +24,28 @@ const ACTION_LABELS: Record<string, string> = {
   approve_payout: 'Approved Payout',
   update_pharmacy_status: 'Updated Pharmacy',
   update_lab_status:      'Updated Lab',
-  approve_drug:  'Approved Drug',
-  approve_order: 'Approved Order',
-  approve_test:  'Approved Test',
-  update_triage_questions: 'Updated Triage',
+  approve_drug:   'Approved Drug',
+  approve_order:  'Approved Order',
+  approve_test:   'Approved Test',
+  update_triage_questions:    'Updated Triage',
+  create_walkin_lab:          'Walk-in Registered (Admin)',
+  lab_walk_in_registered:     'Walk-in Registered (Lab)',
+  lab_request_claimed:        'Lab Request Claimed',
+  lab_request_status_updated: 'Lab Status Updated',
+  lab_result_uploaded:        'Lab Result Uploaded',
+  lab_payout_requested:       'Lab Payout Requested',
+  create_lab:                 'Lab Created',
+  update_lab_tests:           'Lab Tests Updated',
+  impersonate_lab:            'Lab Impersonated',
 }
+
+const LAB_ACTIONS = new Set([
+  'create_walkin_lab', 'lab_walk_in_registered', 'lab_request_claimed',
+  'lab_request_status_updated', 'lab_result_uploaded', 'lab_payout_requested',
+  'create_lab', 'update_lab_tests', 'impersonate_lab',
+])
+
+type AuditView = 'all' | 'lab'
 
 export default function AuditPage () {
   const [logs,    setLogs]    = useState<AuditLog[]>([])
@@ -36,11 +54,13 @@ export default function AuditPage () {
   const [search,  setSearch]  = useState('')
   const [page,    setPage]    = useState(1)
   const [exp,     setExp]     = useState<string | null>(null)
+  const [view,    setView]    = useState<AuditView>('all')
 
-  function load (pg = page, q = search) {
+  function load (pg = page, q = search, v = view) {
     setLoading(true)
     const params = new URLSearchParams({ page: String(pg), limit: '30' })
-    if (q) params.set('action', q)
+    const effectiveQ = v === 'lab' ? (q || 'lab') : q
+    if (effectiveQ) params.set('action', effectiveQ)
     api.get(`/admin/audit?${params}`)
       .then(r => { setLogs(r.data.data?.logs ?? []); setTotal(r.data.data?.total ?? 0) })
       .catch(() => {})
@@ -49,7 +69,14 @@ export default function AuditPage () {
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function doSearch () { setPage(1); load(1, search) }
+  function doSearch () { setPage(1); load(1, search, view) }
+
+  function switchView (v: AuditView) {
+    setView(v)
+    setPage(1)
+    setSearch('')
+    load(1, '', v)
+  }
 
   const pages = Math.ceil(total / 30)
 
@@ -58,15 +85,21 @@ export default function AuditPage () {
       <div className={s.pageHeader}>
         <div>
           <h1 className={s.title}>Audit Log</h1>
-          <p className={s.subtitle}>Every admin action recorded — {total.toLocaleString()} entries</p>
+          <p className={s.subtitle}>All staff actions recorded — {total.toLocaleString()} entries</p>
         </div>
-        <button className={s.refreshBtn} onClick={() => load()}>Refresh</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className={s.viewTabs}>
+            <button className={`${s.viewTab} ${view === 'all' ? s.viewTabActive : ''}`} onClick={() => switchView('all')}>All</button>
+            <button className={`${s.viewTab} ${view === 'lab' ? s.viewTabActive : ''}`} onClick={() => switchView('lab')}>Lab Activity</button>
+          </div>
+          <button className={s.refreshBtn} onClick={() => load()}>Refresh</button>
+        </div>
       </div>
 
       <div className={s.toolbar}>
         <input
           className={s.search}
-          placeholder='Filter by action keyword…'
+          placeholder={view === 'lab' ? 'Filter lab actions…' : 'Filter by action keyword…'}
           value={search}
           onChange={e => setSearch(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && doSearch()}
@@ -86,18 +119,30 @@ export default function AuditPage () {
               <div key={log._id} className={s.row}>
                 <div className={s.rowHead} onClick={() => setExp(exp === log._id ? null : log._id)}>
                   <div className={s.rowLeft}>
-                    <div className={s.adminAvatar}>{log.admin?.name?.[0] ?? 'A'}</div>
+                    <div className={`${s.adminAvatar} ${LAB_ACTIONS.has(log.action) ? s.adminAvatarLab : ''}`}>
+                      {log.admin?.name?.[0] ?? 'A'}
+                    </div>
                     <div>
                       <p className={s.adminName}>{log.admin?.name ?? 'Admin'}</p>
-                      <p className={s.adminEmail}>{log.admin?.email ?? ''}</p>
+                      <p className={s.adminEmail}>
+                        {log.actorRole ?? log.admin?.email ?? ''}
+                      </p>
                     </div>
                   </div>
                   <div className={s.rowMid}>
-                    <span className={s.actionBadge}>
+                    <span className={`${s.actionBadge} ${LAB_ACTIONS.has(log.action) ? s.actionBadgeLab : ''}`}>
                       {ACTION_LABELS[log.action] ?? log.action.replace(/_/g, ' ')}
                     </span>
                     {log.targetModel && (
                       <span className={s.model}>{log.targetModel}</span>
+                    )}
+                    {/* Show amount for walk-in registrations */}
+                    {(log.action === 'lab_walk_in_registered' || log.action === 'create_walkin_lab') &&
+                      typeof log.details?.totalAmount === 'number' && log.details.totalAmount > 0 && (
+                      <span className={s.amountChip}>
+                        ₦{(log.details.totalAmount as number).toLocaleString()}
+                        {log.details.paymentMethod ? ` · ${log.details.paymentMethod}` : ''}
+                      </span>
                     )}
                   </div>
                   <div className={s.rowRight}>

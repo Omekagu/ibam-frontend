@@ -57,6 +57,7 @@
   font-weight: 700; font-size: 0.875rem; flex-shrink: 0;
   @include flex-center;
 }
+.adminAvatarLab { background: rgba(139,92,246,0.2); color: #a78bfa; }
 .adminName  { font-size: 0.82rem; font-weight: 600; color: var(--text); margin: 0; }
 .adminEmail { font-size: 0.72rem; color: var(--text-sub); margin: 0; }
 
@@ -64,10 +65,20 @@
   font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
   background: rgba($accent,0.1); color: $accent; text-transform: capitalize;
 }
+.actionBadgeLab { background: rgba(139,92,246,0.12); color: #a78bfa; }
 .model {
   font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
   background: var(--badge-neutral-bg); color: var(--text-muted);
 }
+.amountChip {
+  font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: rgba($success, 0.1); color: $success;
+}
+
+// ─── View tabs ────────────────────────────────────────────────
+.viewTabs { display: flex; border: 1px solid $navy-border; border-radius: $radius-sm; overflow: hidden; }
+.viewTab { padding: 5px 14px; font-size: 0.78rem; font-weight: 600; border: none; background: transparent; color: var(--text-faint); cursor: pointer; transition: background 0.12s, color 0.12s; }
+.viewTabActive { background: rgba($primary,0.15); color: $accent; }
 
 .ip   { font-size: 0.72rem; font-family: monospace; color: var(--text-faint); }
 .date { font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; }
