@@ -609,6 +609,103 @@
 .wiTicketTotalVal    { font-size: 1.1rem; font-weight: 900; color: $primary; }
 .wiTicketFooter      { font-size: 0.72rem; color: #888; text-align: center; padding: 0.75rem 1.25rem 1rem; line-height: 1.5; strong { color: #333; } }
 
+// ── Assign scientist ──────────────────────────────────────────────────────────
+
+.assignBtn {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba($primary,0.35);
+  background: rgba($primary,0.08);
+  color: $primary;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover { background: rgba($primary,0.16); }
+}
+
+.assignList { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+
+.assignItem {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: $radius-sm; border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03); cursor: pointer; text-align: left; width: 100%;
+  transition: all 0.12s;
+  &:hover:not(:disabled) { border-color: rgba($primary,0.3); background: rgba($primary,0.06); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.assignItemActive { border-color: rgba($primary,0.5); background: rgba($primary,0.1); }
+
+.assignAvatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, $primary, $accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 800; color: $white; flex-shrink: 0;
+}
+
+.assignInfo { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.assignName  { font-size: 0.875rem; font-weight: 700; color: $white; }
+.assignEmail { font-size: 0.72rem; color: rgba(255,255,255,0.4); }
+.assignedTag { font-size: 0.65rem; font-weight: 700; color: $primary; background: rgba($primary,0.15); border-radius: 999px; padding: 2px 8px; flex-shrink: 0; }
+
+// ── Team tab ──────────────────────────────────────────────────────────────────
+
+.teamWrap { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.teamHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+.teamTitle { font-size: 1rem; font-weight: 800; color: $white; margin: 0; }
+
+.addSciBtn {
+  padding: 8px 18px; border-radius: $radius-sm; border: 1px solid rgba($primary,0.35);
+  background: rgba($primary,0.08); color: $primary; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+  &:hover { background: rgba($primary,0.16); }
+}
+
+.addSciForm {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
+}
+
+.addSciFormTitle { font-size: 0.9rem; font-weight: 700; color: $white; margin: 0; }
+
+.sciFormGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+
+.sciFormField { display: flex; flex-direction: column; gap: 5px; }
+
+.sciFormLabel { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.sciFormInput {
+  background: rgba(255,255,255,0.05); border: 1px solid $navy-border; border-radius: $radius-sm;
+  padding: 9px 11px; font-size: 0.875rem; color: $white; font-family: inherit; outline: none;
+  transition: border-color 0.15s; width: 100%; box-sizing: border-box;
+  &::placeholder { color: rgba(255,255,255,0.2); }
+  &:focus { border-color: rgba($primary,0.45); }
+}
+
+.sciTeamList { display: flex; flex-direction: column; gap: 8px; }
+
+.sciTeamCard {
+  display: flex; align-items: center; gap: 12px;
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-md; padding: 1rem 1.25rem;
+}
+
+.sciTeamAvatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, $primary, $accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 800; color: $white; flex-shrink: 0;
+}
+
+.sciTeamInfo { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.sciTeamName  { font-size: 0.9rem; font-weight: 700; color: $white; margin: 0; }
+.sciTeamEmail { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 0; }
+.sciTeamPhone { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin: 0; }
+.sciTeamJoined { font-size: 0.7rem; color: rgba(255,255,255,0.28); white-space: nowrap; flex-shrink: 0; }
+
 // ── Walk-in success toast ─────────────────────────────────────────────────────
 
 .successToast {

@@ -8,6 +8,7 @@ export function dashboardFor (role?: string, adminRole?: string): string {
   if (role === 'admin')            return adminRole === 'lab_admin' ? '/partner/lab' : '/admin'
   if (role === 'pharmacy_partner') return '/partner/pharmacy'
   if (role === 'lab_partner')      return '/partner/lab'
+  if (role === 'lab_scientist')    return '/partner/lab'
   return '/patient'
 }
 

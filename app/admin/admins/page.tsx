@@ -15,25 +15,28 @@ interface AdminUser {
   _id: string
   name: string
   email: string
-  adminRole: AdminRole
+  role: string
+  adminRole?: AdminRole
   isActive: boolean
   createdAt: string
 }
 
-const ROLE_LABELS: Record<AdminRole, string> = {
+const ROLE_LABELS: Record<string, string> = {
   super_admin:    'Super Admin',
   lab_admin:      'Lab Admin',
   finance_admin:  'Finance Admin',
   support_admin:  'Support Admin',
   ops_admin:      'Ops Admin',
+  lab_scientist:  'Lab Scientist',
 }
 
-const ROLE_DESC: Record<AdminRole, string> = {
+const ROLE_DESC: Record<string, string> = {
   super_admin:   'Full access to all sections',
   lab_admin:     'Labs, diagnostics, walk-in, lab tests, doctors, KYC',
   finance_admin: 'Payments, payouts, earnings',
   support_admin: 'Users, monitoring, appointments, audit, broadcast',
   ops_admin:     'Approvals, orders, pharmacy, drugs',
+  lab_scientist: 'Processes diagnostic requests assigned by lab admin',
 }
 
 const BLANK = { name: '', email: '', password: '', adminRole: 'support_admin' as AdminRole }
@@ -56,6 +59,9 @@ export default function AdminUsersPage () {
 
   // Toggle active
   const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  // Delete
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -113,6 +119,19 @@ export default function AdminUsersPage () {
     setTogglingId(null)
   }
 
+  async function deleteAdmin (admin: AdminUser) {
+    if (!window.confirm(`Permanently delete ${admin.name}? This frees their email for reuse and cannot be undone.`)) return
+    setDeletingId(admin._id)
+    try {
+      await api.delete(`/admin/admin-users/${admin._id}`)
+      setAdmins(prev => prev.filter(a => a._id !== admin._id))
+      modal.show({ variant: 'success', title: 'Deleted', message: `${admin.name}'s account has been permanently removed.` })
+    } catch (err: any) {
+      modal.show({ variant: 'declined', title: 'Error', message: err?.response?.data?.message ?? 'Failed to delete.' })
+    }
+    setDeletingId(null)
+  }
+
   return (
     <div className={s.wrap}>
       <div className={s.header}>
@@ -127,7 +146,7 @@ export default function AdminUsersPage () {
 
       {/* Role legend */}
       <div className={s.legend}>
-        {ADMIN_ROLES.map(r => (
+        {[...ADMIN_ROLES, 'lab_scientist'].map(r => (
           <div key={r} className={s.legendItem}>
             <span className={`${s.rolePill} ${s[r]}`}>{ROLE_LABELS[r]}</span>
             <span className={s.legendDesc}>{ROLE_DESC[r]}</span>
@@ -147,14 +166,19 @@ export default function AdminUsersPage () {
                 <div className={s.cardInfo}>
                   <div className={s.nameRow}>
                     <span className={s.adminName}>{admin.name}</span>
-                    <span className={`${s.rolePill} ${s[admin.adminRole]}`}>{ROLE_LABELS[admin.adminRole]}</span>
+                    <span className={`${s.rolePill} ${s[admin.adminRole ?? admin.role]}`}>
+                      {ROLE_LABELS[admin.adminRole ?? admin.role] ?? admin.role}
+                    </span>
                     {!admin.isActive && <span className={s.inactivePill}>Inactive</span>}
                   </div>
                   <p className={s.adminEmail}>{admin.email}</p>
-                  <p className={s.adminMeta}>Added {new Date(admin.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className={s.adminMeta}>
+                    {admin.role === 'lab_scientist' ? 'Lab Scientist' : `${ROLE_LABELS[admin.adminRole ?? ''] ?? 'Admin'}`}
+                    {' · '}Added {new Date(admin.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
                 </div>
                 <div className={s.cardActions}>
-                  {editingRole === admin._id ? (
+                  {admin.role !== 'lab_scientist' && (editingRole === admin._id ? (
                     <div className={s.roleEditRow}>
                       <select
                         className={s.roleSelect}
@@ -173,17 +197,24 @@ export default function AdminUsersPage () {
                   ) : (
                     <button
                       className={s.editRoleBtn}
-                      onClick={() => { setEditingRole(admin._id); setRoleDraft(admin.adminRole) }}
+                      onClick={() => { setEditingRole(admin._id); setRoleDraft(admin.adminRole ?? 'support_admin') }}
                     >
                       Change Role
                     </button>
-                  )}
+                  ))}
                   <button
                     className={admin.isActive ? s.deactivateBtn : s.activateBtn}
                     disabled={togglingId === admin._id}
                     onClick={() => toggleActive(admin)}
                   >
                     {togglingId === admin._id ? '…' : admin.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    className={s.deleteBtn}
+                    disabled={deletingId === admin._id}
+                    onClick={() => deleteAdmin(admin)}
+                  >
+                    {deletingId === admin._id ? '…' : 'Delete'}
                   </button>
                 </div>
               </div>

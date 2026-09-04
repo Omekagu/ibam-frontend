@@ -55,6 +55,13 @@ interface PaymentRef {
   method?: string
   reference?: string
 }
+interface Scientist {
+  _id: string
+  name: string
+  email: string
+  phone?: string
+  createdAt: string
+}
 interface LabRequest {
   _id: string
   tests: string[]
@@ -69,6 +76,13 @@ interface LabRequest {
   patient?: Patient
   paymentRef?: PaymentRef
   wellnessPackage?: { name: string }
+  assignedScientist?: { _id: string; name: string; email: string }
+  result?: {
+    fileUrl: string
+    signedUrl?: string
+    notes?: string
+    createdAt: string
+  }
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -91,7 +105,7 @@ const STATUS_CLS: Record<string, string> = {
   no_show: s.statusCancelled
 }
 
-type Tab = 'available' | 'mine' | 'completed' | 'walkin'
+type Tab = 'available' | 'mine' | 'completed' | 'walkin' | 'team'
 
 function fmt (iso: string) {
   return new Date(iso).toLocaleDateString('en-NG', {
@@ -212,23 +226,110 @@ function UploadModal ({
   )
 }
 
+// ── Assign scientist modal ────────────────────────────────────────────────────
+function AssignScientistModal ({
+  req,
+  scientists,
+  labApi,
+  onClose,
+  onDone
+}: {
+  req: LabRequest
+  scientists: Scientist[]
+  labApi: ReturnType<typeof makeLabApi>
+  onClose: () => void
+  onDone: () => void
+}) {
+  const [assigning, setAssigning] = useState<string | null>(null)
+  const [err, setErr] = useState('')
+
+  async function assign (scientistId: string) {
+    setAssigning(scientistId)
+    setErr('')
+    try {
+      await labApi.post(
+        `/diagnostics/labs/requests/${req._id}/assign-scientist`,
+        { scientistId }
+      )
+      onDone()
+    } catch (e: unknown) {
+      setErr(
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Assignment failed.'
+      )
+    }
+    setAssigning(null)
+  }
+
+  return (
+    <div className={s.overlay}>
+      <div className={s.modal}>
+        <div className={s.modalHead}>
+          <h3 className={s.modalTitle}>Assign to Scientist</h3>
+          <button className={s.closeBtn} onClick={onClose}>
+            <XIcon size={14} />
+          </button>
+        </div>
+        <p className={s.modalSub}>
+          {req.tests.slice(0, 2).join(', ')}
+          {req.tests.length > 2 ? ` +${req.tests.length - 2} more` : ''} ·{' '}
+          {req.patient?.name ?? 'Patient'}
+        </p>
+        {err && <p className={s.errMsg}>{err}</p>}
+        <div className={s.assignList}>
+          {scientists.map(sci => (
+            <button
+              key={sci._id}
+              className={`${s.assignItem} ${
+                req.assignedScientist?._id === sci._id ? s.assignItemActive : ''
+              }`}
+              onClick={() => assign(sci._id)}
+              disabled={assigning !== null}
+            >
+              <span className={s.assignAvatar}>{sci.name[0]}</span>
+              <div className={s.assignInfo}>
+                <span className={s.assignName}>{sci.name}</span>
+                <span className={s.assignEmail}>{sci.email}</span>
+              </div>
+              {req.assignedScientist?._id === sci._id && (
+                <span className={s.assignedTag}>Current</span>
+              )}
+              {assigning === sci._id && (
+                <span className={s.assignedTag}>…</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className={s.modalFooter}>
+          <button className={s.cancelBtn} onClick={onClose}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Request card ─────────────────────────────────────────────────────────────
 function RequestCard ({
   req,
   isAvailable,
   labApi,
-  onRefresh
+  onRefresh,
+  scientists
 }: {
   req: LabRequest
   isAvailable: boolean
   labApi: ReturnType<typeof makeLabApi>
   onRefresh: () => void
+  scientists?: Scientist[]
 }) {
   const modal = useStatusModal()
   const [expanded, setExpanded] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [statusUpdating, setStatusUpdating] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
+  const [showAssign, setShowAssign] = useState(false)
 
   async function claim () {
     setClaiming(true)
@@ -361,6 +462,17 @@ function RequestCard ({
                     : 'Walk-in at Lab'}
                 </span>
               </div>
+              {req.assignedScientist && (
+                <div className={s.detailItem}>
+                  <span className={s.detailLabel}>Assigned To</span>
+                  <span className={s.detailVal}>
+                    {req.assignedScientist.name}
+                  </span>
+                  <span className={s.detailSub}>
+                    {req.assignedScientist.email}
+                  </span>
+                </div>
+              )}
               {req.totalAmount > 0 && (
                 <div className={s.detailItem}>
                   <span className={s.detailLabel}>Amount</span>
@@ -478,6 +590,16 @@ function RequestCard ({
                         Mark No-Show
                       </button>
                     )}
+                  {scientists && scientists.length > 0 && (
+                    <button
+                      className={s.assignBtn}
+                      onClick={() => setShowAssign(true)}
+                    >
+                      {req.assignedScientist
+                        ? `↗ ${req.assignedScientist.name}`
+                        : 'Assign Scientist'}
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -491,6 +613,18 @@ function RequestCard ({
           labApi={labApi}
           onClose={() => setShowUpload(false)}
           onDone={onRefresh}
+        />
+      )}
+      {showAssign && scientists && (
+        <AssignScientistModal
+          req={req}
+          scientists={scientists}
+          labApi={labApi}
+          onClose={() => setShowAssign(false)}
+          onDone={() => {
+            setShowAssign(false)
+            onRefresh()
+          }}
         />
       )}
     </>
@@ -532,21 +666,21 @@ const WALK_IN_PAY: { value: WalkInPay; label: string; desc: string }[] = [
 ]
 
 function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
-  const [step,        setStep]        = useState<WalkInStep>('patient')
-  const [testMode,    setTestMode]    = useState<WalkInMode>('individual')
-  const [allTests,    setAllTests]    = useState<WalkInTest[]>([])
+  const [step, setStep] = useState<WalkInStep>('patient')
+  const [testMode, setTestMode] = useState<WalkInMode>('individual')
+  const [allTests, setAllTests] = useState<WalkInTest[]>([])
   const [allPackages, setAllPackages] = useState<WellnessPkg[]>([])
   const [selectedPkg, setSelectedPkg] = useState<WellnessPkg | null>(null)
   const [loadingTests, setLoadingTests] = useState(true)
-  const [search,      setSearch]      = useState('')
-  const [selected,    setSelected]    = useState<string[]>([])
-  const [patient,     setPatient]     = useState({
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
+  const [patient, setPatient] = useState({
     name: '',
     phone: '',
     email: '',
     notes: ''
   })
-  const [payMethod,  setPayMethod]  = useState<WalkInPay>('pos')
+  const [payMethod, setPayMethod] = useState<WalkInPay>('pos')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{
     bookingRef: string
@@ -583,15 +717,21 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
   }, {})
 
   const selectedTests = allTests.filter(t => selected.includes(t.name))
-  const total = testMode === 'wellness' && selectedPkg
-    ? selectedPkg.walkInPrice
-    : selectedTests.reduce((sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0), 0)
+  const total =
+    testMode === 'wellness' && selectedPkg
+      ? selectedPkg.walkInPrice
+      : selectedTests.reduce(
+          (sum, t) => sum + (t.walkInPrice ?? t.estimatedPrice ?? 0),
+          0
+        )
 
-  const displayTests = testMode === 'wellness' && selectedPkg
-    ? selectedPkg.includedTests
-    : selected
+  const displayTests =
+    testMode === 'wellness' && selectedPkg
+      ? selectedPkg.includedTests
+      : selected
 
-  const canProceed = testMode === 'wellness' ? !!selectedPkg : selected.length > 0
+  const canProceed =
+    testMode === 'wellness' ? !!selectedPkg : selected.length > 0
 
   function toggle (name: string) {
     setSelected(p =>
@@ -773,7 +913,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
           <div className={s.wiTopRow}>
             <div>
               <h3 className={s.wiTitle}>Select Tests</h3>
-              <p className={s.wiHint}>Choose individual tests or a wellness package.</p>
+              <p className={s.wiHint}>
+                Choose individual tests or a wellness package.
+              </p>
             </div>
             {canProceed && (
               <div className={s.wiSelBadge}>
@@ -787,14 +929,24 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
           {/* Mode toggle */}
           <div className={s.wiModeToggle}>
             <button
-              className={`${s.wiModeBtn} ${testMode === 'individual' ? s.wiModeBtnActive : ''}`}
-              onClick={() => { setTestMode('individual'); setSelectedPkg(null) }}
+              className={`${s.wiModeBtn} ${
+                testMode === 'individual' ? s.wiModeBtnActive : ''
+              }`}
+              onClick={() => {
+                setTestMode('individual')
+                setSelectedPkg(null)
+              }}
             >
               Individual Tests
             </button>
             <button
-              className={`${s.wiModeBtn} ${testMode === 'wellness' ? s.wiModeBtnActive : ''}`}
-              onClick={() => { setTestMode('wellness'); setSelected([]) }}
+              className={`${s.wiModeBtn} ${
+                testMode === 'wellness' ? s.wiModeBtnActive : ''
+              }`}
+              onClick={() => {
+                setTestMode('wellness')
+                setSelected([])
+              }}
             >
               Wellness Package
             </button>
@@ -812,7 +964,10 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                   autoFocus
                 />
                 {search && (
-                  <button className={s.searchClear} onClick={() => setSearch('')}>
+                  <button
+                    className={s.searchClear}
+                    onClick={() => setSearch('')}
+                  >
                     <XIcon size={12} />
                   </button>
                 )}
@@ -832,7 +987,8 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                     .map(([cat, tests]) => (
                       <div key={cat} className={s.wiCatGroup}>
                         <p className={s.wiCatLabel}>
-                          {cat} <span className={s.wiCatCount}>{tests.length}</span>
+                          {cat}{' '}
+                          <span className={s.wiCatCount}>{tests.length}</span>
                         </p>
                         {tests.map(t => {
                           const price = t.walkInPrice ?? t.estimatedPrice ?? 0
@@ -840,9 +996,15 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                           return (
                             <label
                               key={t._id}
-                              className={`${s.wiTestRow} ${sel ? s.wiTestRowSel : ''}`}
+                              className={`${s.wiTestRow} ${
+                                sel ? s.wiTestRowSel : ''
+                              }`}
                             >
-                              <span className={`${s.wiCheck} ${sel ? s.wiCheckOn : ''}`}>
+                              <span
+                                className={`${s.wiCheck} ${
+                                  sel ? s.wiCheckOn : ''
+                                }`}
+                              >
                                 {sel && '✓'}
                               </span>
                               <input
@@ -852,7 +1014,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                                 style={{ display: 'none' }}
                               />
                               <span className={s.wiTestName}>{t.name}</span>
-                              <span className={s.wiTurnaround}>{t.turnaroundHours}h</span>
+                              <span className={s.wiTurnaround}>
+                                {t.turnaroundHours}h
+                              </span>
                               <span className={s.wiPrice}>
                                 {price > 0 ? `₦${price.toLocaleString()}` : '—'}
                               </span>
@@ -865,15 +1029,21 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
               )}
               {selected.length > 0 && (
                 <div className={s.wiSummaryBar}>
-                  <span>{selected.length} test{selected.length !== 1 ? 's' : ''}</span>
-                  <span className={s.wiSummaryTotal}>₦{total.toLocaleString()}</span>
+                  <span>
+                    {selected.length} test{selected.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className={s.wiSummaryTotal}>
+                    ₦{total.toLocaleString()}
+                  </span>
                 </div>
               )}
             </>
           ) : (
             <>
               {loadingTests ? (
-                <div className={s.empty}><Loader label='Loading packages…' /></div>
+                <div className={s.empty}>
+                  <Loader label='Loading packages…' />
+                </div>
               ) : allPackages.length === 0 ? (
                 <p className={s.empty}>No wellness packages available.</p>
               ) : (
@@ -881,21 +1051,29 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                   {allPackages.map(pkg => (
                     <button
                       key={pkg._id}
-                      className={`${s.wiPkgCard} ${selectedPkg?._id === pkg._id ? s.wiPkgCardSel : ''}`}
+                      className={`${s.wiPkgCard} ${
+                        selectedPkg?._id === pkg._id ? s.wiPkgCardSel : ''
+                      }`}
                       onClick={() => setSelectedPkg(pkg)}
                     >
                       <p className={s.wiPkgName}>{pkg.name}</p>
                       {pkg.gender !== 'all' && (
                         <span className={s.wiPkgGender}>{pkg.gender}</span>
                       )}
-                      <p className={s.wiPkgPrice}>₦{pkg.walkInPrice.toLocaleString()}</p>
+                      <p className={s.wiPkgPrice}>
+                        ₦{pkg.walkInPrice.toLocaleString()}
+                      </p>
                       {pkg.includedTests.length > 0 && (
                         <div className={s.wiPkgTests}>
                           {pkg.includedTests.slice(0, 4).map(t => (
-                            <span key={t} className={s.wiPkgTag}>{t}</span>
+                            <span key={t} className={s.wiPkgTag}>
+                              {t}
+                            </span>
                           ))}
                           {pkg.includedTests.length > 4 && (
-                            <span className={s.wiPkgTag}>+{pkg.includedTests.length - 4} more</span>
+                            <span className={s.wiPkgTag}>
+                              +{pkg.includedTests.length - 4} more
+                            </span>
                           )}
                         </div>
                       )}
@@ -906,7 +1084,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
               {selectedPkg && (
                 <div className={s.wiSummaryBar}>
                   <span>{selectedPkg.name}</span>
-                  <span className={s.wiSummaryTotal}>₦{total.toLocaleString()}</span>
+                  <span className={s.wiSummaryTotal}>
+                    ₦{total.toLocaleString()}
+                  </span>
                 </div>
               )}
             </>
@@ -957,19 +1137,25 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                   {selectedPkg.gender !== 'all' && (
                     <span className={s.wiReviewCat}>{selectedPkg.gender}</span>
                   )}
-                  <span className={s.wiReviewPrice}>₦{selectedPkg.walkInPrice.toLocaleString()}</span>
+                  <span className={s.wiReviewPrice}>
+                    ₦{selectedPkg.walkInPrice.toLocaleString()}
+                  </span>
                 </div>
                 {selectedPkg.includedTests.length > 0 && (
                   <div className={s.wiPkgTests} style={{ marginTop: 6 }}>
                     {selectedPkg.includedTests.map(t => (
-                      <span key={t} className={s.wiPkgTag}>{t}</span>
+                      <span key={t} className={s.wiPkgTag}>
+                        {t}
+                      </span>
                     ))}
                   </div>
                 )}
               </>
             ) : (
               <>
-                <p className={s.wiReviewTitle}>Tests ({selectedTests.length})</p>
+                <p className={s.wiReviewTitle}>
+                  Tests ({selectedTests.length})
+                </p>
                 {selectedTests.map(t => {
                   const price = t.walkInPrice ?? t.estimatedPrice ?? 0
                   return (
@@ -1158,6 +1344,421 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
   )
 }
 
+// ── Scientist request card ────────────────────────────────────────────────────
+function ScientistCard ({
+  req,
+  labApi,
+  onRefresh
+}: {
+  req: LabRequest
+  labApi: ReturnType<typeof makeLabApi>
+  onRefresh: () => void
+}) {
+  const modal = useStatusModal()
+  const [expanded, setExpanded] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
+  const isCompleted = req.status === 'completed'
+
+  async function updateStatus (status: string) {
+    setUpdating(true)
+    try {
+      await labApi.put(`/diagnostics/scientist/requests/${req._id}/status`, {
+        status
+      })
+      onRefresh()
+    } catch (e: unknown) {
+      modal.show({
+        variant: 'declined',
+        title: 'Error',
+        message:
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message ?? 'Could not update status.'
+      })
+    }
+    setUpdating(false)
+  }
+
+  return (
+    <>
+      <div className={s.reqCard}>
+        <div
+          className={s.reqCardTop}
+          onClick={() => setExpanded(p => !p)}
+          role='button'
+        >
+          <div className={`${s.reqIcon} ${isCompleted ? s.reqIconDone : ''}`}>
+            <MicroscopeIcon size={18} />
+          </div>
+          <div className={s.reqInfo}>
+            <p className={s.reqTitle}>
+              {req.tests.slice(0, 2).join(', ')}
+              {req.tests.length > 2 && (
+                <span className={s.moreTag}> +{req.tests.length - 2}</span>
+              )}
+            </p>
+            <span className={s.reqMeta}>
+              {req.patient?.name ?? 'Patient'} ·{' '}
+              {req.collectionType === 'home_visit' ? (
+                <>
+                  <HomeIcon size={14} /> Home Visit
+                </>
+              ) : (
+                <>
+                  <WalkingIcon size={14} /> Walk-in
+                </>
+              )}{' '}
+              · {fmt(req.createdAt)}
+            </span>
+          </div>
+          <div className={s.reqRight}>
+            <span
+              className={`${s.statusBadge} ${STATUS_CLS[req.status] ?? ''}`}
+            >
+              {STATUS_LABEL[req.status] ?? req.status}
+            </span>
+            <span className={s.chevron}>
+              {expanded ? (
+                <ChevronUpIcon size={14} />
+              ) : (
+                <ChevronDownIcon size={14} />
+              )}
+            </span>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className={s.reqBody}>
+            <div>
+              <p className={s.bodyLabel}>Tests</p>
+              <div className={s.testTags}>
+                {req.tests.map((t, i) => (
+                  <span key={i} className={s.testTag}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className={s.detailGrid}>
+              <div className={s.detailItem}>
+                <span className={s.detailLabel}>Patient</span>
+                <span className={s.detailVal}>{req.patient?.name ?? '—'}</span>
+                {req.patient?.phone && (
+                  <span className={s.detailSub}>{req.patient.phone}</span>
+                )}
+              </div>
+              <div className={s.detailItem}>
+                <span className={s.detailLabel}>Booking Ref</span>
+                <span className={`${s.detailVal} ${s.detailMono}`}>
+                  #{req._id.slice(-8).toUpperCase()}
+                </span>
+              </div>
+              {req.totalAmount > 0 && (
+                <div className={s.detailItem}>
+                  <span className={s.detailLabel}>Amount</span>
+                  <span className={`${s.detailVal} ${s.detailGreen}`}>
+                    ₦{req.totalAmount.toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {req.notes && <p className={s.notesText}>Note: {req.notes}</p>}
+            {req.wellnessPackage && (
+              <p className={s.pkgTag}>
+                <ClipboardIcon size={14} /> Package: {req.wellnessPackage.name}
+              </p>
+            )}
+
+            {req.result && (
+              <div className={s.sciResultBox}>
+                <p className={s.sciResultReady}>Result uploaded</p>
+                {req.result.notes && (
+                  <p className={s.notesText}>{req.result.notes}</p>
+                )}
+                {req.result.signedUrl && (
+                  <a
+                    href={req.result.signedUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className={s.downloadBtn}
+                  >
+                    <DocumentIcon size={13} /> Download Result
+                  </a>
+                )}
+              </div>
+            )}
+
+            {!isCompleted && (
+              <div className={s.actionRow}>
+                {req.status === 'assigned' && (
+                  <button
+                    className={s.actionBtn}
+                    disabled={updating}
+                    onClick={() => updateStatus('sample_collected')}
+                  >
+                    {updating ? '…' : 'Mark Sample Collected'}
+                  </button>
+                )}
+                {req.status === 'sample_collected' && (
+                  <button
+                    className={s.actionBtn}
+                    disabled={updating}
+                    onClick={() => updateStatus('processing')}
+                  >
+                    {updating ? '…' : 'Mark Processing'}
+                  </button>
+                )}
+                <button
+                  className={s.uploadBtn}
+                  onClick={() => setShowUpload(true)}
+                >
+                  <DocumentIcon size={13} /> Upload & Complete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {showUpload && (
+        <UploadModal
+          req={req}
+          labApi={labApi}
+          onClose={() => setShowUpload(false)}
+          onDone={onRefresh}
+        />
+      )}
+    </>
+  )
+}
+
+// ── Scientist portal ──────────────────────────────────────────────────────────
+function ScientistPortal ({
+  labApi,
+  labName
+}: {
+  labApi: ReturnType<typeof makeLabApi>
+  labName: string
+}) {
+  const [historyMode, setHistoryMode] = useState(false)
+  const [requests, setRequests] = useState<LabRequest[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    labApi
+      .get(
+        `/diagnostics/scientist/requests${historyMode ? '?history=true' : ''}`
+      )
+      .then(r => setRequests(r.data.data?.requests ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [labApi, historyMode])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return (
+    <div className={s.wrap}>
+      <div className={s.header}>
+        <div>
+          <h1 className={s.title}>My Assigned Tests</h1>
+          {labName && <p className={s.labSubtitle}>{labName}</p>}
+        </div>
+        <button className={s.refreshBtn} onClick={load}>
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div className={s.tabs}>
+        <button
+          className={`${s.tab} ${!historyMode ? s.tabActive : ''}`}
+          onClick={() => setHistoryMode(false)}
+        >
+          Active
+          {!historyMode && requests.length > 0 && (
+            <span className={s.badge}>{requests.length}</span>
+          )}
+        </button>
+        <button
+          className={`${s.tab} ${historyMode ? s.tabActive : ''}`}
+          onClick={() => setHistoryMode(true)}
+        >
+          History
+        </button>
+      </div>
+
+      {loading ? (
+        <div className={s.empty}>
+          <Loader label='Loading tests…' />
+        </div>
+      ) : requests.length === 0 ? (
+        <div className={s.empty}>
+          {historyMode
+            ? 'No completed tests yet.'
+            : 'No active tests assigned to you.'}
+        </div>
+      ) : (
+        <div className={s.list}>
+          {requests.map(req => (
+            <ScientistCard
+              key={req._id}
+              req={req}
+              labApi={labApi}
+              onRefresh={load}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── My Team tab ───────────────────────────────────────────────────────────────
+function TeamTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
+  const modal = useStatusModal()
+  const [scientists, setScientists] = useState<Scientist[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: ''
+  })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  function loadTeam () {
+    setLoading(true)
+    labApi
+      .get('/diagnostics/labs/scientists')
+      .then(r => setScientists(r.data.data?.scientists ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadTeam()
+  }, [labApi])
+
+  async function addScientist () {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      setErr('Name, email, and password are required.')
+      return
+    }
+    setSaving(true)
+    setErr('')
+    try {
+      await labApi.post('/diagnostics/labs/scientists', form)
+      setForm({ name: '', email: '', phone: '', password: '' })
+      setShowForm(false)
+      loadTeam()
+      modal.show({
+        variant: 'success',
+        title: 'Scientist Added',
+        message:
+          'Account created. Share the credentials with the new scientist.'
+      })
+    } catch (e: unknown) {
+      setErr(
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Failed to create account.'
+      )
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className={s.teamWrap}>
+      <div className={s.teamHeader}>
+        <h2 className={s.teamTitle}>Lab Scientists ({scientists.length})</h2>
+        <button className={s.addSciBtn} onClick={() => setShowForm(p => !p)}>
+          {showForm ? 'Cancel' : '+ Add Scientist'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className={s.addSciForm}>
+          <h3 className={s.addSciFormTitle}>New Scientist Account</h3>
+          {err && <p className={s.errMsg}>{err}</p>}
+          <div className={s.sciFormGrid}>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Full Name *</span>
+              <input
+                className={s.sciFormInput}
+                value={form.name}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                placeholder='Dr. Jane Okafor'
+              />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Email *</span>
+              <input
+                className={s.sciFormInput}
+                type='email'
+                value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                placeholder='jane@lab.com'
+              />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Phone</span>
+              <input
+                className={s.sciFormInput}
+                value={form.phone}
+                onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                placeholder='08012345678'
+              />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Temporary Password *</span>
+              <input
+                className={s.sciFormInput}
+                type='password'
+                value={form.password}
+                onChange={e =>
+                  setForm(p => ({ ...p, password: e.target.value }))
+                }
+                placeholder='Min 8 characters'
+              />
+            </label>
+          </div>
+          <button className={s.wiBtn} disabled={saving} onClick={addScientist}>
+            {saving ? <Loader inline size='sm' /> : 'Create Account'}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className={s.empty}>
+          <Loader label='Loading team…' />
+        </div>
+      ) : scientists.length === 0 ? (
+        <div className={s.empty}>No lab scientists yet. Add one above.</div>
+      ) : (
+        <div className={s.sciTeamList}>
+          {scientists.map(sci => (
+            <div key={sci._id} className={s.sciTeamCard}>
+              <div className={s.sciTeamAvatar}>{sci.name[0]}</div>
+              <div className={s.sciTeamInfo}>
+                <p className={s.sciTeamName}>{sci.name}</p>
+                <p className={s.sciTeamEmail}>{sci.email}</p>
+                {sci.phone && <p className={s.sciTeamPhone}>{sci.phone}</p>}
+              </div>
+              <span className={s.sciTeamJoined}>
+                Joined {fmt(sci.createdAt)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main lab portal ───────────────────────────────────────────────────────────
 function LabPortalInner () {
   const searchParams = useSearchParams()
@@ -1185,36 +1786,59 @@ function LabPortalInner () {
   const [mine, setMine] = useState<LabRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [labName, setLabName] = useState('')
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [scientists, setScientists] = useState<Scientist[]>([])
   const [search, setSearch] = useState('')
 
+  // Phase 1: load profile to detect role
+  useEffect(() => {
+    labApi
+      .get('/diagnostics/labs/profile')
+      .then(r => {
+        setLabName(r.data.data?.lab?.name ?? '')
+        setUserRole(r.data.data?.userRole ?? 'lab_partner')
+      })
+      .catch(() => setUserRole('lab_partner'))
+  }, [labApi])
+
+  // Phase 2: load requests (non-scientists only) + scientists list
   const load = useCallback(async () => {
+    if (!userRole || userRole === 'lab_scientist') return
     try {
-      const [reqRes, profileRes] = await Promise.all([
+      const [reqRes, sciRes] = await Promise.allSettled([
         labApi.get('/diagnostics/labs/requests'),
-        labApi
-          .get('/diagnostics/labs/profile')
-          .catch(() => ({ data: { data: {} } }))
+        labApi.get('/diagnostics/labs/scientists')
       ])
-      setAvailable(reqRes.data.data?.available ?? [])
-      setMine(reqRes.data.data?.mine ?? [])
-      setLabName(profileRes.data.data?.lab?.name ?? '')
-    } catch (e: unknown) {
-      const status = (e as { response?: { status?: number } })?.response?.status
-      if (status === 401) {
-        modal.show({
-          variant: 'declined',
-          title: 'Session Expired',
-          message: 'Please log in again or ask an admin to re-open the portal.'
-        })
+      if (reqRes.status === 'fulfilled') {
+        setAvailable(reqRes.value.data.data?.available ?? [])
+        setMine(reqRes.value.data.data?.mine ?? [])
+      } else {
+        const status = (reqRes.reason as { response?: { status?: number } })
+          ?.response?.status
+        if (status === 401) {
+          modal.show({
+            variant: 'declined',
+            title: 'Session Expired',
+            message:
+              'Please log in again or ask an admin to re-open the portal.'
+          })
+        }
       }
+      if (sciRes.status === 'fulfilled') {
+        setScientists(sciRes.value.data.data?.scientists ?? [])
+      }
+    } catch {
+      /* ignore */
     }
-  }, [labApi, modal])
+  }, [labApi, modal, userRole])
 
   useEffect(() => {
+    if (userRole === null) return
     load().finally(() => setLoading(false))
-    const iv = setInterval(load, 30000) // poll every 30s for new requests
+    if (userRole === 'lab_scientist') return
+    const iv = setInterval(load, 30000)
     return () => clearInterval(iv)
-  }, [load])
+  }, [load, userRole])
 
   const myActive = mine.filter(
     r => r.status !== 'completed' && r.status !== 'cancelled'
@@ -1242,7 +1866,24 @@ function LabPortalInner () {
     available: filterRequests(available),
     mine: filterRequests(myActive),
     completed: filterRequests(myDone),
-    walkin: []
+    walkin: [],
+    team: []
+  }
+
+  // Show loading spinner until profile is resolved
+  if (userRole === null) {
+    return (
+      <div className={s.wrap}>
+        <div className={s.empty}>
+          <Loader label='Loading portal…' />
+        </div>
+      </div>
+    )
+  }
+
+  // Scientists see their own portal
+  if (userRole === 'lab_scientist') {
+    return <ScientistPortal labApi={labApi} labName={labName} />
   }
 
   return (
@@ -1257,10 +1898,12 @@ function LabPortalInner () {
         </button>
       </div>
 
-      {/* Search bar — hidden on walk-in tab */}
+      {/* Search bar — hidden on walk-in and team tabs */}
       <div
         className={s.searchWrap}
-        style={tab === 'walkin' ? { display: 'none' } : undefined}
+        style={
+          tab === 'walkin' || tab === 'team' ? { display: 'none' } : undefined
+        }
       >
         <span className={s.searchIcon}>
           <SearchIcon size={14} />
@@ -1278,7 +1921,7 @@ function LabPortalInner () {
         )}
       </div>
 
-      {search.trim() && (
+      {search.trim() && tab !== 'walkin' && tab !== 'team' && (
         <p className={s.searchHint}>
           Tip: paste the patient&apos;s <strong>User ID</strong> or{' '}
           <strong>Transaction Ref</strong> from their receipt for an exact
@@ -1319,15 +1962,26 @@ function LabPortalInner () {
         >
           + Walk-in
         </button>
+        <button
+          className={`${s.tab} ${tab === 'team' ? s.tabActive : ''}`}
+          onClick={() => setTab('team')}
+        >
+          My Team
+          {scientists.length > 0 && (
+            <span className={s.badge}>{scientists.length}</span>
+          )}
+        </button>
       </div>
 
       {tab === 'walkin' ? (
         <WalkInTab labApi={labApi} />
+      ) : tab === 'team' ? (
+        <TeamTab labApi={labApi} />
       ) : loading ? (
         <div className={s.empty}>
           <Loader label='Loading requests…' />
         </div>
-      ) : tabData[tab as Exclude<Tab, 'walkin'>]?.length === 0 ? (
+      ) : tabData[tab as Exclude<Tab, 'walkin' | 'team'>]?.length === 0 ? (
         <div className={s.empty}>
           {search.trim()
             ? 'No requests match your search.'
@@ -1339,13 +1993,16 @@ function LabPortalInner () {
         </div>
       ) : (
         <div className={s.list}>
-          {tabData[tab as Exclude<Tab, 'walkin'>]?.map(req => (
+          {tabData[tab as Exclude<Tab, 'walkin' | 'team'>]?.map(req => (
             <RequestCard
               key={req._id}
               req={req}
               isAvailable={tab === 'available'}
               labApi={labApi}
               onRefresh={load}
+              scientists={
+                tab === 'mine' && scientists.length > 0 ? scientists : undefined
+              }
             />
           ))}
         </div>

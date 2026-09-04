@@ -66,6 +66,7 @@ export default function AdminUsersPage () {
   const [expanded,   setExpanded] = useState<string | null>(null)
   const [profiles,   setProfiles] = useState<Record<string, AnyProfile | null>>({})
   const [profLoad,   setProfLoad] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -89,6 +90,17 @@ export default function AdminUsersPage () {
       await api.put(`/admin/users/${id}/suspend`, { isActive: !active })
       setUsers(prev => prev.map(u => u._id === id ? { ...u, isActive: !active } : u))
     } catch { }
+  }
+
+  async function deleteUser (u: User) {
+    if (!window.confirm(`Permanently delete ${u.name}? This frees their email for reuse and cannot be undone.`)) return
+    setDeletingId(u._id)
+    try {
+      await api.delete(`/admin/users/${u._id}`)
+      setUsers(prev => prev.filter(x => x._id !== u._id))
+      setTotal(prev => prev - 1)
+    } catch { }
+    setDeletingId(null)
   }
 
   async function toggleExpand (id: string) {
@@ -198,12 +210,21 @@ export default function AdminUsersPage () {
                       </span>
                     </td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button
-                        className={u.isActive ? s.btnSuspend : s.btnRestore}
-                        onClick={() => toggleSuspend(u._id, u.isActive)}
-                      >
-                        {u.isActive ? 'Suspend' : 'Restore'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                        <button
+                          className={u.isActive ? s.btnSuspend : s.btnRestore}
+                          onClick={() => toggleSuspend(u._id, u.isActive)}
+                        >
+                          {u.isActive ? 'Suspend' : 'Restore'}
+                        </button>
+                        <button
+                          className={s.btnDelete}
+                          disabled={deletingId === u._id}
+                          onClick={() => deleteUser(u)}
+                        >
+                          {deletingId === u._id ? '…' : 'Delete'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
 

@@ -5,6 +5,14 @@ import { XIcon, SearchIcon } from '@/components/icons'
 import { downloadReceipt } from '@/lib/receipt'
 import s from './page.module.scss'
 
+interface Scientist {
+  _id: string
+  name: string
+  email: string
+  phone?: string
+  createdAt: string
+}
+
 interface LabTest {
   _id: string
   name: string
@@ -47,6 +55,7 @@ interface Request {
   patient?: Patient
   paymentRef?: PaymentRef | null
   result?: LabResultDoc | null
+  assignedScientist?: { _id: string; name: string; email: string }
 }
 
 const METHOD_LABEL: Record<string, string> = {
@@ -490,6 +499,349 @@ function WalkInPanel ({
   )
 }
 
+// ── Assign scientist modal ────────────────────────────────────────────────────
+
+function AssignScientistModal ({
+  req,
+  scientists,
+  onClose,
+  onDone,
+}: {
+  req: Request
+  scientists: Scientist[]
+  onClose: () => void
+  onDone: () => void
+}) {
+  const [assigning, setAssigning] = useState<string | null>(null)
+  const [err, setErr] = useState('')
+
+  async function assign (scientistId: string) {
+    setAssigning(scientistId)
+    setErr('')
+    try {
+      await api.post(`/diagnostics/labs/requests/${req._id}/assign-scientist`, { scientistId })
+      onDone()
+    } catch (e: unknown) {
+      setErr(
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+          ?? 'Assignment failed.'
+      )
+    }
+    setAssigning(null)
+  }
+
+  return (
+    <div className={s.overlay}>
+      <div className={s.modal}>
+        <div className={s.modalHeader}>
+          <h3 className={s.modalTitle}>Assign to Scientist</h3>
+          <button className={s.closeBtn} onClick={onClose}>×</button>
+        </div>
+        <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', margin: '0 0 12px' }}>
+          {req.tests.slice(0, 2).join(', ')}
+          {req.tests.length > 2 ? ` +${req.tests.length - 2} more` : ''} · {req.patient?.name ?? 'Patient'}
+        </p>
+        {err && <p className={s.formError}>{err}</p>}
+        <div className={s.assignList}>
+          {scientists.map(sci => (
+            <button
+              key={sci._id}
+              className={`${s.assignItem} ${req.assignedScientist?._id === sci._id ? s.assignItemActive : ''}`}
+              onClick={() => assign(sci._id)}
+              disabled={assigning !== null}
+            >
+              <span className={s.assignAvatar}>{sci.name[0]}</span>
+              <div className={s.assignInfo}>
+                <span className={s.assignName}>{sci.name}</span>
+                <span className={s.assignEmail}>{sci.email}</span>
+              </div>
+              {req.assignedScientist?._id === sci._id && <span className={s.assignedTag}>Current</span>}
+              {assigning === sci._id && <span className={s.assignedTag}>…</span>}
+            </button>
+          ))}
+        </div>
+        <div className={s.modalActions}>
+          <button className={s.cancelBtn} onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Scientist request card ────────────────────────────────────────────────────
+
+function ScientistCard ({ req, onRefresh }: { req: Request; onRefresh: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadNote, setUploadNote] = useState('')
+  const fileRef = useRef<HTMLInputElement | null>(null)
+  const done = DONE.includes(req.status)
+
+  async function updateStatus (status: string) {
+    setUpdating(true)
+    try {
+      await api.put(`/diagnostics/scientist/requests/${req._id}/status`, { status })
+      onRefresh()
+    } catch {}
+    setUpdating(false)
+  }
+
+  async function uploadResult () {
+    const file = fileRef.current?.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('result', file)
+      if (uploadNote) form.append('notes', uploadNote)
+      await api.post(`/diagnostics/${req._id}/upload-result`, form)
+      onRefresh()
+    } catch {}
+    setUploading(false)
+  }
+
+  return (
+    <div className={`${s.card} ${done ? s.cardDone : ''}`}>
+      <div className={s.cardHead} onClick={() => setOpen(v => !v)}>
+        <div className={s.cardLeft}>
+          <span className={`${s.statusBadge} ${s[`badge_${req.status}`] ?? s.badge_pending}`}>
+            {STATUS_LABEL[req.status] ?? req.status}
+          </span>
+          <div>
+            <p className={s.patientName}>{req.patient?.name ?? 'Patient'}</p>
+            <p className={s.testList}>
+              {req.tests.slice(0, 2).join(', ')}
+              {req.tests.length > 2 ? ` +${req.tests.length - 2} more` : ''}
+            </p>
+          </div>
+        </div>
+        <div className={s.cardRight}>
+          <span className={s.collection}>{req.collectionType === 'home_visit' ? 'Home Visit' : 'Walk-in'}</span>
+          <span className={s.date}>
+            {new Date(req.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+      </div>
+
+      {open && (
+        <div className={s.cardBody}>
+          <div className={s.allTests}>
+            <p className={s.sectionLabel}>Tests</p>
+            {req.tests.map((t, i) => <span key={i} className={s.testTag}>{t}</span>)}
+          </div>
+
+          {req.patient?.phone && <p className={s.info}>Phone: {req.patient.phone}</p>}
+          {req.notes && <p className={s.infoNote}>Notes: {req.notes}</p>}
+
+          {req.result?.fileUrl && (
+            <div className={s.resultBox}>
+              <p className={s.sectionLabel}>Result Uploaded</p>
+              {req.result.notes && <p className={s.infoNote}>{req.result.notes}</p>}
+              <a href={req.result.signedUrl ?? req.result.fileUrl} target='_blank' rel='noopener noreferrer' className={s.resultLink}>
+                Download Result ↗
+              </a>
+            </div>
+          )}
+
+          {!done && (
+            <div className={s.actions}>
+              <div className={s.actionBtns}>
+                {req.status === 'assigned' && req.collectionType === 'home_visit' && (
+                  <button className={s.actionBtn} disabled={updating} onClick={() => updateStatus('sample_collected')}>
+                    Mark Sample Collected
+                  </button>
+                )}
+                {(req.status === 'sample_collected' || (req.status === 'assigned' && req.collectionType === 'walk_in')) && (
+                  <button className={s.actionBtn} disabled={updating} onClick={() => updateStatus('processing')}>
+                    Mark Processing
+                  </button>
+                )}
+              </div>
+              <div className={s.uploadSection}>
+                <p className={s.sectionLabel}>Upload Result (PDF / image)</p>
+                <div className={s.uploadRow}>
+                  <input type='file' accept='.pdf,image/*' ref={fileRef} className={s.fileInput} />
+                  <textarea
+                    className={s.notesInput}
+                    rows={2}
+                    placeholder='Result notes (optional)…'
+                    value={uploadNote}
+                    onChange={e => setUploadNote(e.target.value)}
+                  />
+                  <button className={s.uploadBtn} disabled={uploading} onClick={uploadResult}>
+                    {uploading ? 'Uploading…' : 'Upload & Complete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Scientist portal ──────────────────────────────────────────────────────────
+
+function ScientistPortal ({ labName }: { labName: string }) {
+  const [historyMode, setHistoryMode] = useState(false)
+  const [requests, setRequests] = useState<Request[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const r = await api.get(`/diagnostics/scientist/requests${historyMode ? '?history=true' : ''}`)
+      setRequests(r.data.data?.requests ?? [])
+    } catch {}
+    setLoading(false)
+  }, [historyMode])
+
+  useEffect(() => { load() }, [load])
+
+  return (
+    <div className={s.wrap}>
+      <div className={s.pageHeader}>
+        <div>
+          <h1 className={s.title}>My Assigned Tests</h1>
+          {labName && <p className={s.subtitle}>{labName}</p>}
+        </div>
+        <button className={s.refreshBtn} onClick={load}>Refresh</button>
+      </div>
+
+      <div className={s.tabs}>
+        <button
+          className={`${s.tab} ${!historyMode ? s.tabActive : ''}`}
+          onClick={() => setHistoryMode(false)}
+        >
+          Active
+          {!historyMode && requests.length > 0 && <span className={s.tabCount}>{requests.length}</span>}
+        </button>
+        <button
+          className={`${s.tab} ${historyMode ? s.tabActive : ''}`}
+          onClick={() => setHistoryMode(true)}
+        >
+          History
+        </button>
+      </div>
+
+      {loading ? (
+        <div className={s.empty}>Loading tests…</div>
+      ) : requests.length === 0 ? (
+        <div className={s.empty}>{historyMode ? 'No completed tests yet.' : 'No active tests assigned to you.'}</div>
+      ) : (
+        <div className={s.list}>
+          {requests.map(req => <ScientistCard key={req._id} req={req} onRefresh={load} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── My Team tab ───────────────────────────────────────────────────────────────
+
+function TeamTab () {
+  const [scientists, setScientists] = useState<Scientist[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  function loadTeam () {
+    setLoading(true)
+    api.get('/diagnostics/labs/scientists')
+      .then(r => setScientists(r.data.data?.scientists ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadTeam() }, [])
+
+  async function addScientist () {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      setErr('Name, email, and password are required.')
+      return
+    }
+    setSaving(true)
+    setErr('')
+    try {
+      await api.post('/diagnostics/labs/scientists', form)
+      setForm({ name: '', email: '', phone: '', password: '' })
+      setShowForm(false)
+      loadTeam()
+    } catch (e: unknown) {
+      setErr(
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+          ?? 'Failed to create account.'
+      )
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className={s.teamWrap}>
+      <div className={s.teamHeader}>
+        <h2 className={s.teamTitle}>Lab Scientists ({scientists.length})</h2>
+        <button className={s.addSciBtn} onClick={() => setShowForm(p => !p)}>
+          {showForm ? 'Cancel' : '+ Add Scientist'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className={s.addSciForm}>
+          <h3 className={s.addSciFormTitle}>New Scientist Account</h3>
+          {err && <p className={s.formError}>{err}</p>}
+          <div className={s.sciFormGrid}>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Full Name *</span>
+              <input className={s.sciFormInput} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder='Dr. Jane Okafor' />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Email *</span>
+              <input className={s.sciFormInput} type='email' value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder='jane@lab.com' />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Phone</span>
+              <input className={s.sciFormInput} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder='08012345678' />
+            </label>
+            <label className={s.sciFormField}>
+              <span className={s.sciFormLabel}>Temporary Password *</span>
+              <input className={s.sciFormInput} type='password' value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} placeholder='Min 8 characters' />
+            </label>
+          </div>
+          <button className={s.wiBtn} disabled={saving} onClick={addScientist}>
+            {saving ? 'Creating…' : 'Create Account'}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className={s.empty}>Loading team…</div>
+      ) : scientists.length === 0 ? (
+        <div className={s.empty}>No lab scientists yet. Add one above.</div>
+      ) : (
+        <div className={s.sciTeamList}>
+          {scientists.map(sci => (
+            <div key={sci._id} className={s.sciTeamCard}>
+              <div className={s.sciTeamAvatar}>{sci.name[0]}</div>
+              <div className={s.sciTeamInfo}>
+                <p className={s.sciTeamName}>{sci.name}</p>
+                <p className={s.sciTeamEmail}>{sci.email}</p>
+                {sci.phone && <p className={s.sciTeamPhone}>{sci.phone}</p>}
+              </div>
+              <span className={s.sciTeamJoined}>
+                Joined {new Date(sci.createdAt).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Single request card ───────────────────────────────────────────────────────
 
 function RequestCard ({
@@ -501,6 +853,8 @@ function RequestCard ({
   uploadNotes,
   setUploadNotes,
   fileRefs,
+  scientists,
+  onRefresh,
 }: {
   req: Request
   onUpdate: (id: string, status: string) => void
@@ -510,12 +864,16 @@ function RequestCard ({
   uploadNotes: Record<string, string>
   setUploadNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>
   fileRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>
+  scientists?: Scientist[]
+  onRefresh?: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const [showAssign, setShowAssign] = useState(false)
   const done = DONE.includes(req.status)
   const busy = updating === req._id
 
   return (
+    <>
     <div className={`${s.card} ${done ? s.cardDone : ''}`}>
       <div className={s.cardHead} onClick={() => setOpen(v => !v)}>
         <div className={s.cardLeft}>
@@ -633,6 +991,12 @@ function RequestCard ({
                 </button>
               )}
 
+              {scientists && scientists.length > 0 && (
+                <button className={s.assignBtn} onClick={() => setShowAssign(true)}>
+                  {req.assignedScientist ? `↗ ${req.assignedScientist.name}` : 'Assign Scientist'}
+                </button>
+              )}
+
               <div className={s.uploadSection}>
                 <p className={s.sectionLabel}>Upload Result (PDF / image)</p>
                 <div className={s.uploadRow}>
@@ -659,6 +1023,15 @@ function RequestCard ({
         </div>
       )}
     </div>
+    {showAssign && scientists && scientists.length > 0 && (
+      <AssignScientistModal
+        req={req}
+        scientists={scientists}
+        onClose={() => setShowAssign(false)}
+        onDone={() => { setShowAssign(false); if (onRefresh) onRefresh() }}
+      />
+    )}
+    </>
   )
 }
 
@@ -750,43 +1123,62 @@ function ClaimCard ({ req, claiming, onClaim }: { req: Request; claiming: string
 
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 
-type Tab = 'active' | 'available' | 'done' | 'walkin'
+type Tab = 'active' | 'available' | 'done' | 'walkin' | 'team'
 
 export default function LabDashboard () {
   const [available,   setAvailable]   = useState<Request[]>([])
   const [mine,        setMine]        = useState<Request[]>([])
   const [loading,     setLoading]     = useState(true)
   const [labName,     setLabName]     = useState('')
+  const [userRole,    setUserRole]    = useState<string | null>(null)
   const [claiming,    setClaiming]    = useState<string | null>(null)
   const [updating,    setUpdating]    = useState<string | null>(null)
   const [uploading,   setUploading]   = useState<string | null>(null)
+  const [scientists,  setScientists]  = useState<Scientist[]>([])
   const [labTests,    setLabTests]    = useState<LabTest[]>([])
   const [tab,         setTab]         = useState<Tab>('active')
   const [uploadNotes, setUploadNotes] = useState<Record<string, string>>({})
   const [walkInMsg,   setWalkInMsg]   = useState('')
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [reqRes, profRes] = await Promise.all([
-        api.get('/diagnostics/labs/requests'),
-        api.get('/diagnostics/labs/profile').catch(() => null),
-      ])
-      setAvailable(reqRes.data.data?.available ?? [])
-      setMine(reqRes.data.data?.mine ?? [])
-      const name = profRes?.data?.data?.lab?.name
-      if (name) setLabName(name)
-    } catch {}
-    setLoading(false)
+  // Phase 1: detect user role from profile
+  useEffect(() => {
+    api.get('/diagnostics/labs/profile')
+      .then(r => {
+        setLabName(r.data.data?.lab?.name ?? '')
+        setUserRole(r.data.data?.userRole ?? 'lab_partner')
+      })
+      .catch(() => setUserRole('lab_partner'))
   }, [])
 
+  // Phase 2: load requests + scientists (non-scientists only)
+  const load = useCallback(async () => {
+    if (!userRole || userRole === 'lab_scientist') return
+    setLoading(true)
+    try {
+      const [reqRes, sciRes] = await Promise.allSettled([
+        api.get('/diagnostics/labs/requests'),
+        api.get('/diagnostics/labs/scientists'),
+      ])
+      if (reqRes.status === 'fulfilled') {
+        setAvailable(reqRes.value.data.data?.available ?? [])
+        setMine(reqRes.value.data.data?.mine ?? [])
+      }
+      if (sciRes.status === 'fulfilled') {
+        setScientists(sciRes.value.data.data?.scientists ?? [])
+      }
+    } catch {}
+    setLoading(false)
+  }, [userRole])
+
   useEffect(() => {
+    if (userRole === null) return
+    if (userRole === 'lab_scientist') { setLoading(false); return }
     load()
     api.get('/diagnostics/labs/test-catalog')
       .then(r => setLabTests(r.data.data?.tests ?? []))
       .catch(() => {})
-  }, [load])
+  }, [load, userRole])
 
   async function claimRequest (id: string) {
     setClaiming(id)
@@ -822,6 +1214,14 @@ export default function LabDashboard () {
       setMine(prev => prev.map(req => req._id === id ? { ...req, status: 'completed' } : req))
     } catch {}
     setUploading(null)
+  }
+
+  if (userRole === null) {
+    return <div className={s.wrap}><div className={s.empty}>Loading portal…</div></div>
+  }
+
+  if (userRole === 'lab_scientist') {
+    return <ScientistPortal labName={labName} />
   }
 
   const active       = mine.filter(r => !DONE.includes(r.status))
@@ -873,9 +1273,18 @@ export default function LabDashboard () {
         >
           + Walk-in
         </button>
+        <button
+          className={`${s.tab} ${tab === 'team' ? s.tabActive : ''}`}
+          onClick={() => setTab('team')}
+        >
+          My Team
+          {scientists.length > 0 && <span className={s.tabCount}>{scientists.length}</span>}
+        </button>
       </div>
 
-      {tab === 'walkin' ? (
+      {tab === 'team' ? (
+        <TeamTab />
+      ) : tab === 'walkin' ? (
         <WalkInPanel
           labTests={labTests}
           onDone={() => { load(); setTab('active') }}
@@ -905,6 +1314,8 @@ export default function LabDashboard () {
                   uploadNotes={uploadNotes}
                   setUploadNotes={setUploadNotes}
                   fileRefs={fileRefs}
+                  scientists={scientists.length > 0 ? scientists : undefined}
+                  onRefresh={load}
                 />
               ))}
             </div>

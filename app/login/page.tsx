@@ -119,6 +119,7 @@ function LoginInner () {
       else if (user.role === 'pharmacy_partner')
         router.push('/partner/pharmacy')
       else if (user.role === 'lab_partner') router.push('/partner/lab')
+      else if (user.role === 'lab_scientist') router.push('/partner/lab')
       else router.push('/patient')
     } catch (err: unknown) {
       const e = err as {
@@ -147,7 +148,9 @@ function LoginInner () {
     setLoading(true)
     try {
       const { user } = await verifyAdminOtp(adminOtp.adminUserId, otpCode)
-      router.push(user.adminRole === 'lab_admin' ? '/partner/lab' : '/admin')
+      if (user.role === 'lab_scientist') router.push('/partner/lab')
+      else
+        router.push(user.adminRole === 'lab_admin' ? '/partner/lab' : '/admin')
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } }
       modal.show({
@@ -180,9 +183,9 @@ function LoginInner () {
 
           {adminOtp ? (
             <>
-              <h1 className={s.formTitle}>Admin Verification</h1>
+              <h1 className={s.formTitle}>Two-Step Verification</h1>
               <p className={s.formSub}>
-                A 6-digit code was sent to your admin email. Enter it below to
+                A 6-digit code was sent to your email. Enter it below to
                 continue.
               </p>
 

@@ -54,6 +54,7 @@
 .finance_admin { background: rgba(251,191,36,0.15); color: #fbbf24; }
 .support_admin { background: rgba(167,139,250,0.15); color: #a78bfa; }
 .ops_admin     { background: rgba(251,113,133,0.15); color: #fb7185; }
+.lab_scientist { background: rgba(52,211,153,0.15); color: #34d399; }
 
 .inactivePill { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--badge-neutral-bg); color: var(--text-muted); }
 
@@ -153,6 +154,19 @@
   font-weight: 600;
   cursor: pointer;
   &:hover { background: rgba($success,0.16); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.deleteBtn {
+  padding: 5px 11px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba($danger,0.2);
+  background: transparent;
+  color: rgba($danger,0.6);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: rgba($danger,0.08); color: $danger; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 

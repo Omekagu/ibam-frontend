@@ -189,6 +189,21 @@
   &:hover { background: rgba($success,0.18); }
 }
 
+.btnDelete {
+  padding: 0.3125rem 0.75rem;
+  background: transparent;
+  border: 1px solid rgba($danger,0.2);
+  border-radius: $radius-md;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba($danger,0.6);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  &:hover { background: rgba($danger,0.08); color: $danger; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
 // ─── Expanded detail row ─────────────────────────
 .detailRow td {
   background: rgba($primary,0.03) !important;

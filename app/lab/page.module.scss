@@ -462,3 +462,81 @@
   padding: 0.6rem 1.25rem; font-size: 0.875rem;
   &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 }
+
+// ─── Assign scientist button ──────────────────────────────────────
+.assignBtn {
+  padding: 0.45rem 1rem; border-radius: $radius-md;
+  border: 1px solid rgba(139,92,246,0.35); background: rgba(139,92,246,0.08);
+  color: #a78bfa; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s ease;
+  &:hover { background: rgba(139,92,246,0.16); }
+}
+
+// ─── Assign scientist modal list ──────────────────────────────────
+.assignList { display: flex; flex-direction: column; gap: 0.375rem; max-height: 280px; overflow-y: auto; }
+.assignItem {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.625rem 0.875rem; border-radius: $radius-md;
+  border: 1px solid $navy-border; background: var(--input-bg);
+  cursor: pointer; text-align: left; width: 100%; transition: all 0.12s;
+  &:hover:not(:disabled) { border-color: rgba($primary,0.4); background: rgba($primary,0.04); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+.assignItemActive { border-color: rgba(139,92,246,0.5) !important; background: rgba(139,92,246,0.08) !important; }
+.assignAvatar {
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(139,92,246,0.15); color: #a78bfa;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0;
+}
+.assignInfo { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.assignName  { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+.assignEmail { font-size: 0.75rem; color: var(--text-muted); }
+.assignedTag { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(139,92,246,0.12); color: #a78bfa; white-space: nowrap; }
+
+// ─── Scientist result box ─────────────────────────────────────────
+.sciResultBox { padding: 0.75rem 1rem; border-radius: $radius-md; background: rgba($success,0.07); border: 1px solid rgba($success,0.25); display: flex; flex-direction: column; gap: 6px; }
+.sciResultReady { font-size: 0.8125rem; font-weight: 600; color: $success; margin: 0; }
+.downloadBtn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: $radius-sm; background: $success; color: #fff; font-size: 0.8rem; font-weight: 600; text-decoration: none; width: fit-content; &:hover { opacity: 0.88; } }
+
+// ─── My Team tab ──────────────────────────────────────────────────
+.teamWrap { display: flex; flex-direction: column; gap: 1.25rem; }
+.teamHeader { @include flex-between; flex-wrap: wrap; gap: 0.75rem; }
+.teamTitle { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
+.addSciBtn {
+  padding: 0.45rem 1rem; border-radius: $radius-md;
+  border: 1px solid rgba($primary,0.4); background: rgba($primary,0.08);
+  color: $accent; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+  &:hover { background: rgba($primary,0.16); }
+}
+
+.addSciForm {
+  background: $navy-dark; border: 1px solid $navy-border; border-radius: $radius-lg;
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
+}
+.addSciFormTitle { font-size: 0.9375rem; font-weight: 700; color: var(--text); margin: 0; }
+.sciFormGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; @media (max-width: 520px) { grid-template-columns: 1fr; } }
+.sciFormField { display: flex; flex-direction: column; gap: 4px; }
+.sciFormLabel { font-size: 0.75rem; font-weight: 600; color: var(--text-semi); }
+.sciFormInput {
+  background: var(--input-bg); border: 1px solid $navy-border; border-radius: $radius-md;
+  padding: 8px 10px; font-size: 0.875rem; color: var(--text); outline: none; width: 100%;
+  &:focus { border-color: rgba($primary,0.5); }
+  &::placeholder { color: var(--text-faint); }
+}
+
+.sciTeamList { display: flex; flex-direction: column; gap: 0.5rem; }
+.sciTeamCard {
+  display: flex; align-items: center; gap: 0.875rem;
+  background: $navy-dark; border: 1px solid $navy-border;
+  border-radius: $radius-lg; padding: 0.875rem 1rem;
+  transition: border-color 0.15s;
+  &:hover { border-color: rgba($primary,0.25); }
+}
+.sciTeamAvatar {
+  width: 40px; height: 40px; border-radius: 50%; background: rgba(139,92,246,0.15); color: #a78bfa;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0;
+}
+.sciTeamInfo { flex: 1; min-width: 0; }
+.sciTeamName  { font-size: 0.9rem; font-weight: 700; color: var(--text); margin: 0 0 2px; }
+.sciTeamEmail { font-size: 0.775rem; color: var(--text-muted); margin: 0; }
+.sciTeamPhone { font-size: 0.75rem; color: var(--text-faint); margin: 2px 0 0; }
+.sciTeamJoined { font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; }
