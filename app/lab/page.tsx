@@ -692,7 +692,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
   } | null>(null)
   const [error, setError] = useState('')
   const [pendingConfirm, setPendingConfirm] = useState<{
-    name: string; email: string | null; phone: string
+    name: string
+    email: string | null
+    phone: string
   } | null>(null)
 
   useEffect(() => {
@@ -1225,8 +1227,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
             <div className={s.confirmBanner}>
               <p className={s.confirmBannerText}>
                 A patient named <strong>{pendingConfirm.name}</strong>
-                {pendingConfirm.phone ? ` (${pendingConfirm.phone})` : ''} already has an account.
-                Link this walk-in to their existing account?
+                {pendingConfirm.phone ? ` (${pendingConfirm.phone})` : ''}{' '}
+                already has an account. Link this walk-in to their existing
+                account?
               </p>
               <div className={s.confirmBannerActions}>
                 <button
@@ -1234,11 +1237,18 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
                   disabled={submitting}
                   onClick={() => submit(true)}
                 >
-                  {submitting ? <Loader inline size='sm' /> : 'Yes, use existing →'}
+                  {submitting ? (
+                    <Loader inline size='sm' />
+                  ) : (
+                    'Yes, use existing →'
+                  )}
                 </button>
                 <button
                   className={s.wiBtn2}
-                  onClick={() => { setPendingConfirm(null); setStep('patient') }}
+                  onClick={() => {
+                    setPendingConfirm(null)
+                    setStep('patient')
+                  }}
                 >
                   No, change patient
                 </button>
@@ -1257,7 +1267,11 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
               >
                 ← Back
               </button>
-              <button className={s.wiBtn} disabled={submitting} onClick={() => submit()}>
+              <button
+                className={s.wiBtn}
+                disabled={submitting}
+                onClick={() => submit()}
+              >
                 {submitting ? (
                   <Loader inline size='sm' />
                 ) : (
