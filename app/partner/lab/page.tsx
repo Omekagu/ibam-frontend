@@ -116,6 +116,9 @@ function WalkInPanel ({
   const [payMethod,    setPayMethod]    = useState<WalkInPay>('pos')
   const [submitting,   setSubmitting]   = useState(false)
   const [error,        setError]        = useState('')
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    name: string; email: string | null; phone: string
+  } | null>(null)
   const [result,       setResult]       = useState<{
     bookingRef: string
     patientName: string
@@ -154,9 +157,10 @@ function WalkInPanel ({
     setSelected(p => p.includes(name) ? p.filter(n => n !== name) : [...p, name])
   }
 
-  async function submit () {
+  async function submit (confirmExisting = false) {
     setSubmitting(true)
     setError('')
+    setPendingConfirm(null)
     try {
       const body: Record<string, unknown> = {
         patientName:  patient.name,
@@ -165,6 +169,7 @@ function WalkInPanel ({
         paymentMethod: payMethod,
         totalAmount:  total,
         notes:        patient.notes || undefined,
+        ...(confirmExisting ? { confirmExisting: true } : {})
       }
       if (testMode === 'wellness' && selectedPkg) {
         body.wellnessPackageId = selectedPkg._id
@@ -173,6 +178,12 @@ function WalkInPanel ({
       }
       const res = await api.post('/diagnostics/labs/walk-in', body)
       const d = res.data.data
+
+      if (d.requiresConfirmation) {
+        setPendingConfirm(d.existingPatient)
+        return
+      }
+
       setResult({
         bookingRef:  d.bookingRef,
         patientName: d.patient.name,
@@ -202,6 +213,7 @@ function WalkInPanel ({
     setPayMethod('pos')
     setResult(null)
     setError('')
+    setPendingConfirm(null)
   }
 
   const STEPS: WalkInStep[] = ['patient', 'tests', 'payment', 'done']
@@ -407,13 +419,32 @@ function WalkInPanel ({
             </div>
           </div>
 
+          {pendingConfirm && (
+            <div className={s.confirmBanner}>
+              <p className={s.confirmBannerText}>
+                A patient named <strong>{pendingConfirm.name}</strong>
+                {pendingConfirm.phone ? ` (${pendingConfirm.phone})` : ''} already has an account.
+                Link this walk-in to their existing account?
+              </p>
+              <div className={s.confirmBannerActions}>
+                <button className={s.wiBtn} disabled={submitting} onClick={() => submit(true)}>
+                  {submitting ? 'Registering…' : 'Yes, use existing →'}
+                </button>
+                <button className={s.wiBtn2} onClick={() => { setPendingConfirm(null); setStep('patient') }}>
+                  No, change patient
+                </button>
+              </div>
+            </div>
+          )}
           {error && <p className={s.formError}>{error}</p>}
-          <div className={s.wiActions}>
-            <button className={s.wiBtn2} onClick={() => { setError(''); setStep('tests') }}>← Back</button>
-            <button className={s.wiBtn} disabled={submitting} onClick={submit}>
-              {submitting ? 'Registering…' : 'Confirm & Register →'}
-            </button>
-          </div>
+          {!pendingConfirm && (
+            <div className={s.wiActions}>
+              <button className={s.wiBtn2} onClick={() => { setError(''); setStep('tests') }}>← Back</button>
+              <button className={s.wiBtn} disabled={submitting} onClick={() => submit()}>
+                {submitting ? 'Registering…' : 'Confirm & Register →'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
