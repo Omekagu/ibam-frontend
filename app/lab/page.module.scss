@@ -204,6 +204,22 @@
 
 .errMsg { font-size: 0.8125rem; color: $danger; background: rgba($danger,0.08); border-radius: $radius-md; padding: 0.5rem 0.75rem; }
 
+.confirmBanner {
+  background: rgba($accent, 0.08);
+  border: 1px solid rgba($accent, 0.25);
+  border-radius: $radius-md;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.confirmBannerText {
+  font-size: 0.875rem;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+  strong { color: $accent; }
+}
+.confirmBannerActions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
 // ── Walk-in tab styles ───────────────────────────────────────────
 .tabWalkin { border-color: rgba($primary,0.4) !important; color: $primary !important;
   &.tabActive { background: $primary; color: #fff !important; border-color: $primary !important; }

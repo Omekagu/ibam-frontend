@@ -691,6 +691,9 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     payLabel: string
   } | null>(null)
   const [error, setError] = useState('')
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    name: string; email: string | null; phone: string
+  } | null>(null)
 
   useEffect(() => {
     labApi
@@ -739,9 +742,10 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     )
   }
 
-  async function submit () {
+  async function submit (confirmExisting = false) {
     setSubmitting(true)
     setError('')
+    setPendingConfirm(null)
     try {
       const body: Record<string, unknown> = {
         patientName: patient.name,
@@ -749,7 +753,8 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
         patientEmail: patient.email || undefined,
         paymentMethod: payMethod,
         totalAmount: total,
-        notes: patient.notes || undefined
+        notes: patient.notes || undefined,
+        ...(confirmExisting ? { confirmExisting: true } : {})
       }
       if (testMode === 'wellness' && selectedPkg) {
         body.wellnessPackageId = selectedPkg._id
@@ -758,6 +763,13 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
       }
       const res = await labApi.post('/diagnostics/labs/walk-in', body)
       const d = res.data.data
+
+      // Server wants staff to confirm before linking an existing patient account
+      if (d.requiresConfirmation) {
+        setPendingConfirm(d.existingPatient)
+        return
+      }
+
       setResult({
         bookingRef: d.bookingRef,
         patientName: d.patient.name,
@@ -788,6 +800,7 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
     setPayMethod('pos')
     setResult(null)
     setError('')
+    setPendingConfirm(null)
   }
 
   const STEPS: WalkInStep[] = ['patient', 'tests', 'payment', 'done']
@@ -1208,25 +1221,51 @@ function WalkInTab ({ labApi }: { labApi: ReturnType<typeof makeLabApi> }) {
             </div>
           </div>
 
+          {pendingConfirm && (
+            <div className={s.confirmBanner}>
+              <p className={s.confirmBannerText}>
+                A patient named <strong>{pendingConfirm.name}</strong>
+                {pendingConfirm.phone ? ` (${pendingConfirm.phone})` : ''} already has an account.
+                Link this walk-in to their existing account?
+              </p>
+              <div className={s.confirmBannerActions}>
+                <button
+                  className={s.wiBtn}
+                  disabled={submitting}
+                  onClick={() => submit(true)}
+                >
+                  {submitting ? <Loader inline size='sm' /> : 'Yes, use existing →'}
+                </button>
+                <button
+                  className={s.wiBtn2}
+                  onClick={() => { setPendingConfirm(null); setStep('patient') }}
+                >
+                  No, change patient
+                </button>
+              </div>
+            </div>
+          )}
           {error && <p className={s.errMsg}>{error}</p>}
-          <div className={s.wiActions}>
-            <button
-              className={s.wiBtn2}
-              onClick={() => {
-                setError('')
-                setStep('tests')
-              }}
-            >
-              ← Back
-            </button>
-            <button className={s.wiBtn} disabled={submitting} onClick={submit}>
-              {submitting ? (
-                <Loader inline size='sm' />
-              ) : (
-                'Confirm & Register →'
-              )}
-            </button>
-          </div>
+          {!pendingConfirm && (
+            <div className={s.wiActions}>
+              <button
+                className={s.wiBtn2}
+                onClick={() => {
+                  setError('')
+                  setStep('tests')
+                }}
+              >
+                ← Back
+              </button>
+              <button className={s.wiBtn} disabled={submitting} onClick={() => submit()}>
+                {submitting ? (
+                  <Loader inline size='sm' />
+                ) : (
+                  'Confirm & Register →'
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
