@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import api from '@/lib/api'
 import { useStatusModal } from '@/components/StatusModal'
 import { Loader } from '@/components/Loader'
@@ -7,9 +7,17 @@ import s from './page.module.scss'
 
 // ─── Payment settings ─────────────────────────────────────────────────────────
 interface PaymentSettings {
+  paymentProvider: 'paystack' | 'monnify'
   paystackEnabled: boolean
   paystackKeySet: boolean
   paystackPublicKey: string
+  monnifyEnabled: boolean
+  monnifyKeySet: boolean
+  monnifyApiKeySet: boolean
+  monnifyApiKey: string
+  monnifyContractCode: string
+  monnifyBaseUrl: string
+  monnifySourceAccountNumber: string
   directPaymentEnabled: boolean
   companyBankName: string
   companyAccountNumber: string
@@ -19,9 +27,17 @@ interface PaymentSettings {
 }
 
 const DEFAULT_PAYMENT: PaymentSettings = {
+  paymentProvider: 'paystack',
   paystackEnabled: true,
   paystackKeySet: false,
   paystackPublicKey: '',
+  monnifyEnabled: false,
+  monnifyKeySet: false,
+  monnifyApiKeySet: false,
+  monnifyApiKey: '',
+  monnifyContractCode: '',
+  monnifyBaseUrl: 'https://sandbox.monnify.com',
+  monnifySourceAccountNumber: '',
   directPaymentEnabled: false,
   companyBankName: '',
   companyAccountNumber: '',
@@ -30,17 +46,110 @@ const DEFAULT_PAYMENT: PaymentSettings = {
   directPaymentNote: ''
 }
 
+function KeySection ({
+  title,
+  savedLabel,
+  isSet,
+  otpMode,
+  otpSent,
+  otpSending,
+  otp,
+  setOtp,
+  onSendOtp,
+  onCancelOtp,
+  children,
+  hasExistingKeys,
+}: {
+  title: string
+  savedLabel: string
+  isSet: boolean
+  otpMode: boolean
+  otpSent: boolean
+  otpSending: boolean
+  otp: string
+  setOtp: (v: string) => void
+  onSendOtp: () => void
+  onCancelOtp: () => void
+  children: React.ReactNode
+  hasExistingKeys: boolean
+}) {
+  const editing = otpMode || !isSet
+
+  return (
+    <div className={s.keySection}>
+      <div className={s.keySectionHead}>
+        <div>
+          <p className={s.sectionTitle}>{title}</p>
+          <p className={s.subtext} style={{ marginTop: 4 }}>
+            {isSet ? savedLabel : 'No keys saved yet — add them below.'}
+          </p>
+        </div>
+        {isSet && !otpMode && (
+          <button className={s.editKeyBtn} onClick={onSendOtp}>
+            Change Keys
+          </button>
+        )}
+      </div>
+
+      {/* The children handle their own locked/edit display */}
+      {children}
+
+      {/* OTP flow — only shown when actively editing */}
+      {editing && hasExistingKeys && !otpSent && (
+        <div className={s.otpPrompt}>
+          <p className={s.otpPromptText}>
+            An OTP will be sent to your admin email to authorize this change.
+          </p>
+          <div className={s.otpBtnRow}>
+            <button className={s.otpSendBtn} onClick={onSendOtp} disabled={otpSending}>
+              {otpSending ? 'Sending…' : 'Send OTP to my email'}
+            </button>
+            <button className={s.cancelKeyBtn} onClick={onCancelOtp}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {editing && hasExistingKeys && otpSent && (
+        <div className={s.field}>
+          <label>OTP <span className={s.hint}>(check your email)</span></label>
+          <input
+            className={s.input}
+            value={otp}
+            onChange={e => setOtp(e.target.value)}
+            placeholder='6-digit OTP'
+            maxLength={6}
+            style={{ maxWidth: 200 }}
+          />
+        </div>
+      )}
+      {editing && hasExistingKeys && (
+        <button className={s.cancelKeyBtn} onClick={onCancelOtp} style={{ alignSelf: 'flex-start' }}>
+          Cancel
+        </button>
+      )}
+    </div>
+  )
+}
+
 function PaymentTab () {
   const modal = useStatusModal()
   const [settings, setSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [otpMode, setOtpMode] = useState(false)
+
+  // Shared OTP state (one OTP covers all key changes in a single save)
   const [otpSent, setOtpSent] = useState(false)
   const [otpSending, setOtpSending] = useState(false)
   const [otp, setOtp] = useState('')
-  const [newSecretKey, setNewSecretKey] = useState('')
-  const [newPublicKey, setNewPublicKey] = useState('')
+
+  // Paystack key editing
+  const [psOtpMode, setPsOtpMode] = useState(false)
+  const [newPsSecret, setNewPsSecret] = useState('')
+  const [newPsPublic, setNewPsPublic] = useState('')
+
+  // Monnify key editing
+  const [mnOtpMode, setMnOtpMode] = useState(false)
+  const [newMnApiKey, setNewMnApiKey] = useState('')
+  const [newMnSecret, setNewMnSecret] = useState('')
 
   useEffect(() => {
     api
@@ -56,13 +165,16 @@ function PaymentTab () {
       await api.post('/admin/settings/request-otp')
       setOtpSent(true)
     } catch {
-      modal.show({
-        variant: 'declined',
-        title: 'OTP Failed',
-        message: 'Could not send OTP. Try again.'
-      })
+      modal.show({ variant: 'declined', title: 'OTP Failed', message: 'Could not send OTP. Try again.' })
     }
     setOtpSending(false)
+  }
+
+  function cancelOtp () {
+    setPsOtpMode(false)
+    setMnOtpMode(false)
+    setOtpSent(false)
+    setOtp('')
   }
 
   async function save () {
@@ -70,39 +182,39 @@ function PaymentTab () {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: Record<string, any> = {
-        paystackEnabled: settings.paystackEnabled,
+        paymentProvider:      settings.paymentProvider,
+        paystackEnabled:      settings.paystackEnabled,
+        monnifyEnabled:       settings.monnifyEnabled,
+        monnifyContractCode:  settings.monnifyContractCode,
+        monnifyBaseUrl:       settings.monnifyBaseUrl,
+        monnifySourceAccountNumber: settings.monnifySourceAccountNumber,
         directPaymentEnabled: settings.directPaymentEnabled,
-        companyBankName: settings.companyBankName,
+        companyBankName:      settings.companyBankName,
         companyAccountNumber: settings.companyAccountNumber,
-        companyAccountName: settings.companyAccountName,
-        companyBankCode: settings.companyBankCode,
-        directPaymentNote: settings.directPaymentNote
+        companyAccountName:   settings.companyAccountName,
+        companyBankCode:      settings.companyBankCode,
+        directPaymentNote:    settings.directPaymentNote,
       }
-      if (otpMode && newSecretKey.trim()) {
-        body.paystackSecretKey = newSecretKey.trim()
-        body.paystackPublicKey = newPublicKey.trim()
-        if (settings.paystackKeySet) body.otp = otp
+      const hasExisting = settings.paystackKeySet || settings.monnifyKeySet
+      if (psOtpMode && newPsSecret.trim()) {
+        body.paystackSecretKey = newPsSecret.trim()
+        body.paystackPublicKey = newPsSecret.trim() ? newPsPublic.trim() : undefined
+        if (hasExisting) body.otp = otp
+      }
+      if (mnOtpMode && (newMnApiKey.trim() || newMnSecret.trim())) {
+        if (newMnApiKey.trim())  body.monnifyApiKey    = newMnApiKey.trim()
+        if (newMnSecret.trim())  body.monnifySecretKey = newMnSecret.trim()
+        if (hasExisting) body.otp = otp
       }
       const r = await api.put('/admin/settings', body)
       setSettings(prev => ({ ...prev, ...r.data.data?.settings }))
-      setOtpMode(false)
-      setOtpSent(false)
-      setOtp('')
-      setNewSecretKey('')
-      setNewPublicKey('')
-      modal.show({
-        variant: 'success',
-        title: 'Settings Saved',
-        message: 'Payment settings have been updated.'
-      })
+      cancelOtp()
+      setNewPsSecret(''); setNewPsPublic('')
+      setNewMnApiKey(''); setNewMnSecret('')
+      modal.show({ variant: 'success', title: 'Settings Saved', message: 'Payment settings have been updated.' })
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message
-      modal.show({
-        variant: 'declined',
-        title: 'Save Failed',
-        message: msg ?? 'Failed to save settings.'
-      })
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      modal.show({ variant: 'declined', title: 'Save Failed', message: msg ?? 'Failed to save settings.' })
     }
     setSaving(false)
   }
@@ -118,156 +230,213 @@ function PaymentTab () {
       </div>
     )
 
+  const hasExistingKeys = settings.paystackKeySet || settings.monnifyKeySet
+
   return (
     <div className={s.card}>
+
+      {/* ── Active Provider ─────────────────────────────────────────── */}
+      <h2 className={s.sectionTitle}>Active Payment Provider</h2>
+      <p className={s.subtext}>
+        Select which payment gateway processes all transactions. Only one can be active at a time.
+      </p>
+      <div className={s.providerSelector}>
+        {(['paystack', 'monnify'] as const).map(p => (
+          <button
+            key={p}
+            className={`${s.providerBtn} ${settings.paymentProvider === p ? s.providerBtnActive : ''}`}
+            onClick={() => setSettings(prev => ({ ...prev, paymentProvider: p }))}
+          >
+            {p === 'paystack' ? 'Paystack' : 'Monnify'}
+            {settings.paymentProvider === p && (
+              <span className={s.providerActivePill}>Active</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div className={s.divider} />
+
+      {/* ── Paystack ──────────────────────────────────────────────────── */}
       <h2 className={s.sectionTitle}>Paystack</h2>
       <p className={s.subtext}>
-        Configure Paystack integration. API keys are stored securely in the
-        database. Changes to API keys require email OTP verification.
+        Card, bank transfer, USSD, and more. API keys are stored securely in the database.
+        Changes require email OTP verification.
       </p>
 
       <div className={s.toggleRow}>
         <div>
-          <p className={s.toggleLabel}>Accept Paystack Payments</p>
-          <p className={s.toggleSub}>Card, bank transfer, USSD, and more </p>
+          <p className={s.toggleLabel}>Enable Paystack</p>
+          <p className={s.toggleSub}>Allow Paystack as a payment option</p>
         </div>
         <button
-          className={`${s.toggle} ${
-            settings.paystackEnabled ? s.toggleOn : ''
-          }`}
-          onClick={() =>
-            setSettings(p => ({ ...p, paystackEnabled: !p.paystackEnabled }))
-          }
+          className={`${s.toggle} ${settings.paystackEnabled ? s.toggleOn : ''}`}
+          onClick={() => setSettings(p => ({ ...p, paystackEnabled: !p.paystackEnabled }))}
           aria-pressed={settings.paystackEnabled}
         >
           <span className={s.toggleThumb} />
         </button>
       </div>
 
-      {/* API Keys */}
-      <div className={s.keySection}>
-        <div className={s.keySectionHead}>
-          <div>
-            <p className={s.sectionTitle}>API Keys</p>
-            <p className={s.subtext} style={{ marginTop: 4 }}>
-              {settings.paystackKeySet
-                ? 'Keys are saved and active.'
-                : 'No keys saved yet — add them below.'}
-            </p>
-          </div>
-          {settings.paystackKeySet && !otpMode && (
-            <button className={s.editKeyBtn} onClick={() => setOtpMode(true)}>
-              Change Keys
-            </button>
-          )}
-        </div>
-
-        {settings.paystackKeySet && !otpMode ? (
+      <KeySection
+        title='Paystack API Keys'
+        savedLabel='Keys are saved and active.'
+        isSet={settings.paystackKeySet}
+        otpMode={psOtpMode}
+        otpSent={otpSent}
+        otpSending={otpSending}
+        otp={otp}
+        setOtp={setOtp}
+        onSendOtp={() => { setPsOtpMode(true); sendOtp() }}
+        onCancelOtp={cancelOtp}
+        hasExistingKeys={hasExistingKeys}
+      >
+        {settings.paystackKeySet && !psOtpMode ? (
           <div className={s.lockedKeyRow}>
             <div className={s.lockedKeyItem}>
               <span className={s.lockedKeyLabel}>Secret Key</span>
-              <span className={s.lockedKeyValue}>
-                sk_••••••••••••••••••••••••••••••
-              </span>
+              <span className={s.lockedKeyValue}>sk_••••••••••••••••••••••••••••••</span>
             </div>
             <div className={s.lockedKeyItem}>
               <span className={s.lockedKeyLabel}>Public Key</span>
-              <span className={s.lockedKeyValue}>
-                {settings.paystackPublicKey ||
-                  'pk_••••••••••••••••••••••••••••••'}
-              </span>
+              <span className={s.lockedKeyValue}>{settings.paystackPublicKey || 'pk_••••••••••••••••••••••••••••••'}</span>
             </div>
           </div>
         ) : (
-          <>
-            {settings.paystackKeySet && !otpSent && (
-              <div className={s.otpPrompt}>
-                <p className={s.otpPromptText}>
-                  An OTP will be sent to your admin email to authorize this
-                  change.
-                </p>
-                <div className={s.otpBtnRow}>
-                  <button
-                    className={s.otpSendBtn}
-                    onClick={sendOtp}
-                    disabled={otpSending}
-                  >
-                    {otpSending ? 'Sending…' : 'Send OTP to my email'}
-                  </button>
-                  <button
-                    className={s.cancelKeyBtn}
-                    onClick={() => {
-                      setOtpMode(false)
-                      setOtpSent(false)
-                      setOtp('')
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {(!settings.paystackKeySet || otpSent) && (
-              <>
-                {settings.paystackKeySet && (
-                  <div className={s.field}>
-                    <label>
-                      OTP <span className={s.hint}>(check your email)</span>
-                    </label>
-                    <input
-                      className={s.input}
-                      value={otp}
-                      onChange={e => setOtp(e.target.value)}
-                      placeholder='6-digit OTP'
-                      maxLength={6}
-                      style={{ maxWidth: 200 }}
-                    />
-                  </div>
-                )}
-                <div className={s.row2}>
-                  <div className={s.field}>
-                    <label>Secret Key</label>
-                    <input
-                      className={s.input}
-                      value={newSecretKey}
-                      onChange={e => setNewSecretKey(e.target.value)}
-                      placeholder='sk_live_…'
-                      type='password'
-                      autoComplete='new-password'
-                    />
-                  </div>
-                  <div className={s.field}>
-                    <label>Public Key</label>
-                    <input
-                      className={s.input}
-                      value={newPublicKey}
-                      onChange={e => setNewPublicKey(e.target.value)}
-                      placeholder='pk_live_…'
-                    />
-                  </div>
-                </div>
-                {settings.paystackKeySet && (
-                  <button
-                    className={s.cancelKeyBtn}
-                    onClick={() => {
-                      setOtpMode(false)
-                      setOtpSent(false)
-                      setOtp('')
-                    }}
-                    style={{ alignSelf: 'flex-start' }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </>
-            )}
-          </>
+          <div className={s.row2}>
+            <div className={s.field}>
+              <label>Secret Key</label>
+              <input
+                className={s.input}
+                value={newPsSecret}
+                onChange={e => setNewPsSecret(e.target.value)}
+                placeholder='sk_live_…'
+                type='password'
+                autoComplete='new-password'
+              />
+            </div>
+            <div className={s.field}>
+              <label>Public Key</label>
+              <input
+                className={s.input}
+                value={newPsPublic}
+                onChange={e => setNewPsPublic(e.target.value)}
+                placeholder='pk_live_…'
+              />
+            </div>
+          </div>
         )}
+      </KeySection>
+
+      <div className={s.divider} />
+
+      {/* ── Monnify ──────────────────────────────────────────────────── */}
+      <h2 className={s.sectionTitle}>Monnify</h2>
+      <p className={s.subtext}>
+        Alternative payment provider with card and bank transfer support.
+        Credentials are stored securely and changes require OTP verification.
+      </p>
+
+      <div className={s.toggleRow}>
+        <div>
+          <p className={s.toggleLabel}>Enable Monnify</p>
+          <p className={s.toggleSub}>Allow Monnify as a payment option</p>
+        </div>
+        <button
+          className={`${s.toggle} ${settings.monnifyEnabled ? s.toggleOn : ''}`}
+          onClick={() => setSettings(p => ({ ...p, monnifyEnabled: !p.monnifyEnabled }))}
+          aria-pressed={settings.monnifyEnabled}
+        >
+          <span className={s.toggleThumb} />
+        </button>
+      </div>
+
+      <KeySection
+        title='Monnify Credentials'
+        savedLabel='Credentials are saved and active.'
+        isSet={settings.monnifyKeySet || settings.monnifyApiKeySet}
+        otpMode={mnOtpMode}
+        otpSent={otpSent}
+        otpSending={otpSending}
+        otp={otp}
+        setOtp={setOtp}
+        onSendOtp={() => { setMnOtpMode(true); sendOtp() }}
+        onCancelOtp={cancelOtp}
+        hasExistingKeys={hasExistingKeys}
+      >
+        {(settings.monnifyKeySet || settings.monnifyApiKeySet) && !mnOtpMode ? (
+          <div className={s.lockedKeyRow}>
+            <div className={s.lockedKeyItem}>
+              <span className={s.lockedKeyLabel}>API Key</span>
+              <span className={s.lockedKeyValue}>MK_••••••••••••••••••••••••••••••</span>
+            </div>
+            <div className={s.lockedKeyItem}>
+              <span className={s.lockedKeyLabel}>Secret Key</span>
+              <span className={s.lockedKeyValue}>••••••••••••••••••••••••••••••••</span>
+            </div>
+          </div>
+        ) : (
+          <div className={s.row2}>
+            <div className={s.field}>
+              <label>API Key</label>
+              <input
+                className={s.input}
+                value={newMnApiKey}
+                onChange={e => setNewMnApiKey(e.target.value)}
+                placeholder='MK_TEST_…'
+                autoComplete='new-password'
+              />
+            </div>
+            <div className={s.field}>
+              <label>Secret Key</label>
+              <input
+                className={s.input}
+                value={newMnSecret}
+                onChange={e => setNewMnSecret(e.target.value)}
+                placeholder='Secret key…'
+                type='password'
+                autoComplete='new-password'
+              />
+            </div>
+          </div>
+        )}
+      </KeySection>
+
+      <div className={s.row2} style={{ marginTop: '0.75rem' }}>
+        <div className={s.field}>
+          <label>Contract Code</label>
+          <input
+            className={s.input}
+            value={settings.monnifyContractCode}
+            onChange={e => field('monnifyContractCode', e.target.value)}
+            placeholder='e.g. 123456789'
+          />
+        </div>
+        <div className={s.field}>
+          <label>Source Account Number <span className={s.hint}>(wallet)</span></label>
+          <input
+            className={s.input}
+            value={settings.monnifySourceAccountNumber}
+            onChange={e => field('monnifySourceAccountNumber', e.target.value)}
+            placeholder='10-digit NUBAN'
+            maxLength={10}
+          />
+        </div>
+      </div>
+
+      <div className={s.field}>
+        <label>Base URL <span className={s.hint}>(sandbox or live)</span></label>
+        <input
+          className={s.input}
+          value={settings.monnifyBaseUrl}
+          onChange={e => field('monnifyBaseUrl', e.target.value)}
+          placeholder='https://sandbox.monnify.com'
+        />
       </div>
 
       <div className={s.divider} />
 
+      {/* ── Direct Bank Transfer ──────────────────────────────────────── */}
       <h2 className={s.sectionTitle}>Direct Bank Transfer</h2>
       <p className={s.subtext}>
         When enabled, patients will see your company bank details on the payment

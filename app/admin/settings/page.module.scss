@@ -140,6 +140,25 @@
   &:hover { color: var(--text); }
 }
 
+// ── Provider selector ──
+.providerSelector {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+}
+.providerBtn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: $radius-sm; cursor: pointer;
+  font-size: 0.875rem; font-weight: 600; border: 1.5px solid var(--border);
+  background: var(--input-bg); color: var(--text-muted); transition: all 0.15s;
+  &:hover { color: var(--text); border-color: rgba($primary,0.4); }
+}
+.providerBtnActive {
+  background: rgba($primary,0.08); border-color: $primary; color: $primary;
+}
+.providerActivePill {
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  background: $primary; color: $white; border-radius: 999px; padding: 1px 7px;
+}
+
 // ── List sections (specializations / services) ──
 .listHeader {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
