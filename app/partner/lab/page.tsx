@@ -1157,6 +1157,37 @@ function ClaimCard ({ req, claiming, onClaim }: { req: Request; claiming: string
   )
 }
 
+// ── Pagination helper ─────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 20
+
+function paginateList<T>(arr: T[], page: number) {
+  const start = (page - 1) * PAGE_SIZE
+  return {
+    items: arr.slice(start, start + PAGE_SIZE),
+    totalPages: Math.max(1, Math.ceil(arr.length / PAGE_SIZE)),
+  }
+}
+
+function PaginationBar ({
+  page,
+  totalPages,
+  onPage,
+}: {
+  page: number
+  totalPages: number
+  onPage: (p: number) => void
+}) {
+  if (totalPages <= 1) return null
+  return (
+    <div className={s.pagination}>
+      <button className={s.pageBtn} disabled={page <= 1} onClick={() => onPage(page - 1)}>← Prev</button>
+      <span className={s.pageInfo}>Page {page} of {totalPages}</span>
+      <button className={s.pageBtn} disabled={page >= totalPages} onClick={() => onPage(page + 1)}>Next →</button>
+    </div>
+  )
+}
+
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 
 type Tab = 'active' | 'available' | 'done' | 'walkin' | 'team'
@@ -1175,6 +1206,8 @@ export default function LabDashboard () {
   const [tab,         setTab]         = useState<Tab>('active')
   const [uploadNotes, setUploadNotes] = useState<Record<string, string>>({})
   const [walkInMsg,   setWalkInMsg]   = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [pages,       setPages]       = useState<Record<string, number>>({ active: 1, available: 1, done: 1 })
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   // Phase 1: detect user role from profile
@@ -1267,6 +1300,30 @@ export default function LabDashboard () {
     new Date(r.createdAt).toDateString() === new Date().toDateString()
   ).length
 
+  function filterRequests (list: Request[]) {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return list
+    return list.filter(r =>
+      r.patient?.name?.toLowerCase().includes(q) ||
+      r.tests.some(t => t.toLowerCase().includes(q)) ||
+      r.patient?.phone?.includes(q)
+    )
+  }
+
+  function goPage (tabKey: string, p: number) {
+    setPages(prev => ({ ...prev, [tabKey]: p }))
+  }
+
+  const filteredActive    = filterRequests(active)
+  const filteredAvailable = filterRequests(available)
+  const filteredDone      = filterRequests(done)
+
+  const { items: activeItems,    totalPages: activeTotalPages    } = paginateList(filteredActive,    pages.active    ?? 1)
+  const { items: availableItems, totalPages: availableTotalPages } = paginateList(filteredAvailable, pages.available ?? 1)
+  const { items: doneItems,      totalPages: doneTotalPages      } = paginateList(filteredDone,      pages.done      ?? 1)
+
+  const showSearch = ['active', 'available', 'done'].includes(tab)
+
   return (
     <div className={s.wrap}>
       <div className={s.pageHeader}>
@@ -1297,7 +1354,7 @@ export default function LabDashboard () {
           <button
             key={key}
             className={`${s.tab} ${tab === key ? s.tabActive : ''}`}
-            onClick={() => setTab(key)}
+            onClick={() => { setTab(key); setSearchQuery('') }}
           >
             {label}
             {count > 0 && <span className={s.tabCount}>{count}</span>}
@@ -1318,6 +1375,26 @@ export default function LabDashboard () {
         </button>
       </div>
 
+      {showSearch && (
+        <div className={s.searchRow}>
+          <div className={s.searchWrap}>
+            <SearchIcon size={16} className={s.searchIcon} />
+            <input
+              className={s.searchInput}
+              type='text'
+              placeholder='Search by patient name, phone, or test…'
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setPages(prev => ({ ...prev, [tab]: 1 })) }}
+            />
+            {searchQuery && (
+              <button className={s.searchClear} onClick={() => { setSearchQuery(''); setPages(prev => ({ ...prev, [tab]: 1 })) }}>
+                <XIcon size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {tab === 'team' ? (
         <TeamTab />
       ) : tab === 'walkin' ? (
@@ -1328,51 +1405,60 @@ export default function LabDashboard () {
       ) : loading ? (
         <div className={s.empty}>Loading requests…</div>
       ) : tab === 'available' ? (
-        available.length === 0
-          ? <div className={s.empty}>No unclaimed paid requests right now.</div>
-          : <div className={s.list}>
-              {available.map(req => (
-                <ClaimCard key={req._id} req={req} claiming={claiming} onClaim={claimRequest} />
-              ))}
-            </div>
+        filteredAvailable.length === 0
+          ? <div className={s.empty}>{searchQuery ? 'No results match your search.' : 'No unclaimed paid requests right now.'}</div>
+          : <>
+              <div className={s.list}>
+                {availableItems.map(req => (
+                  <ClaimCard key={req._id} req={req} claiming={claiming} onClaim={claimRequest} />
+                ))}
+              </div>
+              <PaginationBar page={pages.available ?? 1} totalPages={availableTotalPages} onPage={p => goPage('available', p)} />
+            </>
       ) : tab === 'active' ? (
-        active.length === 0
-          ? <div className={s.empty}>No active requests — claim available ones or register a walk-in.</div>
-          : <div className={s.list}>
-              {active.map(req => (
-                <RequestCard
-                  key={req._id}
-                  req={req}
-                  onUpdate={updateStatus}
-                  onUpload={uploadResult}
-                  updating={updating}
-                  uploading={uploading}
-                  uploadNotes={uploadNotes}
-                  setUploadNotes={setUploadNotes}
-                  fileRefs={fileRefs}
-                  scientists={scientists.length > 0 ? scientists : undefined}
-                  onRefresh={load}
-                />
-              ))}
-            </div>
+        filteredActive.length === 0
+          ? <div className={s.empty}>{searchQuery ? 'No results match your search.' : 'No active requests — claim available ones or register a walk-in.'}</div>
+          : <>
+              <div className={s.list}>
+                {activeItems.map(req => (
+                  <RequestCard
+                    key={req._id}
+                    req={req}
+                    onUpdate={updateStatus}
+                    onUpload={uploadResult}
+                    updating={updating}
+                    uploading={uploading}
+                    uploadNotes={uploadNotes}
+                    setUploadNotes={setUploadNotes}
+                    fileRefs={fileRefs}
+                    scientists={scientists.length > 0 ? scientists : undefined}
+                    onRefresh={load}
+                  />
+                ))}
+              </div>
+              <PaginationBar page={pages.active ?? 1} totalPages={activeTotalPages} onPage={p => goPage('active', p)} />
+            </>
       ) : (
-        done.length === 0
-          ? <div className={s.empty}>No completed requests yet.</div>
-          : <div className={s.list}>
-              {done.map(req => (
-                <RequestCard
-                  key={req._id}
-                  req={req}
-                  onUpdate={updateStatus}
-                  onUpload={uploadResult}
-                  updating={updating}
-                  uploading={uploading}
-                  uploadNotes={uploadNotes}
-                  setUploadNotes={setUploadNotes}
-                  fileRefs={fileRefs}
-                />
-              ))}
-            </div>
+        filteredDone.length === 0
+          ? <div className={s.empty}>{searchQuery ? 'No results match your search.' : 'No completed requests yet.'}</div>
+          : <>
+              <div className={s.list}>
+                {doneItems.map(req => (
+                  <RequestCard
+                    key={req._id}
+                    req={req}
+                    onUpdate={updateStatus}
+                    onUpload={uploadResult}
+                    updating={updating}
+                    uploading={uploading}
+                    uploadNotes={uploadNotes}
+                    setUploadNotes={setUploadNotes}
+                    fileRefs={fileRefs}
+                  />
+                ))}
+              </div>
+              <PaginationBar page={pages.done ?? 1} totalPages={doneTotalPages} onPage={p => goPage('done', p)} />
+            </>
       )}
     </div>
   )

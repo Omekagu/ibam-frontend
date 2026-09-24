@@ -172,7 +172,9 @@
   text-align: center;
   margin-top: 0.75rem;
   font-size: 0.8125rem;
-  a { color: $primary; text-decoration: none; font-weight: 600; &:hover { text-decoration: underline; } }
+  color: $primary;
+  font-weight: 600;
+  a, button { color: $primary; text-decoration: none; font-weight: 600; font-size: inherit; &:hover { text-decoration: underline; } }
 }
 
 // ─── Divider ──────────────────────────────────────

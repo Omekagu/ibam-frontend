@@ -3,7 +3,7 @@ import { useState, FormEvent, Suspense, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { login, verifyAdminOtp, type AdminOtpRequired } from '@/lib/auth'
+import { login, verifyAdminOtp, resendAdminOtp, type AdminOtpRequired } from '@/lib/auth'
 import { useAuthRedirect } from '@/hooks/useAuthRedirect'
 import AuthBrandPanel from '@/components/AuthBrandPanel'
 import { useStatusModal } from '@/components/StatusModal'
@@ -89,6 +89,13 @@ function LoginInner () {
   const [loading, setLoading] = useState(false)
   const [adminOtp, setAdminOtp] = useState<AdminOtpRequired | null>(null)
   const [otpCode, setOtpCode] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendCooldown])
 
   useEffect(() => {
     const msg = searchParams.get('error')
@@ -110,6 +117,7 @@ function LoginInner () {
       if ('requiresAdminOtp' in result) {
         setAdminOtp(result)
         setOtpCode('')
+        setResendCooldown(60)
         return
       }
       const { user } = result
@@ -137,6 +145,25 @@ function LoginInner () {
         return
       }
       modal.show({ variant: 'declined', title: 'Login Failed', message: msg })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResendAdminOtp () {
+    if (!adminOtp || resendCooldown > 0) return
+    setLoading(true)
+    try {
+      await resendAdminOtp(adminOtp.adminUserId)
+      setResendCooldown(60)
+      setOtpCode('')
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } }
+      modal.show({
+        variant: 'declined',
+        title: 'Failed to Resend',
+        message: e?.response?.data?.message ?? 'Could not resend code. Try again.'
+      })
     } finally {
       setLoading(false)
     }
@@ -222,22 +249,25 @@ function LoginInner () {
                 </button>
               </form>
 
-              <button
-                type='button'
-                className={s.verifyLink}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-                onClick={() => {
-                  setAdminOtp(null)
-                  setOtpCode('')
-                }}
-              >
-                ← Back to login
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
+                <button
+                  type='button'
+                  className={s.verifyLink}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  onClick={() => { setAdminOtp(null); setOtpCode('') }}
+                >
+                  ← Back to login
+                </button>
+                <button
+                  type='button'
+                  className={s.verifyLink}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: resendCooldown > 0 ? 'default' : 'pointer', opacity: resendCooldown > 0 ? 0.5 : 1 }}
+                  disabled={loading || resendCooldown > 0}
+                  onClick={handleResendAdminOtp}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                </button>
+              </div>
             </>
           ) : (
             <>

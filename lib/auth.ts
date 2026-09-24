@@ -66,6 +66,10 @@ export async function verifyAdminOtp (adminUserId: string, otp: string): Promise
   return data
 }
 
+export async function resendAdminOtp (adminUserId: string): Promise<void> {
+  await api.post('/auth/resend-admin-otp', { adminUserId })
+}
+
 export async function register (payload: RegisterPayload): Promise<AuthResponse> {
   const res = await api.post('/auth/register', payload)
   const data: AuthResponse = res.data.data

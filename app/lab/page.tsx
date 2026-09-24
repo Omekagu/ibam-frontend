@@ -1854,6 +1854,9 @@ function LabPortalInner () {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [scientists, setScientists] = useState<Scientist[]>([])
   const [search, setSearch] = useState('')
+  const [pages, setPages] = useState<Record<string, number>>({ available: 1, mine: 1, completed: 1 })
+
+  const LAB_PAGE_SIZE = 20
 
   // Phase 1: load profile to detect role
   useEffect(() => {
@@ -1927,12 +1930,19 @@ function LabPortalInner () {
     )
   }
 
-  const tabData: Record<Tab, LabRequest[]> = {
+  const filteredTabData: Record<Tab, LabRequest[]> = {
     available: filterRequests(available),
     mine: filterRequests(myActive),
     completed: filterRequests(myDone),
     walkin: [],
     team: []
+  }
+
+  function getPagedTab (key: Exclude<Tab, 'walkin' | 'team'>) {
+    const all = filteredTabData[key]
+    const p = pages[key] ?? 1
+    const totalPages = Math.max(1, Math.ceil(all.length / LAB_PAGE_SIZE))
+    return { items: all.slice((p - 1) * LAB_PAGE_SIZE, p * LAB_PAGE_SIZE), totalPages, total: all.length }
   }
 
   // Show loading spinner until profile is resolved
@@ -1977,10 +1987,10 @@ function LabPortalInner () {
           className={s.searchInput}
           placeholder='Search by patient ID, name, or transaction ref…'
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setPages(p => ({ ...p, [tab]: 1 })) }}
         />
         {search && (
-          <button className={s.searchClear} onClick={() => setSearch('')}>
+          <button className={s.searchClear} onClick={() => { setSearch(''); setPages(p => ({ ...p, [tab]: 1 })) }}>
             <XIcon size={14} />
           </button>
         )}
@@ -1997,25 +2007,25 @@ function LabPortalInner () {
       <div className={s.tabs}>
         <button
           className={`${s.tab} ${tab === 'available' ? s.tabActive : ''}`}
-          onClick={() => setTab('available')}
+          onClick={() => { setTab('available'); setSearch(''); setPages(p => ({ ...p, available: 1 })) }}
         >
           Available Requests
-          {tabData.available.length > 0 && (
-            <span className={s.badge}>{tabData.available.length}</span>
+          {filteredTabData.available.length > 0 && (
+            <span className={s.badge}>{filteredTabData.available.length}</span>
           )}
         </button>
         <button
           className={`${s.tab} ${tab === 'mine' ? s.tabActive : ''}`}
-          onClick={() => setTab('mine')}
+          onClick={() => { setTab('mine'); setSearch(''); setPages(p => ({ ...p, mine: 1 })) }}
         >
           In Progress
-          {tabData.mine.length > 0 && (
-            <span className={s.badge}>{tabData.mine.length}</span>
+          {filteredTabData.mine.length > 0 && (
+            <span className={s.badge}>{filteredTabData.mine.length}</span>
           )}
         </button>
         <button
           className={`${s.tab} ${tab === 'completed' ? s.tabActive : ''}`}
-          onClick={() => setTab('completed')}
+          onClick={() => { setTab('completed'); setSearch(''); setPages(p => ({ ...p, completed: 1 })) }}
         >
           Completed
         </button>
@@ -2046,7 +2056,7 @@ function LabPortalInner () {
         <div className={s.empty}>
           <Loader label='Loading requests…' />
         </div>
-      ) : tabData[tab as Exclude<Tab, 'walkin' | 'team'>]?.length === 0 ? (
+      ) : filteredTabData[tab as Exclude<Tab, 'walkin' | 'team'>]?.length === 0 ? (
         <div className={s.empty}>
           {search.trim()
             ? 'No requests match your search.'
@@ -2056,22 +2066,44 @@ function LabPortalInner () {
             ? 'No active requests.'
             : 'No completed requests yet.'}
         </div>
-      ) : (
-        <div className={s.list}>
-          {tabData[tab as Exclude<Tab, 'walkin' | 'team'>]?.map(req => (
-            <RequestCard
-              key={req._id}
-              req={req}
-              isAvailable={tab === 'available'}
-              labApi={labApi}
-              onRefresh={load}
-              scientists={
-                tab === 'mine' && scientists.length > 0 ? scientists : undefined
-              }
-            />
-          ))}
-        </div>
-      )}
+      ) : (() => {
+          const { items, totalPages, total } = getPagedTab(tab as Exclude<Tab, 'walkin' | 'team'>)
+          const currentPage = pages[tab] ?? 1
+          return (
+            <>
+              <div className={s.list}>
+                {items.map(req => (
+                  <RequestCard
+                    key={req._id}
+                    req={req}
+                    isAvailable={tab === 'available'}
+                    labApi={labApi}
+                    onRefresh={load}
+                    scientists={
+                      tab === 'mine' && scientists.length > 0 ? scientists : undefined
+                    }
+                  />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className={s.pagination}>
+                  <button
+                    className={s.pageBtn}
+                    disabled={currentPage <= 1}
+                    onClick={() => setPages(p => ({ ...p, [tab]: currentPage - 1 }))}
+                  >← Prev</button>
+                  <span className={s.pageInfo}>Page {currentPage} of {totalPages} ({total} total)</span>
+                  <button
+                    className={s.pageBtn}
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPages(p => ({ ...p, [tab]: currentPage + 1 }))}
+                  >Next →</button>
+                </div>
+              )}
+            </>
+          )
+        })()
+      }
     </div>
   )
 }
