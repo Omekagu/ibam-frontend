@@ -157,7 +157,7 @@ function WalkInPanel ({
     setSelected(p => p.includes(name) ? p.filter(n => n !== name) : [...p, name])
   }
 
-  async function submit (confirmExisting = false) {
+  async function submit (confirmExisting = false, forceNew = false) {
     setSubmitting(true)
     setError('')
     setPendingConfirm(null)
@@ -169,7 +169,8 @@ function WalkInPanel ({
         paymentMethod: payMethod,
         totalAmount:  total,
         notes:        patient.notes || undefined,
-        ...(confirmExisting ? { confirmExisting: true } : {})
+        ...(confirmExisting ? { confirmExisting: true } : {}),
+        ...(forceNew ? { forceNew: true } : {}),
       }
       if (testMode === 'wellness' && selectedPkg) {
         body.wellnessPackageId = selectedPkg._id
@@ -424,11 +425,15 @@ function WalkInPanel ({
               <p className={s.confirmBannerText}>
                 A patient named <strong>{pendingConfirm.name}</strong>
                 {pendingConfirm.phone ? ` (${pendingConfirm.phone})` : ''} already has an account.
-                Link this walk-in to their existing account?
+                Is this the same person?
               </p>
               <div className={s.confirmBannerActions}>
                 <button className={s.wiBtn} disabled={submitting} onClick={() => submit(true)}>
                   {submitting ? 'Registering…' : 'Yes, use existing →'}
+                </button>
+                <button className={s.wiBtn} disabled={submitting} onClick={() => submit(false, true)}
+                  style={{ background: 'var(--bg-card)', color: 'var(--text)', border: '1.5px solid var(--border)' }}>
+                  {submitting ? 'Registering…' : 'No, new patient →'}
                 </button>
                 <button className={s.wiBtn2} onClick={() => { setPendingConfirm(null); setStep('patient') }}>
                   No, change patient
