@@ -112,8 +112,8 @@ export default function Footer () {
           </p>
           <div className={s.badges}>
             <span className={s.badge}>Registered in Nigeria</span>
-            <span className={s.badge}>NDPR Compliant</span>
-            <span className={s.badge}>FMOH Licensed</span>
+            {/* <span className={s.badge}>NDPR Compliant</span>
+            <span className={s.badge}>FMOH Licensed</span> */}
           </div>
         </div>
       </div>
