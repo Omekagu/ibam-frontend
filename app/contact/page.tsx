@@ -23,12 +23,12 @@ const INFO = [
     icon: <MapPinIcon size={22} />,
     title: 'Head Office',
     body: 'No 32/36 College Road,\nOgui New Layout, Enugu.'
-  },
-  {
-    icon: <ChatIcon size={22} />,
-    title: 'Live Chat',
-    body: 'Available in the app 24/7\nAverage response: < 3 minutes'
   }
+  // {
+  //   icon: <ChatIcon size={22} />,
+  //   title: 'Live Chat',
+  //   body: 'Available in the app 24/7\nAverage response: < 3 minutes'
+  // }
 ]
 
 export default function ContactPage () {
