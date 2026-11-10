@@ -78,7 +78,7 @@ export default async function PricingTeaser() {
                   </li>
                 )}
               </ul>
-              <Link href={`/diagnostics?package=${pkg.slug}`} className={s.planCta}>
+              <Link href={`/patient/labs?tab=packages&package=${pkg.slug}`} className={s.planCta}>
                 Book Package
               </Link>
             </div>

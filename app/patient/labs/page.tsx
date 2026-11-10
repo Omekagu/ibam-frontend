@@ -201,6 +201,17 @@ function PatientLabsInner () {
   }, [params])
 
   useEffect(() => {
+    const pkgSlug = params.get('package')
+    if (!pkgSlug || !wellnessPackages.length) return
+    const match = wellnessPackages.find(p => p.slug === pkgSlug)
+    if (match) {
+      setTab('packages')
+      setSelectedPackage(match)
+      setShowBookModal(true)
+    }
+  }, [params, wellnessPackages])
+
+  useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://js.paystack.co/v2/inline.js'
     script.async = true

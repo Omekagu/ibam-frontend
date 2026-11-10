@@ -99,7 +99,7 @@ export default async function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/diagnostics?package=${pkg.slug}`} className={s.cta}>
+                <Link href={`/patient/labs?tab=packages&package=${pkg.slug}`} className={s.cta}>
                   Book Package
                 </Link>
               </div>
