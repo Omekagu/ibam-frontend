@@ -1,59 +1,33 @@
 import Link from "next/link";
 import s from "./PricingTeaser.module.scss";
 
-const PLANS = [
-  {
-    name: "Free",
-    badge: "Get Started",
-    price: "₦0",
-    period: "forever",
-    featured: false,
-    features: [
-      { label: "Smart symptom triage",     included: true  },
-      { label: "1 consultation / month",   included: true  },
-      { label: "Basic health profile",     included: true  },
-      { label: "Unlimited consultations",  included: false },
-      { label: "E-prescriptions & labs",   included: false },
-      { label: "Family accounts",          included: false },
-    ],
-    cta: "Start Free",
-    href: "/signup",
-  },
-  {
-    name: "Personal",
-    badge: "Most Popular",
-    price: "₦2,500",
-    period: "/ month",
-    featured: true,
-    features: [
-      { label: "Smart symptom triage",     included: true },
-      { label: "Unlimited consultations",  included: true },
-      { label: "E-prescriptions & labs",   included: true },
-      { label: "Pharmacy delivery",        included: true },
-      { label: "Health record storage",    included: true },
-      { label: "Family accounts",          included: false },
-    ],
-    cta: "Get Personal",
-    href: "/signup?plan=personal",
-  },
-  {
-    name: "Family",
-    badge: "Best Value",
-    price: "₦5,000",
-    period: "/ month",
-    featured: false,
-    features: [
-      { label: "Smart symptom triage",     included: true },
-      { label: "Unlimited consultations",  included: true },
-      { label: "E-prescriptions & labs",   included: true },
-      { label: "Pharmacy delivery",        included: true },
-      { label: "Up to 6 family members",   included: true },
-      { label: "Priority booking",         included: true },
-    ],
-    cta: "Get Family",
-    href: "/signup?plan=family",
-  },
-];
+interface WellnessPackage {
+  _id: string;
+  name: string;
+  slug: string;
+  includedTests: string[];
+  walkInPrice: number;
+  homeVisitPrice: number;
+  gender: "male" | "female" | "all";
+}
+
+async function fetchPackages(): Promise<WellnessPackage[]> {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "https://api.ibamhealth.com/api";
+    const res = await fetch(`${base}/admin/public/content`, { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const body = await res.json();
+    return (body?.data?.wellnessPackages ?? []) as WellnessPackage[];
+  } catch {
+    return [];
+  }
+}
+
+function genderBadge(gender: string) {
+  if (gender === "male") return "For Men";
+  if (gender === "female") return "For Women";
+  return "For Everyone";
+}
 
 function CheckIcon() {
   return (
@@ -63,50 +37,57 @@ function CheckIcon() {
   );
 }
 
-function CrossIcon() {
-  return (
-    <svg className={s.featureCross} viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-    </svg>
-  );
-}
+export default async function PricingTeaser() {
+  const packages = await fetchPackages();
+  const preview = packages.slice(0, 3);
 
-export default function PricingTeaser() {
+  if (preview.length === 0) return null;
+
   return (
     <section className={s.section}>
       <div className={s.inner}>
         <div className={`${s.header} reveal`}>
-          <span className={s.eyebrow}>Pricing</span>
-          <h2>Simple, transparent plans</h2>
-          <p>No hidden fees. No surprise bills. Cancel anytime.</p>
+          <span className={s.eyebrow}>Wellness Packages</span>
+          <h2>Comprehensive health checks</h2>
+          <p>All-inclusive diagnostic packages with walk-in and home visit collection options.</p>
         </div>
 
         <div className={`${s.grid} reveal-stagger`}>
-          {PLANS.map((plan) => (
-            <div key={plan.name} className={`${s.card} ${plan.featured ? s.featured : ""} reveal`}>
-              <span className={s.badge}>{plan.badge}</span>
-              <div className={s.planName}>{plan.name}</div>
+          {preview.map((pkg) => (
+            <div key={pkg._id} className={`${s.card} reveal`}>
+              <span className={s.badge}>{genderBadge(pkg.gender)}</span>
+              <div className={s.planName}>{pkg.name}</div>
               <div className={s.price}>
-                <sub>{ }</sub>{plan.price}
+                ₦{pkg.walkInPrice.toLocaleString("en-NG")}
               </div>
-              <div className={s.period}>{plan.period}</div>
+              <div className={s.period}>
+                walk-in · home visit ₦{pkg.homeVisitPrice.toLocaleString("en-NG")}
+              </div>
               <hr className={s.divider} />
               <ul className={s.featureList}>
-                {plan.features.map((f) => (
-                  <li key={f.label} className={s.feature}>
-                    {f.included ? <CheckIcon /> : <CrossIcon />}
-                    {f.label}
+                {pkg.includedTests.slice(0, 5).map((test) => (
+                  <li key={test} className={s.feature}>
+                    <CheckIcon />
+                    {test}
                   </li>
                 ))}
+                {pkg.includedTests.length > 5 && (
+                  <li className={s.feature}>
+                    <CheckIcon />
+                    +{pkg.includedTests.length - 5} more tests
+                  </li>
+                )}
               </ul>
-              <Link href={plan.href} className={s.planCta}>{plan.cta}</Link>
+              <Link href={`/diagnostics?package=${pkg.slug}`} className={s.planCta}>
+                Book Package
+              </Link>
             </div>
           ))}
         </div>
 
         <div className={s.viewAll}>
           <Link href="/pricing">
-            View full plan comparison →
+            View all wellness packages →
           </Link>
         </div>
       </div>
