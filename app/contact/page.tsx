@@ -17,12 +17,12 @@ const INFO = [
   {
     icon: <PhoneIcon size={22} />,
     title: 'Call Us',
-    body: '+234 700 IBAM HEALTH\nMon–Fri, 8 AM – 8 PM'
+    body: '081 2491 2161 \nMon–Fri, 8 AM – 8 PM'
   },
   {
     icon: <MapPinIcon size={22} />,
     title: 'Head Office',
-    body: '14 Adeola Odeku Street\nVictoria Island, Enugu'
+    body: 'No 32/36 College Road,\nOgui New Layout, Enugu.'
   },
   {
     icon: <ChatIcon size={22} />,
